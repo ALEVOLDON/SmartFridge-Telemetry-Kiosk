@@ -196,7 +196,18 @@ def sync_cloud_history():
     except Exception as e:
         print("Cloud sync notice:", e)
 
-sync_cloud_history()
+def get_latest_end_time():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(end_time) FROM cycles")
+        row = cur.fetchone()
+        conn.close()
+        if row and row[0]:
+            return row[0]
+    except Exception:
+        pass
+    return None
 
 def tuya_poller():
     global state
@@ -206,7 +217,10 @@ def tuya_poller():
     poll_count = 0
     
     cfg = load_config()
-    if cfg.get("last_stop_time"):
+    db_last_end = get_latest_end_time()
+    if db_last_end:
+        state["rest_start_time"] = db_last_end
+    elif cfg.get("last_stop_time"):
         state["rest_start_time"] = cfg["last_stop_time"]
     if cfg.get("current_start_time"):
         state["cycle_start_time"] = cfg["current_start_time"]
