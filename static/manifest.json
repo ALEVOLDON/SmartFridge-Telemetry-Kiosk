@@ -1,0 +1,24 @@
+{
+  "name": "Smart Refrigerator Telemetry Kiosk",
+  "short_name": "SmartFridge",
+  "description": "24/7 Smart Refrigerator Energy & Duty Cycle Telemetry Monitor",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

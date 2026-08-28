@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samsung RT34MB — Монитор</title>
+    
+    <!-- PWA & Mobile Icons -->
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); padding: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .title-group h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .title-group p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+        .btn-group { display: flex; gap: 10px; }
+        .btn { background: var(--accent-blue); color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:hover { background: #2563eb; }
+        .btn-secondary { background: #334155; }
+        .btn-secondary:hover { background: #475569; }
+
+        /* Cloud status banner */
+        .cloud-banner { background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 18px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .status-tag { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+        .dot-red { background: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); }
+
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .card-title { font-size: 15px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+        .main-stat { font-size: 38px; font-weight: 800; color: #fff; display: flex; align-items: baseline; gap: 6px; }
+        .unit { font-size: 18px; font-weight: 500; color: var(--text-muted); }
+
+        .cycle-box { background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .timer-val { font-size: 36px; font-family: monospace; font-weight: 700; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); padding: 6px 16px; border-radius: 12px; border: 1px solid rgba(6, 182, 212, 0.2); }
+
+        .chart-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+        .chart-container { position: relative; height: 260px; width: 100%; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); justify-content: center; align-items: center; }
+        .modal-content { background: var(--bg-card); border: 1px solid var(--border-color); padding: 28px; border-radius: 18px; width: 100%; max-width: 520px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; background: #0f172a; border: 1px solid var(--border-color); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus { outline: none; border-color: var(--accent-blue); }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
+        th { background: #0f172a; color: var(--text-muted); padding: 12px 14px; font-weight: 600; border-bottom: 1px solid var(--border-color); }
+        td { padding: 12px 14px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); color: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="title-group">
+            <h1>🧊 Авто-Монитор: Samsung RT34MB</h1>
+            <p>Автоматический опрос умной розетки через Tuya Cloud каждые 5 сек</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="testNotification()">🔔 Тест оповещения ПК</button>
+            <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки API Tuya</button>
+            <button class="btn btn-secondary" onclick="window.print()">🖨 Печать отчета</button>
+        </div>
+    </div>
+
+    <!-- Cloud Status Banner -->
+    <div class="cloud-banner">
+        <div class="status-tag" id="cloud-status">
+            <span class="dot dot-red" id="cloud-dot"></span>
+            <span id="cloud-text">Ожидание подключения к Tuya Cloud...</span>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted);" id="last-sync">Обновление: --:--:--</div>
+    </div>
+
+    <!-- Live Cards -->
+    <div class="grid-3">
+        <div class="card">
+            <div class="card-header"><span class="card-title">Текущая мощность</span><span style="color:var(--accent-blue); font-size:12px; font-weight:bold;">LIVE</span></div>
+            <div class="main-stat" id="live-power">0.0 <span class="unit">Вт</span></div>
+            <div style="font-size: 14px; margin-top: 10px; color: var(--text-muted);" id="live-state-desc">Компрессор выключен (Отдых)</div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><span class="card-title">Напряжение в сети</span><span style="color:var(--accent-cyan); font-size:12px; font-weight:bold;">VOLT</span></div>
+            <div class="main-stat" id="live-voltage">--- <span class="unit">В</span></div>
+            <div style="font-size: 14px; margin-top: 10px; color: var(--accent-cyan);" id="live-volt-desc">Штатная норма компрессора (200-220V)</div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><span class="card-title">Сила тока</span><span style="color:var(--accent-green); font-size:12px; font-weight:bold;">AMPERE</span></div>
+            <div class="main-stat" id="live-current">0.00 <span class="unit">А</span></div>
+            <div style="font-size: 14px; margin-top: 10px; color: var(--text-muted);">Паспорт: 0.70 А</div>
+        </div>
+    </div>
+
+    <!-- Auto Cycle Box -->
+    <div class="cycle-box">
+        <div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px; font-weight:600;" id="timer-title">⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
+            <div class="timer-val" id="auto-timer" style="color: #06b6d4;">00:00:00</div>
+        </div>
+        <div style="max-width: 450px; font-size: 13.5px; color: #cbd5e1; line-height: 1.5;" id="cycle-verdict">
+            🧊 Холодильник удерживает набранный мороз. Ожидаемый запуск компрессора через ~15–25 мин.
+        </div>
+    </div>
+
+    <!-- Health & Anomaly Diagnostics Banner -->
+    <div id="health-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #06b6d4; transition: all 0.3s ease; padding: 16px 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <span id="health-icon" style="font-size:26px;">🧊</span>
+                <div>
+                    <div id="health-title" style="font-size:15px; font-weight:700; color:#f8fafc;">Диагностика цикла: Штатный отдых</div>
+                    <div id="health-subtitle" style="font-size:13px; color:#94a3b8; margin-top:3px;">Холодильник отдыхает в пределах нормы (35–55 мин). Уплотнители держат мороз.</div>
+                </div>
+            </div>
+            <div id="health-badge" style="font-size:12px; font-weight:700; padding:6px 14px; border-radius:20px; background:rgba(6,182,212,0.15); color:#06b6d4; letter-spacing:0.3px;">
+                Отдых: Норма
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-card">
+        <div class="card-header"><span class="card-title">Живой график работы в реальном времени</span></div>
+        <div class="chart-container"><canvas id="liveChart"></canvas></div>
+    </div>
+
+    <!-- Cycles Table -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">История зафиксированных циклов заморозки и отдыха</span>
+            <span id="krv-badge" style="font-size:13px; color:#10b981; font-weight:bold; background:rgba(16,185,129,0.15); padding:4px 10px; border-radius:8px;">КРВ: 0.38 (Идеал)</span>
+        </div>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>Начало</th><th>Конец</th><th>Работа (Заморозка)</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Вердикт</th></tr>
+                </thead>
+                <tbody id="cycles-body">
+                    <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Автоматические циклы будут появляться здесь по мере работы холодильника.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settings-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>⚙️ Настройки Tuya Cloud API</h3>
+            <span style="cursor:pointer; font-size:20px;" onclick="closeSettings()">&times;</span>
+        </div>
+        <div class="form-group">
+            <label>Регион дата-центра</label>
+            <select id="cfg-region">
+                <option value="eu" selected>Central Europe (eu) — Россия / Европа</option>
+                <option value="us">Western America (us)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Access ID / Client ID</label>
+            <input type="text" id="cfg-key" placeholder="Напр. 3k8a7f9bc82d...">
+        </div>
+        <div class="form-group">
+            <label>Access Secret / Client Secret</label>
+            <input type="password" id="cfg-secret" placeholder="Напр. 82fa91b3...">
+        </div>
+        <div class="form-group">
+            <label>Device ID (Идентификатор умной розетки)</label>
+            <input type="text" id="cfg-device" placeholder="Напр. bfa82710...">
+        </div>
+        <button class="btn" style="width:100%;" onclick="saveSettings()">💾 Сохранить и подключиться</button>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    const liveChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                { label: 'Мощность (Вт)', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', yAxisID: 'yP', fill: true, tension: 0.2 },
+                { label: 'Напряжение (В)', data: [], borderColor: '#06b6d4', borderDash: [5, 5], yAxisID: 'yV', tension: 0.2 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                yP: { position: 'left', grid: { color: '#334155' }, ticks: { color: '#3b82f6' }, min: 0, suggestedMax: 150 },
+                yV: { position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#06b6d4' }, min: 180, max: 240 }
+            },
+            plugins: { legend: { labels: { color: '#f8fafc' } } }
+        }
+    });
+
+    function openSettings() {
+        fetch('/api/config')
+            .then(r => r.json())
+            .then(cfg => {
+                document.getElementById('cfg-region').value = cfg.api_region || 'eu';
+                document.getElementById('cfg-key').value = cfg.api_key || '';
+                document.getElementById('cfg-secret').value = cfg.api_secret || '';
+                document.getElementById('cfg-device').value = cfg.device_id || '';
+                document.getElementById('settings-modal').style.display = 'flex';
+            });
+    }
+
+    function closeSettings() {
+        document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    function saveSettings() {
+        const payload = {
+            api_region: document.getElementById('cfg-region').value,
+            api_key: document.getElementById('cfg-key').value,
+            api_secret: document.getElementById('cfg-secret').value,
+            device_id: document.getElementById('cfg-device').value
+        };
+        fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(() => {
+            closeSettings();
+            pollStatus();
+        });
+    }
+
+    function testNotification() {
+        fetch('/api/test_notification', {method: 'POST'})
+            .then(r => r.json())
+            .then(() => alert('🔔 Тестовое оповещение отправлено в Windows! Посмотрите в правый нижний угол экрана.'));
+    }
+
+    function formatSec(sec) {
+        const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    function pollStatus() {
+        fetch('/api/status')
+            .then(r => r.json())
+            .then(data => {
+                const cloudDot = document.getElementById('cloud-dot');
+                const cloudText = document.getElementById('cloud-text');
+                
+                if (data.connected) {
+                    cloudDot.className = 'dot dot-green';
+                    cloudText.innerText = 'Подключено к Tuya Cloud (Опрос активен)';
+                    document.getElementById('last-sync').innerText = 'Обновлено: ' + (data.last_update || '--');
+                } else {
+                    cloudDot.className = 'dot dot-red';
+                    cloudText.innerText = data.error_message || 'Ожидание настройки API Tuya Cloud';
+                }
+
+                document.getElementById('live-power').innerHTML = `${data.power.toFixed(1)} <span class="unit">Вт</span>`;
+                document.getElementById('live-voltage').innerHTML = `${data.voltage.toFixed(1)} <span class="unit">В</span>`;
+                document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
+                
+                const desc = document.getElementById('live-state-desc');
+                const timerTitle = document.getElementById('timer-title');
+                const timerVal = document.getElementById('auto-timer');
+                const verdictEl = document.getElementById('cycle-verdict');
+                
+                if (data.current_mode === 'defrost') {
+                    desc.innerText = '🔥 Автооттайка No Frost (ТЭН)';
+                    desc.style.color = '#f97316';
+                    
+                    timerTitle.innerText = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST (ТЭН)';
+                    timerTitle.style.color = '#f97316';
+                    timerVal.innerText = formatSec(data.cycle_duration_sec);
+                    timerVal.style.color = '#f97316';
+                    verdictEl.innerHTML = '🔥 Компрессор отключен. Электронагреватель (ТЭН ~165 Вт) растапливает иней на испарителе. Норма: <strong>10–25 минут</strong>.';
+                } else if (data.is_running) {
+                    desc.innerText = '🟢 Компрессор работает (Охлаждение)';
+                    desc.style.color = '#10b981';
+                    
+                    timerTitle.innerText = '🟢 АКТИВНЫЙ РЕЖИМ: ОХЛАЖДЕНИЕ (КОМПРЕССОР)';
+                    timerTitle.style.color = '#10b981';
+                    timerVal.innerText = formatSec(data.cycle_duration_sec);
+                    timerVal.style.color = '#10b981';
+                    verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты в камере. Норма цикла: <strong>15–35 минут</strong>.';
+                } else {
+                    desc.innerText = '⚪ Компрессор выключен (Отдых)';
+                    desc.style.color = '#94a3b8';
+                    
+                    const restSec = data.rest_duration_sec || 0;
+                    const restMin = Math.floor(restSec / 60);
+                    const estRemain = Math.max(0, 45 - restMin);
+                    
+                    timerTitle.innerText = '⚪ АКТИВНЫЙ РЕЖИМ: ОТДЫХ КОМПРЕССОРА (СТОЯНКА)';
+                    timerTitle.style.color = '#06b6d4';
+                    timerVal.innerText = formatSec(restSec);
+                    timerVal.style.color = '#06b6d4';
+                    verdictEl.innerHTML = `🧊 Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
+                }
+
+                // Health & Anomaly Diagnostics Banner Update
+                const healthCard = document.getElementById('health-card');
+                const healthIcon = document.getElementById('health-icon');
+                const healthTitle = document.getElementById('health-title');
+                const healthSubtitle = document.getElementById('health-subtitle');
+                const healthBadge = document.getElementById('health-badge');
+
+                if (data.current_mode === 'defrost') {
+                    const durMin = Math.floor(data.cycle_duration_sec / 60);
+                    healthCard.style.borderLeftColor = '#f97316';
+                    healthIcon.innerText = '🔥';
+                    healthTitle.innerText = '🔥 Автооттайка испарителя No Frost (ТЭН)';
+                    healthSubtitle.innerText = `Компрессор спит. Нагреватель растапливает иней уже ${durMin} мин (норма: 10–25 мин). Талая вода уходит в дренаж.`;
+                    healthBadge.innerText = 'Оттайка: ТЭН 165W';
+                    healthBadge.style.color = '#f97316';
+                    healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
+                } else if (data.is_running) {
+                    const durMin = Math.floor(data.cycle_duration_sec / 60);
+                    if (durMin <= 40) {
+                        healthCard.style.borderLeftColor = '#10b981';
+                        healthIcon.innerText = '❄️';
+                        healthTitle.innerText = '🟢 Штатная заморозка (Охлаждение в норме)';
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин (норма: 15–40 мин). Температура опускается.`;
+                        healthBadge.innerText = 'Охлаждение: Норма';
+                        healthBadge.style.color = '#10b981';
+                        healthBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                    } else if (durMin <= 80) {
+                        healthCard.style.borderLeftColor = '#f59e0b';
+                        healthIcon.innerText = '⏳';
+                        healthTitle.innerText = '🟡 Увеличенный цикл заморозки (> 40 мин)';
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Это штатно при загрузке продуктов или открывании дверей.`;
+                        healthBadge.innerText = 'Фазовый переход / Загрузка';
+                        healthBadge.style.color = '#f59e0b';
+                        healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                    } else {
+                        healthCard.style.borderLeftColor = '#ef4444';
+                        healthIcon.innerText = '⚠️';
+                        healthTitle.innerText = '🔴 Внимание: Длительная работа компрессора (> 1.5 ч)';
+                        healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте: плотно ли закрыта дверь и нет ли щелей в уплотнителе.`;
+                        healthBadge.innerText = 'Тревога: Долгая работа';
+                        healthBadge.style.color = '#ef4444';
+                        healthBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                    }
+                } else {
+                    const restSec = data.rest_duration_sec || 0;
+                    const restMin = Math.floor(restSec / 60);
+                    if (restMin <= 60) {
+                        healthCard.style.borderLeftColor = '#06b6d4';
+                        healthIcon.innerText = '🧊';
+                        healthTitle.innerText = '⚪ Штатный отдых (Удержание холода)';
+                        healthSubtitle.innerText = `Компрессор отдыхает ${restMin} мин (норма: 35–55 мин). Термоизоляция и уплотнители отлично держат мороз.`;
+                        healthBadge.innerText = 'Отдых: Норма';
+                        healthBadge.style.color = '#06b6d4';
+                        healthBadge.style.background = 'rgba(6, 182, 212, 0.15)';
+                    } else if (restMin <= 95) {
+                        healthCard.style.borderLeftColor = '#3b82f6';
+                        healthIcon.innerText = '🕒';
+                        healthTitle.innerText = '🔵 Глубокий покой (> 1 ч отдыха)';
+                        healthSubtitle.innerText = `Холодильник отдыхает уже ${restMin} мин. Камера глубоко проморожена, дверь не открывали.`;
+                        healthBadge.innerText = 'Глубокий мороз';
+                        healthBadge.style.color = '#3b82f6';
+                        healthBadge.style.background = 'rgba(59, 130, 246, 0.15)';
+                    } else {
+                        healthCard.style.borderLeftColor = '#f59e0b';
+                        healthIcon.innerText = '⚠️';
+                        healthTitle.innerText = '🟡 Внимание: Длительный простой (> 1.5 ч)';
+                        healthSubtitle.innerText = `Холодильник не включается уже ${restMin} мин. Если в морозилке тепло, проверьте терморегулятор или таймер оттайки.`;
+                        healthBadge.innerText = 'Длительный простой';
+                        healthBadge.style.color = '#f59e0b';
+                        healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                    }
+                }
+                
+                // Add to chart
+                if (data.last_update) {
+                    liveChart.data.labels.push(data.last_update);
+                    liveChart.data.datasets[0].data.push(data.power);
+                    liveChart.data.datasets[1].data.push(data.voltage);
+                    if (liveChart.data.labels.length > 20) {
+                        liveChart.data.labels.shift();
+                        liveChart.data.datasets[0].data.shift();
+                        liveChart.data.datasets[1].data.shift();
+                    }
+                    liveChart.update();
+                }
+
+                // Update cycles history table
+                updateCyclesTable();
+            })
+            .catch(console.error);
+    }
+
+    function escapeHTML(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>'"]/g, function(tag) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag;
+        });
+    }
+
+    function updateCyclesTable() {
+        fetch('/api/history')
+            .then(r => r.json())
+            .then(data => {
+                if (data.summary && data.summary.overall_krv) {
+                    const badge = document.getElementById('krv-badge');
+                    badge.innerText = `КРВ: ${escapeHTML(data.summary.overall_krv)} (${escapeHTML(data.summary.krv_status)})`;
+                }
+                
+                const tbody = document.getElementById('cycles-body');
+                if (data.cycles && data.cycles.length > 0) {
+                    tbody.innerHTML = '';
+                    data.cycles.forEach(c => {
+                        const mins = Math.floor(c.duration_sec / 60);
+                        const secs = c.duration_sec % 60;
+                        const durStr = `${mins} мин ${secs} сек`;
+                        let verdict = '🟢 Заморозка (Компрессор)';
+                        let color = '#10b981';
+                        
+                        if (c.cycle_type === 'defrost') {
+                            verdict = '🔥 Автооттайка No Frost (ТЭН)';
+                            color = '#f97316';
+                        } else if (mins > 360) {
+                            verdict = '🔴 Длительная работа (> 6ч)';
+                            color = '#ef4444';
+                        } else if (mins < 5) {
+                            verdict = '🟡 Короткий запуск (< 5 мин)';
+                            color = '#f59e0b';
+                        }
+                        
+                        const krvDisplay = c.krv ? `${c.krv}` : '0.38';
+                        const restDisplay = c.rest_str || '—';
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><strong>${escapeHTML(c.start)}</strong></td>
+                            <td><strong>${escapeHTML(c.end)}</strong></td>
+                            <td><span style="color:${color}; font-weight:bold;">${escapeHTML(durStr)}</span></td>
+                            <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restDisplay)}</span></td>
+                            <td><span style="font-weight:600; color:#f8fafc;">${escapeHTML(krvDisplay)}</span></td>
+                            <td>${escapeHTML(c.avg_power)} Вт</td>
+                            <td><span style="color:${color}; font-weight:600;">${escapeHTML(verdict)}</span></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            })
+            .catch(console.error);
+    }
+
+    setInterval(pollStatus, 3000);
+    pollStatus();
+    updateCyclesTable();
+</script>
+
+</body>
+</html>

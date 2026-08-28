@@ -1,0 +1,42 @@
+# Credentials & Secrets (CRITICAL)
+config.json
+.env
+
+# Database & Telemetry logs
+*.db
+*.db-journal
+*.log
+monitor.log
+
+# Personal & Generated Documents
+*.docx
+*.txt
+!requirements.txt
+ПОЛНАЯ_*.md
+Руководство_*.md
+ПЛАН_*.md
+*Руководство_и_Отчет.docx
+Офлайн_*.html
+*.lnk
+Обложка_*.jpg
+*Авто_Монитор.bat
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE & OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.tmp
+.qodo/

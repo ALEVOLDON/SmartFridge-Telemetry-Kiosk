@@ -1,0 +1,8 @@
+{
+    "api_region": "eu",
+    "api_key": "YOUR_TUYA_OPENAPI_KEY",
+    "api_secret": "YOUR_TUYA_OPENAPI_SECRET",
+    "device_id": "YOUR_TUYA_SMART_PLUG_DEVICE_ID",
+    "last_stop_time": null,
+    "current_start_time": null
+}

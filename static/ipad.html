@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Samsung RT34MB — iPad Kiosk</title>
+    
+    <!-- iOS Legacy Fullscreen Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    
+    <style>
+        /* Pure CSS3 Compatible with iOS 9/10/11/12 */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, HelveticaNeue, Helvetica, Arial, sans-serif; }
+        body { background-color: #0b1329; color: #f8fafc; padding: 16px; -webkit-touch-callout: none; -webkit-user-select: none; }
+        
+        .header { text-align: center; padding-bottom: 12px; border-bottom: 1px solid #1e293b; margin-bottom: 16px; }
+        .header h1 { font-size: 22px; color: #38bdf8; font-weight: bold; letter-spacing: 0.5px; }
+        .header .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+        /* Main Big Dials */
+        .dials-row { width: 100%; display: table; table-layout: fixed; margin-bottom: 16px; }
+        .dial-cell { display: table-cell; width: 33.33%; padding: 0 6px; vertical-align: top; }
+        
+        .dial-card { background: #1e293b; border-radius: 12px; padding: 16px 10px; text-align: center; border: 1px solid #334155; }
+        .dial-label { font-size: 12px; color: #94a3b8; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; }
+        .dial-val { font-size: 38px; font-weight: bold; line-height: 1; }
+        .dial-unit { font-size: 16px; font-weight: normal; color: #94a3b8; }
+        .dial-status { font-size: 12px; margin-top: 8px; font-weight: 600; }
+
+        /* Colors */
+        .color-blue { color: #38bdf8; }
+        .color-green { color: #10b981; }
+        .color-cyan { color: #06b6d4; }
+        .color-gray { color: #94a3b8; }
+        .color-amber { color: #f59e0b; }
+
+        /* Dynamic Dual Timer Box */
+        .timer-card { background: #1e293b; border-radius: 14px; padding: 16px; text-align: center; margin-bottom: 16px; border: 2px solid #06b6d4; }
+        .timer-mode { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .timer-num { font-size: 46px; font-weight: bold; margin: 6px 0; font-family: Courier, monospace; }
+        .timer-hint { font-size: 13px; color: #cbd5e1; line-height: 1.4; }
+
+        /* Simple History Table */
+        .history-card { background: #1e293b; border-radius: 12px; padding: 14px; border: 1px solid #334155; }
+        .history-card h3 { font-size: 14px; color: #f8fafc; margin-bottom: 10px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { text-align: left; padding: 8px 6px; color: #94a3b8; border-bottom: 1px solid #334155; }
+        td { padding: 8px 6px; border-bottom: 1px solid #243049; }
+        
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .badge-green { background: rgba(16,185,129,0.2); color: #10b981; }
+        .badge-blue { background: rgba(56,189,248,0.2); color: #38bdf8; }
+        .badge-orange { background: rgba(249,115,22,0.2); color: #f97316; }
+        .color-orange { color: #f97316; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>SAMSUNG RT34MB</h1>
+        <div class="sub" id="last-sync">Синхронизация с розеткой Tuya...</div>
+    </div>
+
+    <!-- 3 Big Dials (Table Layout for 100% Old Safari Support) -->
+    <div class="dials-row">
+        <div class="dial-cell">
+            <div class="dial-card">
+                <div class="dial-label">Мощность</div>
+                <div class="dial-val color-blue" id="power-val">0.0 <span class="dial-unit">Вт</span></div>
+                <div class="dial-status color-gray" id="power-status">Отдых</div>
+            </div>
+        </div>
+        <div class="dial-cell">
+            <div class="dial-card">
+                <div class="dial-label">Напряжение</div>
+                <div class="dial-val color-cyan" id="volt-val">--- <span class="dial-unit">В</span></div>
+                <div class="dial-status color-cyan">Норма (200-220V)</div>
+            </div>
+        </div>
+        <div class="dial-cell">
+            <div class="dial-card">
+                <div class="dial-label">Сила тока</div>
+                <div class="dial-val color-green" id="curr-val">0.00 <span class="dial-unit">А</span></div>
+                <div class="dial-status color-gray">Компрессор SK170K</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dual Mode Timer Box -->
+    <div class="timer-card" id="timer-box">
+        <div class="timer-mode color-cyan" id="timer-mode">⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
+        <div class="timer-num color-cyan" id="timer-val">00:00:00</div>
+        <div class="timer-hint" id="timer-hint">Холодильник удерживает мороз. Загрузка данных...</div>
+    </div>
+
+    <!-- Cycles History Table -->
+    <div class="history-card">
+        <h3>История последних циклов заморозки и оттайки</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Старт</th>
+                    <th>Стоп</th>
+                    <th>Работа / Оттайка</th>
+                    <th>Отдых</th>
+                    <th>Мощность</th>
+                    <th>Режим</th>
+                </tr>
+            </thead>
+            <tbody id="history-body">
+                <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:15px;">Загрузка циклов...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pure ES5 Vanilla JavaScript (100% Compatible with Old Safari / iOS 8, 9, 10, 11, 12) -->
+    <script>
+        function formatSeconds(sec) {
+            sec = parseInt(sec, 10) || 0;
+            var h = Math.floor(sec / 3600);
+            var m = Math.floor((sec % 3600) / 60);
+            var s = sec % 60;
+            
+            var hStr = (h < 10 ? '0' : '') + h;
+            var mStr = (m < 10 ? '0' : '') + m;
+            var sStr = (s < 10 ? '0' : '') + s;
+            return hStr + ':' + mStr + ':' + sStr;
+        }
+
+        function loadStatus() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/status', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        
+                        // Voltage, Power, Current
+                        document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
+                        document.getElementById('volt-val').innerHTML = (data.voltage || 202).toFixed(1) + ' <span class="dial-unit">В</span>';
+                        document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
+                        document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | Сеть: ' + (data.voltage || 202) + ' В';
+                        
+                        var pStatus = document.getElementById('power-status');
+                        var timerBox = document.getElementById('timer-box');
+                        var timerMode = document.getElementById('timer-mode');
+                        var timerVal = document.getElementById('timer-val');
+                        var timerHint = document.getElementById('timer-hint');
+                        
+                        if (data.current_mode === 'defrost') {
+                            pStatus.innerHTML = '🔥 Оттайка (ТЭН)';
+                            pStatus.className = 'dial-status color-orange';
+                            
+                            timerBox.style.borderColor = '#f97316';
+                            timerMode.innerHTML = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST';
+                            timerMode.className = 'timer-mode color-orange';
+                            timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
+                            timerVal.className = 'timer-num color-orange';
+                            timerHint.innerHTML = '🔥 Компрессор отключен. ТЭН (~165 Вт) растапливает иней на испарителе.';
+                        } else if (data.is_running) {
+                            pStatus.innerHTML = '🟢 Морозит';
+                            pStatus.className = 'dial-status color-green';
+                            
+                            timerBox.style.borderColor = '#10b981';
+                            timerMode.innerHTML = '🟢 АКТИВНЫЙ ЦИКЛ: ОХЛАЖДЕНИЕ (РАБОТА)';
+                            timerMode.className = 'timer-mode color-green';
+                            timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
+                            timerVal.className = 'timer-num color-green';
+                            timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатная длительность: 15–35 минут.';
+                        } else {
+                            pStatus.innerHTML = '⚪ Отдых';
+                            pStatus.className = 'dial-status color-gray';
+                            
+                            var rSec = data.rest_duration_sec || 0;
+                            var rMin = Math.floor(rSec / 60);
+                            var est = Math.max(0, 45 - rMin);
+                            
+                            timerBox.style.borderColor = '#06b6d4';
+                            timerMode.innerHTML = '⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА';
+                            timerMode.className = 'timer-mode color-cyan';
+                            timerVal.innerHTML = formatSeconds(rSec);
+                            timerVal.className = 'timer-num color-cyan';
+                            timerHint.innerHTML = '🧊 Холодильник держит мороз. Отдых: <strong>' + rMin + ' мин</strong> (норма 35–55 мин). Запуск через ~<strong>' + est + ' мин</strong>.';
+                        }
+                    } catch(e) {}
+                }
+            };
+            xhr.send();
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"]/g, function(tag) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag;
+            });
+        }
+
+        function loadHistory() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/history', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        var cycles = res.cycles || [];
+                        var tbody = document.getElementById('history-body');
+                        
+                        if (cycles.length > 0) {
+                            var html = '';
+                            for (var i = 0; i < cycles.length; i++) {
+                                var c = cycles[i];
+                                var durMin = Math.floor((c.duration_sec || 0) / 60);
+                                var durSec = (c.duration_sec || 0) % 60;
+                                var durStr = durMin + 'м ' + durSec + 'с';
+                                var restStr = c.rest_str || '—';
+                                
+                                var badgeClass = 'badge badge-green';
+                                var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
+                                
+                                if (c.cycle_type === 'defrost') {
+                                    badgeClass = 'badge badge-orange';
+                                    modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка</span>';
+                                }
+                                
+                                html += '<tr>' +
+                                    '<td><strong>' + escapeHTML(c.start) + '</strong></td>' +
+                                    '<td><strong>' + escapeHTML(c.end) + '</strong></td>' +
+                                    '<td><span class="' + badgeClass + '">' + escapeHTML(durStr) + '</span></td>' +
+                                    '<td><span class="badge badge-blue">' + escapeHTML(restStr) + '</span></td>' +
+                                    '<td>' + escapeHTML(c.avg_power) + ' Вт</td>' +
+                                    '<td>' + modeBadge + '</td>' +
+                                '</tr>';
+                            }
+                            tbody.innerHTML = html;
+                        }
+                    } catch(e) {}
+                }
+            };
+            xhr.send();
+        }
+
+        // Auto Refresh Loop every 3 seconds
+        loadStatus();
+        loadHistory();
+        setInterval(loadStatus, 3000);
+        setInterval(loadHistory, 10000);
+    </script>
+</body>
+</html>
