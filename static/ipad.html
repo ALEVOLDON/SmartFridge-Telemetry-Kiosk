@@ -98,7 +98,7 @@
 
     <!-- Cycles History Table -->
     <div class="history-card">
-        <h3>История последних циклов заморозки и оттайки</h3>
+        <h3>История последних циклов (Заморозка и оттайка)</h3>
         <table>
             <thead>
                 <tr>
@@ -114,6 +114,38 @@
                 <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:15px;">Загрузка циклов...</td></tr>
             </tbody>
         </table>
+        <div style="margin-top: 14px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+            <button onclick="openIpadArchive()" style="background: #0f172a; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 8px 20px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;">
+                📜 Открыть весь архив (<span id="ipad-total-count">0</span> циклов)
+            </button>
+        </div>
+    </div>
+
+    <!-- Full Archive Modal for iPad (Pure ES5 / CSS3) -->
+    <div id="ipad-archive-modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(15,23,42,0.92); justify-content:center; align-items:center; padding:15px; box-sizing:border-box;">
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; width:100%; max-width:800px; max-height:90%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.7);">
+            <div style="padding:14px 18px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; background:#0f172a;">
+                <div style="font-weight:bold; font-size:15px; color:#f8fafc;">📜 Полный архив всех циклов</div>
+                <div>
+                    <button onclick="closeIpadArchive()" style="background:#ef4444; color:#fff; border:none; padding:5px 14px; border-radius:6px; font-weight:bold; cursor:pointer;">Закрыть ✕</button>
+                </div>
+            </div>
+            <div style="padding:12px; overflow-y:auto; flex:1;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Старт</th>
+                            <th>Стоп</th>
+                            <th>Работа</th>
+                            <th>Отдых</th>
+                            <th>Мощность</th>
+                            <th>Режим</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ipad-archive-body"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Pure ES5 Vanilla JavaScript (100% Compatible with Old Safari / iOS 8, 9, 10, 11, 12) -->
@@ -198,6 +230,54 @@
             });
         }
 
+        var ipadAllCycles = [];
+
+        function openIpadArchive() {
+            var modal = document.getElementById('ipad-archive-modal');
+            modal.style.display = 'flex';
+            renderIpadArchiveTable();
+        }
+
+        function closeIpadArchive() {
+            var modal = document.getElementById('ipad-archive-modal');
+            modal.style.display = 'none';
+        }
+
+        function renderIpadArchiveTable() {
+            var tbody = document.getElementById('ipad-archive-body');
+            tbody.innerHTML = '';
+            if (ipadAllCycles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">Архив пуст.</td></tr>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < ipadAllCycles.length; i++) {
+                var c = ipadAllCycles[i];
+                var durMin = Math.floor((c.duration_sec || 0) / 60);
+                var durSec = (c.duration_sec || 0) % 60;
+                var durStr = durMin + 'м ' + durSec + 'с';
+                var restStr = c.rest_str || '—';
+                
+                var badgeClass = 'badge badge-green';
+                var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
+                
+                if (c.cycle_type === 'defrost') {
+                    badgeClass = 'badge badge-orange';
+                    modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка</span>';
+                }
+                
+                html += '<tr>' +
+                    '<td><strong>' + escapeHTML(c.start) + '</strong></td>' +
+                    '<td><strong>' + escapeHTML(c.end) + '</strong></td>' +
+                    '<td><span class="' + badgeClass + '">' + escapeHTML(durStr) + '</span></td>' +
+                    '<td><span class="badge badge-blue">' + escapeHTML(restStr) + '</span></td>' +
+                    '<td>' + escapeHTML(c.avg_power) + ' Вт</td>' +
+                    '<td>' + modeBadge + '</td>' +
+                '</tr>';
+            }
+            tbody.innerHTML = html;
+        }
+
         function loadHistory() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/history', true);
@@ -205,13 +285,17 @@
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     try {
                         var res = JSON.parse(xhr.responseText);
-                        var cycles = res.cycles || [];
+                        ipadAllCycles = res.cycles || [];
                         var tbody = document.getElementById('history-body');
                         
-                        if (cycles.length > 0) {
+                        var countEl = document.getElementById('ipad-total-count');
+                        if (countEl) countEl.innerText = ipadAllCycles.length;
+                        
+                        if (ipadAllCycles.length > 0) {
                             var html = '';
-                            for (var i = 0; i < cycles.length; i++) {
-                                var c = cycles[i];
+                            var displayCount = Math.min(5, ipadAllCycles.length);
+                            for (var i = 0; i < displayCount; i++) {
+                                var c = ipadAllCycles[i];
                                 var durMin = Math.floor((c.duration_sec || 0) / 60);
                                 var durSec = (c.duration_sec || 0) % 60;
                                 var durStr = durMin + 'м ' + durSec + 'с';

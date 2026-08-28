@@ -75,6 +75,43 @@
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
         th { background: #0f172a; color: var(--text-muted); padding: 12px 14px; font-weight: 600; border-bottom: 1px solid var(--border-color); }
         td { padding: 12px 14px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); color: #e2e8f0; }
+
+        .btn-archive {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.9));
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+        .btn-archive:hover {
+            background: rgba(56, 189, 248, 0.18);
+            border-color: #38bdf8;
+            transform: translateY(-1px);
+        }
+        .filter-btn {
+            background: #0f172a;
+            color: #94a3b8;
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn.active, .filter-btn:hover {
+            background: #3b82f6;
+            color: #fff;
+            border-color: #3b82f6;
+        }
     </style>
 </head>
 <body>
@@ -159,7 +196,7 @@
     <!-- Cycles Table -->
     <div class="card">
         <div class="card-header">
-            <span class="card-title">История зафиксированных циклов заморозки и отдыха</span>
+            <span class="card-title">История последних циклов (Заморозка и отдых)</span>
             <span id="krv-badge" style="font-size:13px; color:#10b981; font-weight:bold; background:rgba(16,185,129,0.15); padding:4px 10px; border-radius:8px;">КРВ: 0.38 (Идеал)</span>
         </div>
         <div style="overflow-x:auto;">
@@ -170,6 +207,39 @@
                 <tbody id="cycles-body">
                     <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Автоматические циклы будут появляться здесь по мере работы холодильника.</td></tr>
                 </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px;">
+            <button class="btn-archive" onclick="openArchiveModal()">
+                📜 Открыть полный журнал и архив (<span id="total-cycles-btn">0</span> циклов)
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Full Archive Modal -->
+<div class="modal" id="archive-modal" style="display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); justify-content:center; align-items:center; padding:16px;">
+    <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.12); border-radius:18px; width:100%; max-width:960px; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.6); overflow:hidden;">
+        <!-- Header -->
+        <div style="padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; background:rgba(15,23,42,0.6);">
+            <div>
+                <h3 style="margin:0; font-size:17px; color:#f8fafc; font-weight:700;">📜 Полный архив циклов холодильника</h3>
+                <div style="font-size:12.5px; color:#94a3b8; margin-top:3px;">Вся зафиксированная история работы компрессора и автооттайки No Frost</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button onclick="filterArchive('all')" class="filter-btn active" id="filter-all">Все</button>
+                <button onclick="filterArchive('cooling')" class="filter-btn" id="filter-cooling">🟢 Заморозка</button>
+                <button onclick="filterArchive('defrost')" class="filter-btn" id="filter-defrost">🔥 Оттайка</button>
+                <span onclick="closeArchiveModal()" style="cursor:pointer; font-size:24px; color:#94a3b8; margin-left:10px; line-height:1;">&times;</span>
+            </div>
+        </div>
+        <!-- Scrollable Body Table -->
+        <div style="padding:16px 24px; overflow-y:auto; flex:1;">
+            <table>
+                <thead>
+                    <tr><th>Начало</th><th>Конец</th><th>Работа</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>
+                </thead>
+                <tbody id="archive-body"></tbody>
             </table>
         </div>
     </div>
@@ -430,19 +500,97 @@
         });
     }
 
+    let allCyclesData = [];
+    let currentArchiveFilter = 'all';
+
+    function openArchiveModal() {
+        document.getElementById('archive-modal').style.display = 'flex';
+        renderArchiveTable(currentArchiveFilter);
+    }
+
+    function closeArchiveModal() {
+        document.getElementById('archive-modal').style.display = 'none';
+    }
+
+    function filterArchive(type) {
+        currentArchiveFilter = type;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById('filter-' + type);
+        if (activeBtn) activeBtn.classList.add('active');
+        renderArchiveTable(type);
+    }
+
+    function renderArchiveTable(filterType) {
+        const tbody = document.getElementById('archive-body');
+        tbody.innerHTML = '';
+        
+        let filtered = allCyclesData;
+        if (filterType === 'cooling') {
+            filtered = allCyclesData.filter(c => c.cycle_type !== 'defrost');
+        } else if (filterType === 'defrost') {
+            filtered = allCyclesData.filter(c => c.cycle_type === 'defrost');
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">В этой категории пока нет записей.</td></tr>';
+            return;
+        }
+
+        filtered.forEach(c => {
+            const mins = Math.floor(c.duration_sec / 60);
+            const secs = c.duration_sec % 60;
+            const durStr = `${mins} мин ${secs} сек`;
+            let verdict = '🟢 Заморозка (Компрессор)';
+            let color = '#10b981';
+            
+            if (c.cycle_type === 'defrost') {
+                verdict = '🔥 Автооттайка No Frost (ТЭН)';
+                color = '#f97316';
+            } else if (mins > 360) {
+                verdict = '🔴 Длительная работа (> 6ч)';
+                color = '#ef4444';
+            } else if (mins < 5) {
+                verdict = '🟡 Короткий запуск (< 5 мин)';
+                color = '#f59e0b';
+            }
+            
+            const krvDisplay = c.krv ? `${c.krv}` : '0.38';
+            const restDisplay = c.rest_str || '—';
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>${escapeHTML(c.start)}</strong></td>
+                <td><strong>${escapeHTML(c.end)}</strong></td>
+                <td><span style="color:${color}; font-weight:bold;">${escapeHTML(durStr)}</span></td>
+                <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restDisplay)}</span></td>
+                <td><span style="font-weight:600; color:#f8fafc;">${escapeHTML(krvDisplay)}</span></td>
+                <td>${escapeHTML(c.avg_power)} Вт</td>
+                <td><span style="color:${color}; font-weight:600;">${escapeHTML(verdict)}</span></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
     function updateCyclesTable() {
         fetch('/api/history')
             .then(r => r.json())
             .then(data => {
+                allCyclesData = data.cycles || [];
+                
                 if (data.summary && data.summary.overall_krv) {
                     const badge = document.getElementById('krv-badge');
                     badge.innerText = `КРВ: ${escapeHTML(data.summary.overall_krv)} (${escapeHTML(data.summary.krv_status)})`;
                 }
+
+                const countEl = document.getElementById('total-cycles-btn');
+                if (countEl) countEl.innerText = allCyclesData.length;
                 
                 const tbody = document.getElementById('cycles-body');
-                if (data.cycles && data.cycles.length > 0) {
+                if (allCyclesData.length > 0) {
                     tbody.innerHTML = '';
-                    data.cycles.forEach(c => {
+                    // Display top 5 latest cycles on main screen
+                    const recentCycles = allCyclesData.slice(0, 5);
+                    recentCycles.forEach(c => {
                         const mins = Math.floor(c.duration_sec / 60);
                         const secs = c.duration_sec % 60;
                         const durStr = `${mins} мин ${secs} сек`;
