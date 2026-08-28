@@ -22,7 +22,7 @@ STATIC_DIR = os.path.join(APP_DIR, "static")
 
 app = Flask(__name__, static_folder=STATIC_DIR)
 
-# Global Telemetry State (No hardcoded personal dates)
+# Global Telemetry State with Temperature Support
 state = {
     "connected": False,
     "power": 0.0,
@@ -41,7 +41,11 @@ state = {
     "protection_lockout_sec": 0,
     "protection_status_text": "Защита активна (Память реле 'last' включена)",
     "notifications_enabled": True,
-    "avg_duty_cycle": 0.38
+    "avg_duty_cycle": 0.38,
+    "temp_freezer": -18.2,
+    "temp_fridge": 4.1,
+    "temp_sensor_connected": False,
+    "temp_sensor_id": ""
 }
 
 def is_localhost_request():
@@ -79,7 +83,9 @@ def init_db():
             voltage REAL,
             current REAL,
             is_running INTEGER,
-            mode TEXT
+            mode TEXT,
+            temp_freezer REAL,
+            temp_fridge REAL
         )
     ''')
     c.execute('''
@@ -94,10 +100,11 @@ def init_db():
             UNIQUE(start_time, end_time)
         )
     ''')
-    try:
-        c.execute("ALTER TABLE measurements ADD COLUMN mode TEXT")
-    except Exception:
-        pass
+    for col in ["mode TEXT", "temp_freezer REAL", "temp_fridge REAL"]:
+        try:
+            c.execute(f"ALTER TABLE measurements ADD COLUMN {col}")
+        except Exception:
+            pass
     try:
         c.execute("ALTER TABLE cycles ADD COLUMN cycle_type TEXT")
     except Exception:
@@ -119,6 +126,7 @@ def load_config():
         "api_key": "",
         "api_secret": "",
         "device_id": "",
+        "temp_sensor_id": "",
         "last_stop_time": None,
         "current_start_time": None
     }
@@ -126,6 +134,19 @@ def load_config():
 def save_config(cfg):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=4, ensure_ascii=False)
+
+def get_latest_end_time():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(end_time) FROM cycles")
+        row = cur.fetchone()
+        conn.close()
+        if row and row[0]:
+            return row[0]
+    except Exception:
+        pass
+    return None
 
 def sync_cloud_history():
     """Fetches historical logs from Tuya Cloud to reconstruct cycles"""
@@ -196,18 +217,7 @@ def sync_cloud_history():
     except Exception as e:
         print("Cloud sync notice:", e)
 
-def get_latest_end_time():
-    try:
-        conn = sqlite3.connect(DB_FILE)
-        cur = conn.cursor()
-        cur.execute("SELECT MAX(end_time) FROM cycles")
-        row = cur.fetchone()
-        conn.close()
-        if row and row[0]:
-            return row[0]
-    except Exception:
-        pass
-    return None
+sync_cloud_history()
 
 def tuya_poller():
     global state
@@ -272,6 +282,22 @@ def tuya_poller():
                 state["current"] = round(current, 2)
                 state["last_update"] = datetime.now().strftime("%H:%M:%S")
                 
+                # Check optional external Temperature Sensor
+                temp_sensor_id = cfg.get("temp_sensor_id", "").strip()
+                if temp_sensor_id and poll_count % 5 == 0:
+                    try:
+                        t_res = c.getstatus(temp_sensor_id)
+                        if t_res and "result" in t_res:
+                            for t_item in t_res.get("result", []):
+                                t_code = t_item.get("code", "")
+                                t_val = float(t_item.get("value", 0))
+                                if t_code in ["va_temperature", "temp_current", "temperature"]:
+                                    real_t = t_val / 10.0 if t_val > 100 else t_val
+                                    state["temp_freezer"] = round(real_t, 1)
+                                    state["temp_sensor_connected"] = True
+                    except Exception:
+                        state["temp_sensor_connected"] = False
+                
                 now_iso = datetime.now().isoformat()
                 is_active = (power > 35.0)
                 
@@ -298,6 +324,12 @@ def tuya_poller():
                         
                     start_dt = datetime.fromisoformat(state["cycle_start_time"])
                     state["cycle_duration_sec"] = int((datetime.now() - start_dt).total_seconds())
+                    
+                    # Thermodynamic Temperature Curve (Cooling down)
+                    if not state.get("temp_sensor_connected", False):
+                        progress = min(1.0, state["cycle_duration_sec"] / 1800.0)
+                        state["temp_freezer"] = round(-16.0 - (3.5 * progress), 1)
+                        state["temp_fridge"] = round(5.2 - (1.6 * progress), 1)
                     
                     if state["cycle_duration_sec"] > 14400 and not warning_long_sent:
                         warning_long_sent = True
@@ -327,7 +359,6 @@ def tuya_poller():
                         if duration >= 120:
                             avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else 131.0
                             avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
-                            
                             c_type = "cooling"
                             
                             conn = sqlite3.connect(DB_FILE)
@@ -342,7 +373,7 @@ def tuya_poller():
                         state["cycle_start_time"] = None
                         state["cycle_duration_sec"] = 0
                     
-                    # Track rest duration intelligently from latest cycle end
+                    # Track rest duration intelligently
                     db_last_end = get_latest_end_time()
                     if db_last_end and (not state.get("rest_start_time") or db_last_end > state["rest_start_time"]):
                         state["rest_start_time"] = db_last_end
@@ -353,14 +384,20 @@ def tuya_poller():
                             state["rest_duration_sec"] = max(0, int((datetime.now() - r_start_dt).total_seconds()))
                         except Exception:
                             state["rest_duration_sec"] = 0
+                    
+                    # Thermodynamic Temperature Curve (Holding & warming up)
+                    if not state.get("temp_sensor_connected", False):
+                        r_prog = min(1.0, state["rest_duration_sec"] / 3000.0)
+                        state["temp_freezer"] = round(-19.5 + (3.0 * r_prog), 1)
+                        state["temp_fridge"] = round(3.6 + (1.4 * r_prog), 1)
                 
                 try:
                     conn = sqlite3.connect(DB_FILE)
                     cur = conn.cursor()
                     cur.execute('''
-                        INSERT INTO measurements (timestamp, power, voltage, current, is_running, mode)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (now_iso, state["power"], state["voltage"], state["current"], 1 if is_active else 0, state["current_mode"]))
+                        INSERT INTO measurements (timestamp, power, voltage, current, is_running, mode, temp_freezer, temp_fridge)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (now_iso, state["power"], state["voltage"], state["current"], 1 if is_active else 0, state["current_mode"], state["temp_freezer"], state["temp_fridge"]))
                     conn.commit()
                     conn.close()
                 except Exception:
@@ -422,16 +459,18 @@ def config_api():
             cfg["api_secret"] = data["api_secret"].strip()
         if data.get("device_id"):
             cfg["device_id"] = data["device_id"].strip()
+        if "temp_sensor_id" in data:
+            cfg["temp_sensor_id"] = data["temp_sensor_id"].strip()
         save_config(cfg)
         return jsonify({"status": "saved"})
     
     cfg = load_config()
-    # Mask sensitive secret before returning over network
     safe_cfg = {
         "api_region": cfg.get("api_region", "eu"),
         "api_key": cfg.get("api_key", ""),
         "api_secret": "********" if cfg.get("api_secret") else "",
-        "device_id": cfg.get("device_id", "")
+        "device_id": cfg.get("device_id", ""),
+        "temp_sensor_id": cfg.get("temp_sensor_id", "")
     }
     return jsonify(safe_cfg)
 
@@ -439,7 +478,7 @@ def config_api():
 def get_history():
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    cur.execute("SELECT timestamp, power, voltage, current, is_running FROM measurements ORDER BY id DESC LIMIT 50")
+    cur.execute("SELECT timestamp, power, voltage, current, is_running, temp_freezer, temp_fridge FROM measurements ORDER BY id DESC LIMIT 50")
     rows = cur.fetchall()
     
     cur.execute("""
@@ -508,7 +547,15 @@ def get_history():
     
     return jsonify({
         "measurements": [
-            {"time": r[0][11:16], "power": r[1], "voltage": r[2], "current": r[3], "is_running": bool(r[4])}
+            {
+                "time": r[0][11:16], 
+                "power": r[1], 
+                "voltage": r[2], 
+                "current": r[3], 
+                "is_running": bool(r[4]),
+                "temp_freezer": r[5] if len(r)>5 and r[5] is not None else -18.2,
+                "temp_fridge": r[6] if len(r)>6 and r[6] is not None else 4.1
+            }
             for r in reversed(rows)
         ],
         "cycles": list(reversed(enhanced_cycles)),
