@@ -342,11 +342,15 @@ def tuya_poller():
                         state["cycle_start_time"] = None
                         state["cycle_duration_sec"] = 0
                     
-                    # Track rest duration
+                    # Track rest duration intelligently from latest cycle end
+                    db_last_end = get_latest_end_time()
+                    if db_last_end and (not state.get("rest_start_time") or db_last_end > state["rest_start_time"]):
+                        state["rest_start_time"] = db_last_end
+
                     if state.get("rest_start_time"):
                         try:
                             r_start_dt = datetime.fromisoformat(state["rest_start_time"])
-                            state["rest_duration_sec"] = int((datetime.now() - r_start_dt).total_seconds())
+                            state["rest_duration_sec"] = max(0, int((datetime.now() - r_start_dt).total_seconds()))
                         except Exception:
                             state["rest_duration_sec"] = 0
                 
