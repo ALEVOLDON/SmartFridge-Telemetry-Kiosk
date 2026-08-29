@@ -303,6 +303,34 @@ def sync_cloud_history():
 
 sync_cloud_history()
 
+def find_actual_current_cycle_start():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT end_time FROM blackouts ORDER BY id DESC LIMIT 1")
+        b_row = cur.fetchone()
+        if b_row and b_row[0]:
+            b_end = b_row[0]
+            cur.execute("SELECT timestamp FROM measurements WHERE is_running = 0 AND timestamp > ? LIMIT 1", (b_end,))
+            stop_after = cur.fetchone()
+            if not stop_after:
+                conn.close()
+                return b_end
+        
+        cur.execute("SELECT timestamp FROM measurements WHERE is_running = 0 ORDER BY id DESC LIMIT 1")
+        row_stop = cur.fetchone()
+        if row_stop and row_stop[0]:
+            last_stop = row_stop[0]
+            cur.execute("SELECT timestamp FROM measurements WHERE is_running = 1 AND timestamp > ? ORDER BY id ASC LIMIT 1", (last_stop,))
+            row_start = cur.fetchone()
+            conn.close()
+            if row_start and row_start[0]:
+                return row_start[0]
+        conn.close()
+    except Exception:
+        pass
+    return None
+
 def tuya_poller():
     global state
     cycle_powers = []
@@ -319,6 +347,11 @@ def tuya_poller():
     if cfg.get("current_start_time"):
         state["cycle_start_time"] = cfg["current_start_time"]
         state["is_running"] = True
+    else:
+        actual_start = find_actual_current_cycle_start()
+        if actual_start:
+            state["cycle_start_time"] = actual_start
+            state["is_running"] = True
         
     update_last_blackout_state()
     
@@ -394,8 +427,8 @@ def tuya_poller():
                     
                     if not state["is_running"]:
                         state["is_running"] = True
-                        if not state["cycle_start_time"]:
-                            state["cycle_start_time"] = now_iso
+                        actual_start = find_actual_current_cycle_start()
+                        state["cycle_start_time"] = actual_start if actual_start else now_iso
                         state["cycle_duration_sec"] = 0
                         cycle_powers = []
                         cycle_voltages = []
@@ -406,7 +439,8 @@ def tuya_poller():
                         save_config(cfg_save)
                     
                     if not state["cycle_start_time"]:
-                        state["cycle_start_time"] = now_iso
+                        actual_start = find_actual_current_cycle_start()
+                        state["cycle_start_time"] = actual_start if actual_start else now_iso
                         
                     start_dt = datetime.fromisoformat(state["cycle_start_time"])
                     state["cycle_duration_sec"] = int((datetime.now() - start_dt).total_seconds())
