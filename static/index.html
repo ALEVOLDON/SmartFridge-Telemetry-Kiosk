@@ -436,10 +436,43 @@
         return `${h}:${m}:${s}`;
     }
 
+    let failedPolls = 0;
+    let isAutoScanning = false;
+
+    function autoDiscoverNewIP() {
+        if (isAutoScanning) return;
+        isAutoScanning = true;
+        
+        const cloudText = document.getElementById('cloud-text');
+        if (cloudText) cloudText.innerText = '⚡ Потеря связи. Автопоиск нового IP сервера в сети...';
+        
+        let found = false;
+        for (let i = 100; i <= 130; i++) {
+            const targetIp = `192.168.0.${i}`;
+            fetch(`http://${targetIp}:8088/api/status`, { mode: 'cors' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res && (res.connected !== undefined || res.power !== undefined) && !found) {
+                        found = true;
+                        isAutoScanning = false;
+                        failedPolls = 0;
+                        const currentHost = window.location.hostname;
+                        if (currentHost !== targetIp && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+                            window.location.replace(`http://${targetIp}:8088${window.location.pathname}`);
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+        setTimeout(() => { isAutoScanning = false; }, 3500);
+    }
+
     function pollStatus() {
         fetch('/api/status')
             .then(r => r.json())
             .then(data => {
+                failedPolls = 0;
+                isAutoScanning = false;
                 const cloudDot = document.getElementById('cloud-dot');
                 const cloudText = document.getElementById('cloud-text');
                 
@@ -614,7 +647,13 @@
                 // Update cycles history table
                 updateCyclesTable();
             })
-            .catch(console.error);
+            .catch(err => {
+                console.error(err);
+                failedPolls++;
+                if (failedPolls >= 2) {
+                    autoDiscoverNewIP();
+                }
+            });
     }
 
     function escapeHTML(str) {

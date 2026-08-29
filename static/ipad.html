@@ -221,88 +221,146 @@
             return hStr + ':' + mStr + ':' + sStr;
         }
 
+        var failedPolls = 0;
+        var isAutoScanning = false;
+
+        function autoDiscoverNewIP() {
+            if (isAutoScanning) return;
+            isAutoScanning = true;
+            
+            var subEl = document.getElementById('last-sync');
+            if (subEl) subEl.innerHTML = '⚡ Связь потеряна. Автопоиск нового IP в сети...';
+            
+            var found = false;
+            for (var i = 100; i <= 130; i++) {
+                (function(ipNum) {
+                    var probeXhr = new XMLHttpRequest();
+                    var targetIp = '192.168.0.' + ipNum;
+                    probeXhr.open('GET', 'http://' + targetIp + ':8088/api/status', true);
+                    probeXhr.timeout = 2000;
+                    probeXhr.onreadystatechange = function() {
+                        if (probeXhr.readyState === 4 && probeXhr.status === 200 && !found) {
+                            try {
+                                var res = JSON.parse(probeXhr.responseText);
+                                if (res && (res.connected !== undefined || res.power !== undefined)) {
+                                    found = true;
+                                    isAutoScanning = false;
+                                    failedPolls = 0;
+                                    var currentHost = window.location.hostname;
+                                    if (currentHost !== targetIp && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+                                        window.location.replace('http://' + targetIp + ':8088' + window.location.pathname);
+                                    }
+                                }
+                            } catch(e) {}
+                        }
+                    };
+                    probeXhr.send();
+                })(i);
+            }
+            
+            setTimeout(function() {
+                isAutoScanning = false;
+            }, 3500);
+        }
+
         function loadStatus() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/status', true);
+            xhr.timeout = 3000;
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-                        
-                        // Voltage, Power, Current
-                        document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
-                        document.getElementById('volt-val').innerHTML = (data.voltage || 202).toFixed(1) + ' <span class="dial-unit">В</span>';
-                        document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
-                        document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | Сеть: ' + (data.voltage || 202) + ' В';
-                        
-                        // Temperatures
-                        if (data.temp_freezer !== undefined) {
-                            var fEl = document.getElementById('ipad-temp-freezer');
-                            var fSign = data.temp_freezer > 0 ? '+' : '';
-                            if (fEl) fEl.innerHTML = fSign + data.temp_freezer.toFixed(1) + ' <span class="dial-unit">°C</span>';
-                        }
-                        if (data.temp_fridge !== undefined) {
-                            var rEl = document.getElementById('ipad-temp-fridge');
-                            var rSign = data.temp_fridge > 0 ? '+' : '';
-                            if (rEl) rEl.innerHTML = rSign + data.temp_fridge.toFixed(1) + ' <span class="dial-unit">°C</span>';
-                        }
-
-                        // Blackout Info
-                        if (data.last_blackout && data.last_blackout.detected) {
-                            var bTitle = document.getElementById('ipad-blackout-title');
-                            var bSub = document.getElementById('ipad-blackout-sub');
-                            var bBadge = document.getElementById('ipad-blackout-badge');
-                            if (bTitle) bTitle.innerHTML = '⚡ Отключение света: ' + escapeHTML(data.last_blackout.date) + ' (' + escapeHTML(data.last_blackout.start) + ' → ' + escapeHTML(data.last_blackout.end) + ')';
-                            if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(data.last_blackout.duration_str) + '</strong> (' + escapeHTML(data.last_blackout.food_safety) + ')';
-                            if (bBadge) {
-                                bBadge.innerText = data.last_blackout.duration_str;
-                                bBadge.style.color = '#f59e0b';
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        failedPolls = 0;
+                        isAutoScanning = false;
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            
+                            // Voltage, Power, Current
+                            document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
+                            document.getElementById('volt-val').innerHTML = (data.voltage || 202).toFixed(1) + ' <span class="dial-unit">В</span>';
+                            document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
+                            document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | Сеть: ' + (data.voltage || 202) + ' В';
+                            
+                            // Temperatures
+                            if (data.temp_freezer !== undefined) {
+                                var fEl = document.getElementById('ipad-temp-freezer');
+                                var fSign = data.temp_freezer > 0 ? '+' : '';
+                                if (fEl) fEl.innerHTML = fSign + data.temp_freezer.toFixed(1) + ' <span class="dial-unit">°C</span>';
                             }
-                        }
+                            if (data.temp_fridge !== undefined) {
+                                var rEl = document.getElementById('ipad-temp-fridge');
+                                var rSign = data.temp_fridge > 0 ? '+' : '';
+                                if (rEl) rEl.innerHTML = rSign + data.temp_fridge.toFixed(1) + ' <span class="dial-unit">°C</span>';
+                            }
 
-                        var pStatus = document.getElementById('power-status');
-                        var timerBox = document.getElementById('timer-box');
-                        var timerMode = document.getElementById('timer-mode');
-                        var timerVal = document.getElementById('timer-val');
-                        var timerHint = document.getElementById('timer-hint');
-                        
-                        if (data.current_mode === 'defrost') {
-                            pStatus.innerHTML = '🔥 Оттайка (ТЭН)';
-                            pStatus.className = 'dial-status color-orange';
+                            // Blackout Info
+                            if (data.last_blackout && data.last_blackout.detected) {
+                                var bTitle = document.getElementById('ipad-blackout-title');
+                                var bSub = document.getElementById('ipad-blackout-sub');
+                                var bBadge = document.getElementById('ipad-blackout-badge');
+                                if (bTitle) bTitle.innerHTML = '⚡ Отключение света: ' + escapeHTML(data.last_blackout.date) + ' (' + escapeHTML(data.last_blackout.start) + ' → ' + escapeHTML(data.last_blackout.end) + ')';
+                                if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(data.last_blackout.duration_str) + '</strong> (' + escapeHTML(data.last_blackout.food_safety) + ')';
+                                if (bBadge) {
+                                    bBadge.innerText = data.last_blackout.duration_str;
+                                    bBadge.style.color = '#f59e0b';
+                                }
+                            }
+
+                            var pStatus = document.getElementById('power-status');
+                            var timerBox = document.getElementById('timer-box');
+                            var timerMode = document.getElementById('timer-mode');
+                            var timerVal = document.getElementById('timer-val');
+                            var timerHint = document.getElementById('timer-hint');
                             
-                            timerBox.style.borderColor = '#f97316';
-                            timerMode.innerHTML = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST';
-                            timerMode.className = 'timer-mode color-orange';
-                            timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
-                            timerVal.className = 'timer-num color-orange';
-                            timerHint.innerHTML = '🔥 Компрессор отключен. ТЭН (~165 Вт) растапливает иней на испарителе.';
-                        } else if (data.is_running) {
-                            pStatus.innerHTML = '🟢 Морозит';
-                            pStatus.className = 'dial-status color-green';
-                            
-                            timerBox.style.borderColor = '#10b981';
-                            timerMode.innerHTML = '🟢 АКТИВНЫЙ ЦИКЛ: ОХЛАЖДЕНИЕ (РАБОТА)';
-                            timerMode.className = 'timer-mode color-green';
-                            timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
-                            timerVal.className = 'timer-num color-green';
-                            timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатная длительность: 15–35 минут.';
-                        } else {
-                            pStatus.innerHTML = '⚪ Отдых';
-                            pStatus.className = 'dial-status color-gray';
-                            
-                            var rSec = data.rest_duration_sec || 0;
-                            var rMin = Math.floor(rSec / 60);
-                            var est = Math.max(0, 45 - rMin);
-                            
-                            timerBox.style.borderColor = '#06b6d4';
-                            timerMode.innerHTML = '⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА';
-                            timerMode.className = 'timer-mode color-cyan';
-                            timerVal.innerHTML = formatSeconds(rSec);
-                            timerVal.className = 'timer-num color-cyan';
-                            timerHint.innerHTML = '🧊 Холодильник держит мороз. Отдых: <strong>' + rMin + ' мин</strong> (норма 35–55 мин). Запуск через ~<strong>' + est + ' мин</strong>.';
-                        }
-                    } catch(e) {}
+                            if (data.current_mode === 'defrost') {
+                                pStatus.innerHTML = '🔥 Оттайка (ТЭН)';
+                                pStatus.className = 'dial-status color-orange';
+                                
+                                timerBox.style.borderColor = '#f97316';
+                                timerMode.innerHTML = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST';
+                                timerMode.className = 'timer-mode color-orange';
+                                timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
+                                timerVal.className = 'timer-num color-orange';
+                                timerHint.innerHTML = '🔥 Компрессор отключен. ТЭН (~165 Вт) растапливает иней на испарителе.';
+                            } else if (data.is_running) {
+                                pStatus.innerHTML = '🟢 Морозит';
+                                pStatus.className = 'dial-status color-green';
+                                
+                                timerBox.style.borderColor = '#10b981';
+                                timerMode.innerHTML = '🟢 АКТИВНЫЙ ЦИКЛ: ОХЛАЖДЕНИЕ (РАБОТА)';
+                                timerMode.className = 'timer-mode color-green';
+                                timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
+                                timerVal.className = 'timer-num color-green';
+                                timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатная длительность: 15–35 минут.';
+                            } else {
+                                pStatus.innerHTML = '⚪ Отдых';
+                                pStatus.className = 'dial-status color-gray';
+                                
+                                var rSec = data.rest_duration_sec || 0;
+                                var rMin = Math.floor(rSec / 60);
+                                var est = Math.max(0, 45 - rMin);
+                                
+                                timerBox.style.borderColor = '#06b6d4';
+                                timerMode.innerHTML = '⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА';
+                                timerMode.className = 'timer-mode color-cyan';
+                                timerVal.innerHTML = formatSeconds(rSec);
+                                timerVal.className = 'timer-num color-cyan';
+                                timerHint.innerHTML = '🧊 Холодильник держит мороз. Отдых: <strong>' + rMin + ' мин</strong> (норма 35–55 мин). Запуск через ~<strong>' + est + ' мин</strong>.';
+                            }
+                        } catch(e) {}
+                    } else {
+                        failedPolls++;
+                        if (failedPolls >= 2) autoDiscoverNewIP();
+                    }
                 }
+            };
+            xhr.onerror = function() {
+                failedPolls++;
+                if (failedPolls >= 2) autoDiscoverNewIP();
+            };
+            xhr.ontimeout = function() {
+                failedPolls++;
+                if (failedPolls >= 2) autoDiscoverNewIP();
             };
             xhr.send();
         }
