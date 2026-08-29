@@ -1,6 +1,8 @@
 # Credentials & Secrets (CRITICAL)
 config.json
 .env
+last_server_ip.txt
+ipconfig.txt
 
 # Database & Telemetry logs
 *.db
