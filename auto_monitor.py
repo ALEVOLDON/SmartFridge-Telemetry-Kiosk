@@ -696,20 +696,32 @@ def get_history():
             try:
                 dt_prev = datetime.fromisoformat(prev_end_str)
                 dt_curr = datetime.fromisoformat(curr_start_str)
-                rest_sec = max(0, int((dt_curr - dt_prev).total_seconds()))
-                total_rest_sec += rest_sec
+                diff_sec = max(0, int((dt_curr - dt_prev).total_seconds()))
                 
-                if rest_sec > 7200:  # > 2 hours (Overnight / inter-day gap)
-                    h = rest_sec // 3600
-                    m = (rest_sec % 3600) // 60
-                    rest_str = f"{h} ч {m} мин (Перерыв)"
-                    krv_val = "—"
-                else:
+                is_blackout_cross = False
+                for b_item in raw_blackouts:
+                    try:
+                        b1 = datetime.fromisoformat(b_item[0]).timestamp()
+                        b2 = datetime.fromisoformat(b_item[1]).timestamp()
+                        t_a = dt_prev.timestamp()
+                        t_b = dt_curr.timestamp()
+                        if (t_a <= b1 and t_b >= b2) or (b1 <= t_b <= b2) or (b1 <= t_a <= b2):
+                            is_blackout_cross = True
+                            break
+                    except Exception:
+                        pass
+                
+                if 120 <= diff_sec <= 5400 and not is_blackout_cross:
+                    rest_sec = diff_sec
+                    total_rest_sec += rest_sec
                     r_m = rest_sec // 60
                     r_s = rest_sec % 60
                     rest_str = f"{r_m} мин {r_s} сек" if r_s > 0 else f"{r_m} мин"
-                    calc_krv = round(dur / (dur + rest_sec), 2) if (dur + rest_sec) > 0 else 0.38
+                    calc_krv = round(dur / (dur + rest_sec), 2)
                     krv_val = f"{calc_krv:.2f}"
+                else:
+                    rest_str = "—"
+                    krv_val = "—"
             except Exception:
                 pass
             
