@@ -671,12 +671,83 @@
             return;
         }
 
+    function createCycleRow(c) {
+        const mins = Math.floor(c.duration_sec / 60);
+        const secs = c.duration_sec % 60;
+        let durStr = `${mins} мин ${secs} сек`;
+        let verdict = '🟢 Заморозка (Компрессор)';
+        let color = '#10b981';
+        let bgStyle = '';
+        let restDisplay = c.rest_str || '—';
+        let krvDisplay = c.krv ? `${c.krv}` : '0.38';
+        let pwrDisplay = `${c.avg_power} Вт`;
+        
+        if (c.cycle_type === 'blackout') {
+            durStr = `⚡ ${c.duration_str || durStr}`;
+            verdict = `⚡ Отключение света (${c.duration_str || durStr})`;
+            color = '#f59e0b';
+            restDisplay = '⚡ Сбой 220V';
+            krvDisplay = '—';
+            pwrDisplay = '0 Вт (Сеть)';
+            bgStyle = 'background: rgba(245,158,11,0.08);';
+        } else if (c.cycle_type === 'defrost') {
+            verdict = '🔥 Автооттайка No Frost (ТЭН)';
+            color = '#f97316';
+            bgStyle = 'background: rgba(249,115,22,0.06);';
+        } else if (mins > 360) {
+            verdict = '🔴 Длительная работа (> 6ч)';
+            color = '#ef4444';
+        } else if (mins < 5) {
+            verdict = '🟡 Короткий запуск (< 5 мин)';
+            color = '#f59e0b';
+        }
+        
+        const row = document.createElement('tr');
+        if (bgStyle) row.setAttribute('style', bgStyle);
+        row.innerHTML = `
+            <td><strong>${escapeHTML(c.start)}</strong></td>
+            <td><strong>${escapeHTML(c.end)}</strong></td>
+            <td><span style="color:${color}; font-weight:bold;">${escapeHTML(durStr)}</span></td>
+            <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restDisplay)}</span></td>
+            <td><span style="font-weight:600; color:#f8fafc;">${escapeHTML(krvDisplay)}</span></td>
+            <td>${escapeHTML(pwrDisplay)}</td>
+            <td><span style="color:${color}; font-weight:600;">${escapeHTML(verdict)}</span></td>
+        `;
+        return row;
+    }
+
+    function renderArchiveTable(filterType) {
+        const thead = document.getElementById('archive-thead');
+        const tbody = document.getElementById('archive-body');
+        tbody.innerHTML = '';
+        
+        if (filterType === 'blackout') {
+            thead.innerHTML = '<tr><th>Дата</th><th>Отключение</th><th>Включение</th><th>Длительность</th><th>Сохранность продуктов</th></tr>';
+            if (allBlackoutsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">⚡ Отключений электроэнергии пока не зафиксировано (Сеть стабильна).</td></tr>';
+                return;
+            }
+            allBlackoutsData.forEach(b => {
+                const row = document.createElement('tr');
+                row.setAttribute('style', 'background: rgba(245,158,11,0.08);');
+                row.innerHTML = `
+                    <td><strong>${escapeHTML(b.date)}</strong></td>
+                    <td><span style="color:#ef4444; font-weight:bold;">${escapeHTML(b.start)}</span></td>
+                    <td><span style="color:#10b981; font-weight:bold;">${escapeHTML(b.end)}</span></td>
+                    <td><span style="color:#f59e0b; font-weight:bold;">${escapeHTML(b.duration_str)}</span></td>
+                    <td><span style="color:#cbd5e1;">${escapeHTML(b.safety)}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+            return;
+        }
+
         // Standard Cycles
         thead.innerHTML = '<tr><th>Начало</th><th>Конец</th><th>Работа</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>';
         
         let filtered = allCyclesData;
         if (filterType === 'cooling') {
-            filtered = allCyclesData.filter(c => c.cycle_type !== 'defrost');
+            filtered = allCyclesData.filter(c => c.cycle_type === 'cooling');
         } else if (filterType === 'defrost') {
             filtered = allCyclesData.filter(c => c.cycle_type === 'defrost');
         }
@@ -687,37 +758,7 @@
         }
 
         filtered.forEach(c => {
-            const mins = Math.floor(c.duration_sec / 60);
-            const secs = c.duration_sec % 60;
-            const durStr = `${mins} мин ${secs} сек`;
-            let verdict = '🟢 Заморозка (Компрессор)';
-            let color = '#10b981';
-            
-            if (c.cycle_type === 'defrost') {
-                verdict = '🔥 Автооттайка No Frost (ТЭН)';
-                color = '#f97316';
-            } else if (mins > 360) {
-                verdict = '🔴 Длительная работа (> 6ч)';
-                color = '#ef4444';
-            } else if (mins < 5) {
-                verdict = '🟡 Короткий запуск (< 5 мин)';
-                color = '#f59e0b';
-            }
-            
-            const krvDisplay = c.krv ? `${c.krv}` : '0.38';
-            const restDisplay = c.rest_str || '—';
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><strong>${escapeHTML(c.start)}</strong></td>
-                <td><strong>${escapeHTML(c.end)}</strong></td>
-                <td><span style="color:${color}; font-weight:bold;">${escapeHTML(durStr)}</span></td>
-                <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restDisplay)}</span></td>
-                <td><span style="font-weight:600; color:#f8fafc;">${escapeHTML(krvDisplay)}</span></td>
-                <td>${escapeHTML(c.avg_power)} Вт</td>
-                <td><span style="color:${color}; font-weight:600;">${escapeHTML(verdict)}</span></td>
-            `;
-            tbody.appendChild(row);
+            tbody.appendChild(createCycleRow(c));
         });
     }
 
@@ -742,37 +783,7 @@
                     // Display top 5 latest cycles on main screen
                     const recentCycles = allCyclesData.slice(0, 5);
                     recentCycles.forEach(c => {
-                        const mins = Math.floor(c.duration_sec / 60);
-                        const secs = c.duration_sec % 60;
-                        const durStr = `${mins} мин ${secs} сек`;
-                        let verdict = '🟢 Заморозка (Компрессор)';
-                        let color = '#10b981';
-                        
-                        if (c.cycle_type === 'defrost') {
-                            verdict = '🔥 Автооттайка No Frost (ТЭН)';
-                            color = '#f97316';
-                        } else if (mins > 360) {
-                            verdict = '🔴 Длительная работа (> 6ч)';
-                            color = '#ef4444';
-                        } else if (mins < 5) {
-                            verdict = '🟡 Короткий запуск (< 5 мин)';
-                            color = '#f59e0b';
-                        }
-                        
-                        const krvDisplay = c.krv ? `${c.krv}` : '0.38';
-                        const restDisplay = c.rest_str || '—';
-                        
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td><strong>${escapeHTML(c.start)}</strong></td>
-                            <td><strong>${escapeHTML(c.end)}</strong></td>
-                            <td><span style="color:${color}; font-weight:bold;">${escapeHTML(durStr)}</span></td>
-                            <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restDisplay)}</span></td>
-                            <td><span style="font-weight:600; color:#f8fafc;">${escapeHTML(krvDisplay)}</span></td>
-                            <td>${escapeHTML(c.avg_power)} Вт</td>
-                            <td><span style="color:${color}; font-weight:600;">${escapeHTML(verdict)}</span></td>
-                        `;
-                        tbody.appendChild(row);
+                        tbody.appendChild(createCycleRow(c));
                     });
                 }
             })

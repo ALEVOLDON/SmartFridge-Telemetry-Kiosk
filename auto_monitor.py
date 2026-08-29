@@ -614,9 +614,11 @@ def get_history():
             krv_val = 0.38
             
         enhanced_cycles.append({
+            "full_end": c[1] or "",
             "start": c[2],
             "end": c[3],
             "duration_sec": dur,
+            "duration_str": f"{dur // 60} мин {dur % 60} сек",
             "rest_sec": rest_sec,
             "rest_str": rest_str,
             "krv": krv_val,
@@ -634,16 +636,36 @@ def get_history():
             h = dur_sec // 3600
             m = (dur_sec % 3600) // 60
             dur_str = f"{h} ч {m} мин" if h > 0 else f"{m} мин"
-            formatted_blackouts.append({
+            b_item = {
                 "date": dt_st.strftime("%d.%m.%Y"),
                 "start": dt_st.strftime("%H:%M"),
                 "end": dt_end.strftime("%H:%M"),
                 "duration_sec": dur_sec,
                 "duration_str": dur_str,
                 "safety": safety
+            }
+            formatted_blackouts.append(b_item)
+            
+            # Also insert directly into main events stream for main table
+            enhanced_cycles.append({
+                "full_end": end_iso,
+                "start": dt_st.strftime("%H:%M"),
+                "end": dt_end.strftime("%H:%M"),
+                "duration_sec": dur_sec,
+                "duration_str": dur_str,
+                "rest_sec": 0,
+                "rest_str": "Сеть 0V",
+                "krv": "—",
+                "avg_power": 0.0,
+                "avg_voltage": 0.0,
+                "cycle_type": "blackout",
+                "safety": safety
             })
         except Exception:
             pass
+
+    # Sort all events chronologically (newest first)
+    enhanced_cycles.sort(key=lambda x: str(x.get("full_end", "")), reverse=True)
 
     overall_krv = round(total_work_sec / (total_work_sec + total_rest_sec), 2) if (total_work_sec + total_rest_sec) > 0 else 0.38
     
@@ -660,7 +682,7 @@ def get_history():
             }
             for r in reversed(rows)
         ],
-        "cycles": list(reversed(enhanced_cycles)),
+        "cycles": enhanced_cycles,
         "blackouts": formatted_blackouts,
         "summary": {
             "overall_krv": overall_krv,

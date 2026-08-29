@@ -325,6 +325,36 @@
             modal.style.display = 'none';
         }
 
+        function getIpadRowHtml(c) {
+            var durMin = Math.floor((c.duration_sec || 0) / 60);
+            var durSec = (c.duration_sec || 0) % 60;
+            var durStr = durMin + 'м ' + durSec + 'с';
+            var restStr = c.rest_str || '—';
+            var badgeClass = 'badge badge-green';
+            var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
+            var pwrStr = (c.avg_power || 0) + ' Вт';
+            
+            if (c.cycle_type === 'blackout') {
+                badgeClass = 'badge badge-orange';
+                modeBadge = '<span style="color:#f59e0b; font-weight:bold;">⚡ Отключение света</span>';
+                durStr = '⚡ ' + (c.duration_str || durStr);
+                restStr = '⚡ Сбой 220V';
+                pwrStr = '0 Вт (Сеть)';
+            } else if (c.cycle_type === 'defrost') {
+                badgeClass = 'badge badge-orange';
+                modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка</span>';
+            }
+            
+            return '<tr>' +
+                '<td><strong>' + escapeHTML(c.start) + '</strong></td>' +
+                '<td><strong>' + escapeHTML(c.end) + '</strong></td>' +
+                '<td><span class="' + badgeClass + '">' + escapeHTML(durStr) + '</span></td>' +
+                '<td><span class="badge badge-blue">' + escapeHTML(restStr) + '</span></td>' +
+                '<td>' + escapeHTML(pwrStr) + '</td>' +
+                '<td>' + modeBadge + '</td>' +
+            '</tr>';
+        }
+
         function renderIpadArchiveTable() {
             var tbody = document.getElementById('ipad-archive-body');
             tbody.innerHTML = '';
@@ -334,28 +364,7 @@
             }
             var html = '';
             for (var i = 0; i < ipadAllCycles.length; i++) {
-                var c = ipadAllCycles[i];
-                var durMin = Math.floor((c.duration_sec || 0) / 60);
-                var durSec = (c.duration_sec || 0) % 60;
-                var durStr = durMin + 'м ' + durSec + 'с';
-                var restStr = c.rest_str || '—';
-                
-                var badgeClass = 'badge badge-green';
-                var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
-                
-                if (c.cycle_type === 'defrost') {
-                    badgeClass = 'badge badge-orange';
-                    modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка</span>';
-                }
-                
-                html += '<tr>' +
-                    '<td><strong>' + escapeHTML(c.start) + '</strong></td>' +
-                    '<td><strong>' + escapeHTML(c.end) + '</strong></td>' +
-                    '<td><span class="' + badgeClass + '">' + escapeHTML(durStr) + '</span></td>' +
-                    '<td><span class="badge badge-blue">' + escapeHTML(restStr) + '</span></td>' +
-                    '<td>' + escapeHTML(c.avg_power) + ' Вт</td>' +
-                    '<td>' + modeBadge + '</td>' +
-                '</tr>';
+                html += getIpadRowHtml(ipadAllCycles[i]);
             }
             tbody.innerHTML = html;
         }
@@ -377,28 +386,7 @@
                             var html = '';
                             var displayCount = Math.min(5, ipadAllCycles.length);
                             for (var i = 0; i < displayCount; i++) {
-                                var c = ipadAllCycles[i];
-                                var durMin = Math.floor((c.duration_sec || 0) / 60);
-                                var durSec = (c.duration_sec || 0) % 60;
-                                var durStr = durMin + 'м ' + durSec + 'с';
-                                var restStr = c.rest_str || '—';
-                                
-                                var badgeClass = 'badge badge-green';
-                                var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
-                                
-                                if (c.cycle_type === 'defrost') {
-                                    badgeClass = 'badge badge-orange';
-                                    modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка</span>';
-                                }
-                                
-                                html += '<tr>' +
-                                    '<td><strong>' + escapeHTML(c.start) + '</strong></td>' +
-                                    '<td><strong>' + escapeHTML(c.end) + '</strong></td>' +
-                                    '<td><span class="' + badgeClass + '">' + escapeHTML(durStr) + '</span></td>' +
-                                    '<td><span class="badge badge-blue">' + escapeHTML(restStr) + '</span></td>' +
-                                    '<td>' + escapeHTML(c.avg_power) + ' Вт</td>' +
-                                    '<td>' + modeBadge + '</td>' +
-                                '</tr>';
+                                html += getIpadRowHtml(ipadAllCycles[i]);
                             }
                             tbody.innerHTML = html;
                         }
