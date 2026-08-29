@@ -122,14 +122,14 @@
             <div class="dial-card" style="border-top: 3px solid #38bdf8;">
                 <div class="dial-label" style="color: #38bdf8;">❄️ Морозилка</div>
                 <div class="dial-val color-blue" id="ipad-temp-freezer">-18.2 <span class="dial-unit">°C</span></div>
-                <div class="dial-status" id="ipad-freezer-status" style="color: #38bdf8;">Глубокий мороз</div>
+                <div class="dial-status" id="ipad-freezer-status" style="color: #38bdf8;">📊 Модель (оценка)</div>
             </div>
         </div>
         <div class="dial-cell" style="width: 50%;">
             <div class="dial-card" style="border-top: 3px solid #10b981;">
                 <div class="dial-label" style="color: #10b981;">🥗 Холодильник</div>
                 <div class="dial-val color-green" id="ipad-temp-fridge">+4.1 <span class="dial-unit">°C</span></div>
-                <div class="dial-status" style="color: #10b981;">Оптимально (+4°C)</div>
+                <div class="dial-status" id="ipad-fridge-status" style="color: #10b981;">📊 Модель (оценка)</div>
             </div>
         </div>
     </div>
@@ -239,12 +239,19 @@
             if (subEl) subEl.innerHTML = '⚡ Связь потеряна. Автопоиск нового IP в сети...';
             
             var found = false;
-            for (var i = 100; i <= 130; i++) {
+            var currentHost = window.location.hostname;
+            var subnetPrefix = '192.168.0.';
+            var match = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+$/);
+            if (match) {
+                subnetPrefix = match[1] + '.';
+            }
+            
+            for (var i = 2; i <= 254; i++) {
                 (function(ipNum) {
                     var probeXhr = new XMLHttpRequest();
-                    var targetIp = '192.168.0.' + ipNum;
+                    var targetIp = subnetPrefix + ipNum;
                     probeXhr.open('GET', 'http://' + targetIp + ':8088/api/status', true);
-                    probeXhr.timeout = 2000;
+                    probeXhr.timeout = 2500;
                     probeXhr.onreadystatechange = function() {
                         if (probeXhr.readyState === 4 && probeXhr.status === 200 && !found) {
                             try {
@@ -253,7 +260,6 @@
                                     found = true;
                                     isAutoScanning = false;
                                     failedPolls = 0;
-                                    var currentHost = window.location.hostname;
                                     if (currentHost !== targetIp && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
                                         window.location.replace('http://' + targetIp + ':8088' + window.location.pathname);
                                     }
@@ -267,7 +273,7 @@
             
             setTimeout(function() {
                 isAutoScanning = false;
-            }, 3500);
+            }, 8000);
         }
 
         function loadStatus() {
@@ -281,14 +287,25 @@
                         isAutoScanning = false;
                         try {
                             var data = JSON.parse(xhr.responseText);
+                            var vVal = (data.voltage !== undefined && data.voltage !== null) ? data.voltage : 0;
                             
                             // Voltage, Power, Current
                             document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
-                            document.getElementById('volt-val').innerHTML = (data.voltage || 202).toFixed(1) + ' <span class="dial-unit">В</span>';
+                            document.getElementById('volt-val').innerHTML = vVal.toFixed(1) + ' <span class="dial-unit">В</span>';
                             document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
-                            document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | Сеть: ' + (data.voltage || 202) + ' В';
+                            document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | Сеть: ' + vVal.toFixed(0) + ' В';
                             
                             // Temperatures
+                            var isEst = (data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected);
+                            var fStatus = document.getElementById('ipad-freezer-status');
+                            var rStatus = document.getElementById('ipad-fridge-status');
+                            if (fStatus) {
+                                fStatus.innerHTML = isEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
+                            }
+                            if (rStatus) {
+                                rStatus.innerHTML = isEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
+                            }
+
                             if (data.temp_freezer !== undefined) {
                                 var fEl = document.getElementById('ipad-temp-freezer');
                                 var fSign = data.temp_freezer > 0 ? '+' : '';
@@ -338,7 +355,7 @@
                                 timerMode.className = 'timer-mode color-green';
                                 timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
                                 timerVal.className = 'timer-num color-green';
-                                timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатная длительность: 15–35 минут.';
+                                timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатная норма: 15–45 минут (до 4 ч при загрузке).';
                             } else {
                                 pStatus.innerHTML = '⚪ Отдых';
                                 pStatus.className = 'dial-status color-gray';

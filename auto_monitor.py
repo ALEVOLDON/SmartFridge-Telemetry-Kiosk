@@ -282,11 +282,6 @@ def sync_cloud_history():
             for b1, b2 in blackout_ranges:
                 if (t_a <= b1 and t_b >= b2) or (b1 <= t_b <= b2) or (b1 <= t_a <= b2):
                     return True
-            return False
-
-        # Clean any erroneously merged cycles > 2.5 hours
-        cur.execute('DELETE FROM cycles WHERE duration_sec > 9000')
-
         in_cycle = False
         c_start_ts = None
         c_start_iso = None
@@ -372,6 +367,33 @@ def find_actual_current_cycle_start():
         pass
     return None
 
+_cloud_client = None
+_cloud_client_cfg = None
+
+def get_cloud_client(cfg):
+    global _cloud_client, _cloud_client_cfg
+    key = (cfg.get("api_region"), cfg.get("api_key"), cfg.get("api_secret"), cfg.get("device_id"))
+    if _cloud_client is None or _cloud_client_cfg != key:
+        _cloud_client = tinytuya.Cloud(
+            apiRegion=cfg.get("api_region", "eu"),
+            apiKey=cfg.get("api_key", "").strip(),
+            apiSecret=cfg.get("api_secret", "").strip(),
+            apiDeviceID=cfg.get("device_id", "").strip()
+        )
+        _cloud_client_cfg = key
+    return _cloud_client
+
+def prune_old_measurements():
+    """Prunes raw 4-second telemetry older than 7 days to keep SQLite light on TV Box"""
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("DELETE FROM measurements WHERE timestamp < datetime('now', '-7 days')")
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
 def tuya_poller():
     global state
     cycle_powers = []
@@ -407,15 +429,11 @@ def tuya_poller():
         poll_count += 1
         if poll_count % 60 == 0:
             sync_cloud_history()
+        if poll_count % 720 == 0:
+            prune_old_measurements()
             
         try:
-            c = tinytuya.Cloud(
-                apiRegion=cfg.get("api_region", "eu"),
-                apiKey=cfg["api_key"].strip(),
-                apiSecret=cfg["api_secret"].strip(),
-                apiDeviceID=cfg["device_id"].strip()
-            )
-            
+            c = get_cloud_client(cfg)
             res = c.getstatus(cfg["device_id"].strip())
             
             if res and isinstance(res, dict) and "result" in res:
@@ -444,6 +462,7 @@ def tuya_poller():
                 
                 # Check optional external Temperature Sensor
                 temp_sensor_id = cfg.get("temp_sensor_id", "").strip()
+                state["temp_sensor_id"] = temp_sensor_id
                 if temp_sensor_id and poll_count % 5 == 0:
                     try:
                         t_res = c.getstatus(temp_sensor_id)
@@ -457,13 +476,16 @@ def tuya_poller():
                                     state["temp_sensor_connected"] = True
                     except Exception:
                         state["temp_sensor_connected"] = False
+                else:
+                    if not temp_sensor_id:
+                        state["temp_sensor_connected"] = False
+
+                state["temp_is_estimated"] = not state.get("temp_sensor_connected", False)
                 
                 now_iso = datetime.now().isoformat()
                 is_active = (power > 35.0)
                 
                 if is_active:
-                    state["current_mode"] = "cooling"
-                    state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
                     state["rest_duration_sec"] = 0
                     
                     if not state["is_running"]:
@@ -485,23 +507,31 @@ def tuya_poller():
                         
                     start_dt = datetime.fromisoformat(state["cycle_start_time"])
                     state["cycle_duration_sec"] = int((datetime.now() - start_dt).total_seconds())
+                    cycle_powers.append(power)
+                    cycle_voltages.append(voltage)
+                    
+                    # Realtime Defrost Heater vs Compressor classification
+                    avg_recent_p = sum(cycle_powers[-8:]) / len(cycle_powers[-8:]) if cycle_powers else power
+                    if avg_recent_p >= 158.0 and state["cycle_duration_sec"] >= 90:
+                        state["current_mode"] = "defrost"
+                        state["mode_title"] = "🔥 АВТООТТАЙКА NO FROST (ТЭН 170W)"
+                    else:
+                        state["current_mode"] = "cooling"
+                        state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
                     
                     # Thermodynamic Temperature Curve (Cooling down)
-                    if not state.get("temp_sensor_connected", False):
+                    if state.get("temp_is_estimated", True):
                         progress = min(1.0, state["cycle_duration_sec"] / 1800.0)
                         state["temp_freezer"] = round(-16.0 - (3.5 * progress), 1)
                         state["temp_fridge"] = round(5.2 - (1.6 * progress), 1)
                     
-                    if state["cycle_duration_sec"] > 14400 and not warning_long_sent:
+                    if state["cycle_duration_sec"] > 18000 and not warning_long_sent: # 5 hours threshold
                         warning_long_sent = True
                         send_pc_toast(
-                            "⚠️ Длительная работа компрессора",
-                            "Компрессор работает уже более 4 часов подряд без остановки! Проверьте закрытие двери.",
+                            "⚠️ Длительная непрерывная работа",
+                            "Холодильник работает уже более 5 часов подряд без остановки! Проверьте закрытие двери и уплотнители.",
                             is_warning=True
                         )
-                    
-                    cycle_powers.append(power)
-                    cycle_voltages.append(voltage)
                 else:
                     state["current_mode"] = "idle"
                     state["mode_title"] = "⚪ ПОЛНЫЙ ПОКОЙ (ОТДЫХ)"
@@ -520,7 +550,7 @@ def tuya_poller():
                         if duration >= 120:
                             avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else 131.0
                             avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
-                            c_type = "cooling"
+                            c_type = "defrost" if (avg_p >= 158.0 and duration <= 2700) else "cooling"
                             
                             conn = sqlite3.connect(DB_FILE)
                             cur = conn.cursor()
@@ -547,7 +577,7 @@ def tuya_poller():
                             state["rest_duration_sec"] = 0
                     
                     # Thermodynamic Temperature Curve (Holding & warming up)
-                    if not state.get("temp_sensor_connected", False):
+                    if state.get("temp_is_estimated", True):
                         r_prog = min(1.0, state["rest_duration_sec"] / 3000.0)
                         state["temp_freezer"] = round(-19.5 + (3.0 * r_prog), 1)
                         state["temp_fridge"] = round(3.6 + (1.4 * r_prog), 1)
@@ -624,11 +654,11 @@ def config_api():
         cfg = load_config()
         if data.get("api_region"):
             cfg["api_region"] = data["api_region"].strip()
-        if data.get("api_key"):
+        if data.get("api_key") and "..." not in data["api_key"] and data["api_key"] != "********":
             cfg["api_key"] = data["api_key"].strip()
         if data.get("api_secret") and data["api_secret"] != "********":
             cfg["api_secret"] = data["api_secret"].strip()
-        if data.get("device_id"):
+        if data.get("device_id") and "..." not in data["device_id"] and data["device_id"] != "********":
             cfg["device_id"] = data["device_id"].strip()
         if "temp_sensor_id" in data:
             cfg["temp_sensor_id"] = data["temp_sensor_id"].strip()
@@ -636,11 +666,18 @@ def config_api():
         return jsonify({"status": "saved"})
     
     cfg = load_config()
+    is_local = is_localhost_request()
+    raw_key = cfg.get("api_key", "")
+    raw_dev = cfg.get("device_id", "")
+    
+    safe_key = raw_key if is_local else (raw_key[:4] + "..." + raw_key[-4:] if len(raw_key) > 8 else "***")
+    safe_dev = raw_dev if is_local else (raw_dev[:4] + "..." + raw_dev[-4:] if len(raw_dev) > 8 else "***")
+    
     safe_cfg = {
         "api_region": cfg.get("api_region", "eu"),
-        "api_key": cfg.get("api_key", ""),
+        "api_key": safe_key,
         "api_secret": "********" if cfg.get("api_secret") else "",
-        "device_id": cfg.get("device_id", ""),
+        "device_id": safe_dev,
         "temp_sensor_id": cfg.get("temp_sensor_id", "")
     }
     return jsonify(safe_cfg)

@@ -68,6 +68,7 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
         cur = conn.cursor()
         cur.execute("""
             SELECT 
+                strftime('%d.%m.%Y', MIN(start_time)),
                 strftime('%H:%M', MIN(start_time)),
                 strftime('%H:%M', MAX(end_time)),
                 MAX(duration_sec),
@@ -76,23 +77,23 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
                 cycle_type
             FROM cycles
             WHERE duration_sec >= 120
-            GROUP BY strftime('%H:%M', end_time)
-            ORDER BY MAX(end_time) DESC LIMIT 20
+            GROUP BY DATE(end_time), strftime('%H:%M', end_time)
+            ORDER BY MIN(start_time) DESC LIMIT 50
         """)
         for r in cur.fetchall():
-            m = r[2] // 60
-            s = r[2] % 60
-            c_type = r[5] if r[5] else ("defrost" if r[3] > 160 else "cooling")
+            m = r[3] // 60
+            s = r[3] % 60
+            c_type = r[6] if r[6] else ("defrost" if r[4] > 160 else "cooling")
             verdict = "🔥 No Frost Defrost" if c_type == "defrost" else "🟢 Cooling (Compressor)"
-            cycles.append((r[0], r[1], f"{m}m {s}s", f"{r[3]} W", f"{r[4]} V", verdict))
+            cycles.append((r[0], r[1], r[2], f"{m}m {s}s", f"{r[4]} W", f"{r[5]} V", verdict))
         conn.close()
 
     h1 = doc.add_heading('Recorded Operational Cycles', level=1)
     h1.runs[0].font.color.rgb = PRIMARY
 
-    t = doc.add_table(rows=len(cycles)+1, cols=6)
+    t = doc.add_table(rows=len(cycles)+1, cols=7)
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
-    headers = ['Start', 'End', 'Duration', 'Avg Power', 'Avg Voltage', 'Mode']
+    headers = ['Date', 'Start', 'End', 'Duration', 'Avg Power', 'Avg Voltage', 'Mode']
     for j, h_text in enumerate(headers):
         c = t.rows[0].cells[j]
         c.text = h_text

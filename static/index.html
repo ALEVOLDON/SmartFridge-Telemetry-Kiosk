@@ -206,19 +206,19 @@
         <div class="card" style="border-top: 3px solid #38bdf8;">
             <div class="card-header">
                 <span class="card-title">❄️ Морозильная камера</span>
-                <span id="freezer-tag" style="color:#38bdf8; font-size:11.5px; font-weight:700; background:rgba(56,189,248,0.15); padding:3px 8px; border-radius:6px;">ГЛУБОКИЙ МОРОЗ</span>
+                <span id="freezer-tag" style="color:#38bdf8; font-size:11px; font-weight:700; background:rgba(56,189,248,0.15); padding:3px 8px; border-radius:6px;">📊 МОДЕЛЬ (ОЦЕНКА)</span>
             </div>
             <div class="main-stat" id="temp-freezer-val" style="color:#38bdf8;">-18.2 <span class="unit">°C</span></div>
-            <div style="font-size: 13.5px; margin-top: 8px; color: var(--text-muted);" id="freezer-desc">Идеальная температура хранения заморозки</div>
+            <div style="font-size: 13px; margin-top: 8px; color: var(--text-muted);" id="freezer-desc">Теплофизическая модель (физический датчик не подключен)</div>
         </div>
 
         <div class="card" style="border-top: 3px solid #10b981;">
             <div class="card-header">
                 <span class="card-title">🥗 Холодильное отделение</span>
-                <span id="fridge-tag" style="color:#10b981; font-size:11.5px; font-weight:700; background:rgba(16,185,129,0.15); padding:3px 8px; border-radius:6px;">СВЕЖЕСТЬ: НОРМА</span>
+                <span id="fridge-tag" style="color:#10b981; font-size:11px; font-weight:700; background:rgba(16,185,129,0.15); padding:3px 8px; border-radius:6px;">📊 МОДЕЛЬ (ОЦЕНКА)</span>
             </div>
             <div class="main-stat" id="temp-fridge-val" style="color:#10b981;">+4.1 <span class="unit">°C</span></div>
-            <div style="font-size: 13.5px; margin-top: 8px; color: var(--text-muted);" id="fridge-desc">Оптимальная температура (+3...+5°C)</div>
+            <div style="font-size: 13px; margin-top: 8px; color: var(--text-muted);" id="fridge-desc">Теплофизическая модель (физический датчик не подключен)</div>
         </div>
     </div>
 
@@ -330,8 +330,6 @@
             <label>Access Secret / Client Secret</label>
             <input type="password" id="cfg-secret" placeholder="Напр. 82fa91b3...">
         </div>
-        <div class="form-group">
-            <label>Device ID (Идентификатор умной розетки)</label>
         <div class="form-group">
             <label>Device ID (Идентификатор умной розетки)</label>
             <input type="text" id="cfg-device" placeholder="Напр. bfa82710...">
@@ -447,8 +445,19 @@
         if (cloudText) cloudText.innerText = '⚡ Потеря связи. Автопоиск нового IP сервера в сети...';
         
         let found = false;
-        for (let i = 100; i <= 130; i++) {
-            const targetIp = `192.168.0.${i}`;
+        let currentHost = window.location.hostname;
+        let subnetPrefix = '192.168.0.';
+        const match = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+$/);
+        if (match) {
+            subnetPrefix = match[1] + '.';
+        }
+        
+        const scanIps = [];
+        for (let i = 2; i <= 254; i++) {
+            scanIps.push(`${subnetPrefix}${i}`);
+        }
+        
+        scanIps.forEach(targetIp => {
             fetch(`http://${targetIp}:8088/api/status`, { mode: 'cors' })
                 .then(r => r.json())
                 .then(res => {
@@ -456,15 +465,17 @@
                         found = true;
                         isAutoScanning = false;
                         failedPolls = 0;
-                        const currentHost = window.location.hostname;
                         if (currentHost !== targetIp && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-                            window.location.replace(`http://${targetIp}:8088${window.location.pathname}`);
+                            window.location.replace(`http://${targetIp}:8088/`);
                         }
                     }
                 })
                 .catch(() => {});
-        }
-        setTimeout(() => { isAutoScanning = false; }, 3500);
+        });
+        
+        setTimeout(() => {
+            isAutoScanning = false;
+        }, 8000);
     }
 
     function pollStatus() {
@@ -473,12 +484,12 @@
             .then(data => {
                 failedPolls = 0;
                 isAutoScanning = false;
+                
                 const cloudDot = document.getElementById('cloud-dot');
                 const cloudText = document.getElementById('cloud-text');
-                
                 if (data.connected) {
                     cloudDot.className = 'dot dot-green';
-                    cloudText.innerText = 'Подключено к Tuya Cloud (Опрос активен)';
+                    cloudText.innerText = 'Tuya Cloud API: Подключено (Онлайн)';
                     document.getElementById('last-sync').innerText = 'Обновлено: ' + (data.last_update || '--');
                 } else {
                     cloudDot.className = 'dot dot-red';
@@ -490,19 +501,43 @@
                 document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
                 
                 // Update Temperature displays
-                if (data.temp_freezer !== undefined) {
-                    const fVal = document.getElementById('temp-freezer-val');
-                    const fTag = document.getElementById('freezer-tag');
-                    fVal.innerHTML = `${data.temp_freezer > 0 ? '+' : ''}${data.temp_freezer.toFixed(1)} <span class="unit">°C</span>`;
-                    if (data.temp_sensor_connected) {
+                const isEstimated = (data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected);
+                const fTag = document.getElementById('freezer-tag');
+                const rTag = document.getElementById('fridge-tag');
+                const fDesc = document.getElementById('freezer-desc');
+                const rDesc = document.getElementById('fridge-desc');
+                
+                if (fTag && rTag) {
+                    if (isEstimated) {
+                        fTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
+                        fTag.style.color = '#38bdf8';
+                        fTag.style.background = 'rgba(56,189,248,0.15)';
+                        if (fDesc) fDesc.innerText = 'Теплофизическая модель (физический датчик не подключен)';
+                        
+                        rTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
+                        rTag.style.color = '#10b981';
+                        rTag.style.background = 'rgba(16,185,129,0.15)';
+                        if (rDesc) rDesc.innerText = 'Теплофизическая модель (физический датчик не подключен)';
+                    } else {
                         fTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
                         fTag.style.color = '#10b981';
                         fTag.style.background = 'rgba(16,185,129,0.15)';
+                        if (fDesc) fDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
+                        
+                        rTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
+                        rTag.style.color = '#10b981';
+                        rTag.style.background = 'rgba(16,185,129,0.15)';
+                        if (rDesc) rDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
                     }
+                }
+                
+                if (data.temp_freezer !== undefined) {
+                    const fVal = document.getElementById('temp-freezer-val');
+                    if (fVal) fVal.innerHTML = `${data.temp_freezer > 0 ? '+' : ''}${data.temp_freezer.toFixed(1)} <span class="unit">°C</span>`;
                 }
                 if (data.temp_fridge !== undefined) {
                     const rVal = document.getElementById('temp-fridge-val');
-                    rVal.innerHTML = `${data.temp_fridge > 0 ? '+' : ''}${data.temp_fridge.toFixed(1)} <span class="unit">°C</span>`;
+                    if (rVal) rVal.innerHTML = `${data.temp_fridge > 0 ? '+' : ''}${data.temp_fridge.toFixed(1)} <span class="unit">°C</span>`;
                 }
 
                 // Update Blackout Status Banner
@@ -540,7 +575,7 @@
                     timerTitle.style.color = '#10b981';
                     timerVal.innerText = formatSec(data.cycle_duration_sec);
                     timerVal.style.color = '#10b981';
-                    verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты в камере. Норма цикла: <strong>15–35 минут</strong>.';
+                    verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты в камере. Норма цикла: <strong>15–45 минут</strong>.';
                 } else {
                     desc.innerText = '⚪ Компрессор выключен (Отдых)';
                     desc.style.color = '#94a3b8';
@@ -574,28 +609,36 @@
                     healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
                 } else if (data.is_running) {
                     const durMin = Math.floor(data.cycle_duration_sec / 60);
-                    if (durMin <= 40) {
+                    if (durMin <= 45) {
                         healthCard.style.borderLeftColor = '#10b981';
                         healthIcon.innerText = '❄️';
                         healthTitle.innerText = '🟢 Штатная заморозка (Охлаждение в норме)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин (норма: 15–40 мин). Температура опускается.`;
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин (норма: 15–45 мин). Температура опускается.`;
                         healthBadge.innerText = 'Охлаждение: Норма';
                         healthBadge.style.color = '#10b981';
                         healthBadge.style.background = 'rgba(16, 185, 129, 0.15)';
-                    } else if (durMin <= 80) {
+                    } else if (durMin <= 120) {
                         healthCard.style.borderLeftColor = '#f59e0b';
                         healthIcon.innerText = '⏳';
-                        healthTitle.innerText = '🟡 Увеличенный цикл заморозки (> 40 мин)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Это штатно при загрузке продуктов или открывании дверей.`;
-                        healthBadge.innerText = 'Фазовый переход / Загрузка';
+                        healthTitle.innerText = '🟡 Интенсивный донабор холода (> 45 мин)';
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Это норма при открывании дверей, вечерней нагрузке или просадке напряжения сети.`;
+                        healthBadge.innerText = 'Донабор холода / Загрузка';
                         healthBadge.style.color = '#f59e0b';
                         healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                    } else if (durMin <= 240) {
+                        healthCard.style.borderLeftColor = '#f97316';
+                        healthIcon.innerText = '📦';
+                        healthTitle.innerText = '🟠 Глубокая проморозка (> 2 ч)';
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Штатный режим после отключения света (блэкаута) или большой загрузки теплых продуктов (норма до 3.5–5 ч).`;
+                        healthBadge.innerText = 'После блэкаута / Загрузка';
+                        healthBadge.style.color = '#f97316';
+                        healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
                     } else {
                         healthCard.style.borderLeftColor = '#ef4444';
                         healthIcon.innerText = '⚠️';
-                        healthTitle.innerText = '🔴 Внимание: Длительная работа компрессора (> 1.5 ч)';
-                        healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте: плотно ли закрыта дверь и нет ли щелей в уплотнителе.`;
-                        healthBadge.innerText = 'Тревога: Долгая работа';
+                        healthTitle.innerText = '🔴 Внимание: Непрерывная работа компрессора (> 4 ч)';
+                        healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте закрытие дверей, уплотнители или уровень фреона.`;
+                        healthBadge.innerText = 'Тревога: Работа > 4ч';
                         healthBadge.style.color = '#ef4444';
                         healthBadge.style.background = 'rgba(239, 68, 68, 0.15)';
                     }
