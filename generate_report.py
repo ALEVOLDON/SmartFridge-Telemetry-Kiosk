@@ -84,7 +84,7 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
             total_min = (r[3] + 30) // 60
             hh, mm = divmod(total_min, 60)
             dur_s = f"{hh} ч {mm} мин" if hh and mm else (f"{hh} ч" if hh else f"{mm} мин")
-            c_type = r[6] if r[6] else ("defrost" if (r[4] >= 158 and r[3] <= 1800) else "cooling")
+            c_type = r[6] if r[6] else "cooling"
             verdict = "🔥 No Frost Defrost" if c_type == "defrost" else "🟢 Cooling (Compressor)"
             cycles.append((r[0], r[1], r[2], dur_s, f"{r[4]} W", f"{r[5]} V", verdict))
         conn.close()

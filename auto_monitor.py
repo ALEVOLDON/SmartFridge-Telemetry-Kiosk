@@ -158,11 +158,14 @@ def save_config(cfg):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=4, ensure_ascii=False)
 
-# No Frost heater ~160–175 W for ~10–25 min. Compressor SK170K is 125–185 W
-# and stays high for hours under load — so wattage alone is not enough.
-DEFROST_POWER_W = 158.0
-DEFROST_MIN_SEC = 90
-DEFROST_MAX_SEC = 1800
+# No Frost timer counts compressor ON time (~8–10 h), then a 10–25 min
+# sheath heater at ~160–175 W. SK170K cooling is 125–185 W, so a short
+# 158+ W compressor run is not a defrost unless enough cooling has elapsed.
+DEFROST_POWER_MIN = 158.0
+DEFROST_POWER_MAX = 185.0
+DEFROST_MIN_SEC = 480    # 8 min
+DEFROST_MAX_SEC = 1680   # 28 min
+MIN_COOLING_BEFORE_DEFROST_SEC = 7 * 3600
 COMPRESSOR_LOCKOUT_SEC = 180
 LONG_RUN_WARN_SEC = 25200  # 7 h — service guide fault threshold
 CLOUD_SYNC_EVERY_POLLS = 300  # ~20 min at 4 s interval
@@ -185,10 +188,65 @@ def get_cloud_client(cfg):
         _cloud_client_cfg = key
     return _cloud_client
 
-def classify_cycle(avg_power, duration_sec):
-    if avg_power >= DEFROST_POWER_W and DEFROST_MIN_SEC <= duration_sec <= DEFROST_MAX_SEC:
-        return "defrost"
-    return "cooling"
+def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None):
+    """Defrost only if heater-like watts, defrost-length, AND enough compressor hours since last defrost."""
+    p = float(avg_power or 0)
+    dur = int(duration_sec or 0)
+    acc = int(cooling_since_sec or 0)
+    in_heater_band = DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX
+    in_defrost_window = DEFROST_MIN_SEC <= dur <= DEFROST_MAX_SEC
+    enough_cooling = acc >= MIN_COOLING_BEFORE_DEFROST_SEC
+    if not (in_heater_band and in_defrost_window and enough_cooling):
+        return "cooling"
+    if powers and len(powers) >= 6:
+        mean = sum(powers) / len(powers)
+        if mean > 0:
+            var = sum((x - mean) ** 2 for x in powers) / len(powers)
+            if (var ** 0.5) / mean > 0.12:
+                return "cooling"
+    return "defrost"
+
+def cooling_since_last_defrost_sec():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT MAX(end_time) FROM cycles WHERE cycle_type = 'defrost'")
+        last_d = (cur.fetchone() or [None])[0]
+        if last_d:
+            cur.execute(
+                "SELECT COALESCE(SUM(duration_sec), 0) FROM cycles WHERE cycle_type = 'cooling' AND start_time >= ?",
+                (last_d,),
+            )
+        else:
+            cur.execute("SELECT COALESCE(SUM(duration_sec), 0) FROM cycles WHERE cycle_type = 'cooling'")
+        total = int((cur.fetchone() or [0])[0] or 0)
+        conn.close()
+        return total
+    except Exception:
+        return 0
+
+def reclassify_stored_cycles():
+    """Walk cycles in time and rewrite cycle_type with the compressor-hour rule."""
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id, duration_sec, avg_power, cycle_type FROM cycles ORDER BY start_time ASC, id ASC"
+        )
+        rows = cur.fetchall()
+        cooling_acc = 0
+        for cid, dur, avg_p, old_type in rows:
+            new_type = classify_cycle(avg_p, dur, cooling_acc)
+            if new_type != old_type:
+                cur.execute("UPDATE cycles SET cycle_type = ? WHERE id = ?", (new_type, cid))
+            if new_type == "cooling":
+                cooling_acc += int(dur or 0)
+            else:
+                cooling_acc = 0
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 def food_safety_label(gap_sec):
     if gap_sec <= 14400:
@@ -400,6 +458,7 @@ def sync_cloud_history():
         c_start_ts = None
         c_start_iso = None
         powers = []
+        cooling_acc = 0
         
         for i in range(len(events)):
             t_sec, dt_iso, val = events[i]
@@ -411,11 +470,15 @@ def sync_cloud_history():
                     dur = int(t_prev - c_start_ts)
                     if dur >= 180:
                         avg_p = sum(powers) / len(powers) if powers else 130.0
-                        c_type = classify_cycle(avg_p, dur)
+                        c_type = classify_cycle(avg_p, dur, cooling_acc, powers)
                         cur.execute('''
                             INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
                             VALUES (?, ?, ?, ?, ?, ?)
                         ''', (c_start_iso, dt_prev, dur, round(avg_p, 1), 226.0, c_type))
+                        if c_type == "cooling":
+                            cooling_acc += dur
+                        else:
+                            cooling_acc = 0
                     in_cycle = False
                     powers = []
                     c_start_ts = None
@@ -435,17 +498,22 @@ def sync_cloud_history():
                     dur = int(t_sec - c_start_ts)
                     if dur >= 180:
                         avg_p = sum(powers) / len(powers) if powers else 130.0
-                        c_type = classify_cycle(avg_p, dur)
+                        c_type = classify_cycle(avg_p, dur, cooling_acc, powers)
                         cur.execute('''
                             INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
                             VALUES (?, ?, ?, ?, ?, ?)
                         ''', (c_start_iso, dt_iso, dur, round(avg_p, 1), 226.0, c_type))
+                        if c_type == "cooling":
+                            cooling_acc += dur
+                        else:
+                            cooling_acc = 0
                     powers = []
                     c_start_ts = None
                     c_start_iso = None
         
         conn.commit()
         conn.close()
+        reclassify_stored_cycles()
         
         update_last_blackout_state()
         return True
@@ -454,6 +522,7 @@ def sync_cloud_history():
         return False
 
 sync_cloud_history()
+reclassify_stored_cycles()
 
 def find_open_cycle_start():
     """First sustained compressor-on run after the last saved cycle end.
@@ -652,7 +721,7 @@ def tuya_poller():
                     if duration >= 120:
                         avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else 131.0
                         avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
-                        c_type = classify_cycle(avg_p, duration)
+                        c_type = classify_cycle(avg_p, duration, cooling_since_last_defrost_sec(), cycle_powers)
                         conn = sqlite3.connect(DB_FILE)
                         cur = conn.cursor()
                         cur.execute('''
@@ -679,7 +748,7 @@ def tuya_poller():
                     update_restart_lockout(True)
                     
                     avg_recent_p = sum(cycle_powers[-8:]) / len(cycle_powers[-8:]) if cycle_powers else power
-                    if classify_cycle(avg_recent_p, state["cycle_duration_sec"]) == "defrost":
+                    if classify_cycle(avg_recent_p, state["cycle_duration_sec"], cooling_since_last_defrost_sec(), cycle_powers) == "defrost":
                         state["current_mode"] = "defrost"
                         state["mode_title"] = "🔥 АВТООТТАЙКА NO FROST (ТЭН 170W)"
                     else:
@@ -876,8 +945,6 @@ def get_history():
         dur = c[2]
         c_type = c[5] if len(c) > 5 and c[5] else "cooling"
         
-        total_work_sec += dur
-        
         rest_sec = 0
         rest_str = "—"
         rest_start = "—"
@@ -916,10 +983,15 @@ def get_history():
                     next_st = datetime.now()
                     next_label = "сейчас"
             rest_sec, rest_str, rest_start, rest_end, krv_val = fill_rest_after(
-                dt_end, next_st, next_label, raw_blackouts, dur
+                dt_end, next_st, next_label, raw_blackouts, dur if c_type == "cooling" else 0
             )
-            if rest_sec:
+            if rest_sec and c_type == "cooling":
                 total_rest_sec += rest_sec
+            if c_type != "cooling":
+                krv_val = "—"
+
+        if c_type == "cooling":
+            total_work_sec += dur
             
         enhanced_cycles.append({
             "full_end": c[1] or "",
