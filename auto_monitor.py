@@ -663,7 +663,7 @@ def get_history():
             cycle_type 
         FROM cycles 
         WHERE duration_sec >= 120
-        GROUP BY DATE(start_time), strftime('%H:%M', start_time)
+        GROUP BY DATE(end_time), strftime('%H:%M', end_time)
         ORDER BY MIN(start_time) ASC
     """)
     raw_cycles = cur.fetchall()
