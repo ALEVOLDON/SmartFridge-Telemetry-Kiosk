@@ -81,11 +81,12 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
             ORDER BY MIN(start_time) DESC LIMIT 50
         """)
         for r in cur.fetchall():
-            m = r[3] // 60
-            s = r[3] % 60
-            c_type = r[6] if r[6] else ("defrost" if r[4] > 160 else "cooling")
+            total_min = (r[3] + 30) // 60
+            hh, mm = divmod(total_min, 60)
+            dur_s = f"{hh} ч {mm} мин" if hh and mm else (f"{hh} ч" if hh else f"{mm} мин")
+            c_type = r[6] if r[6] else ("defrost" if (r[4] >= 158 and r[3] <= 1800) else "cooling")
             verdict = "🔥 No Frost Defrost" if c_type == "defrost" else "🟢 Cooling (Compressor)"
-            cycles.append((r[0], r[1], r[2], f"{m}m {s}s", f"{r[4]} W", f"{r[5]} V", verdict))
+            cycles.append((r[0], r[1], r[2], dur_s, f"{r[4]} W", f"{r[5]} V", verdict))
         conn.close()
 
     h1 = doc.add_heading('Recorded Operational Cycles', level=1)

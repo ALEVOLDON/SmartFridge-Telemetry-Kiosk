@@ -5,7 +5,8 @@ import json
 import sqlite3
 import argparse
 import threading
-from datetime import datetime
+import signal
+from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, send_from_directory
 import tinytuya
 
@@ -37,15 +38,18 @@ state = {
     "rest_duration_sec": 0,
     "last_update": None,
     "error_message": "",
-    "protection_active": True,
+    "protection_active": False,
     "protection_lockout_sec": 0,
-    "protection_status_text": "Защита активна (Память реле 'last' включена)",
+    "protection_status_text": "Пауза пуска снята",
     "notifications_enabled": True,
     "avg_duty_cycle": 0.38,
     "temp_freezer": -18.2,
     "temp_fridge": 4.1,
     "temp_sensor_connected": False,
     "temp_sensor_id": "",
+    "temp_is_estimated": True,
+    "temp_freezer_estimated": True,
+    "temp_fridge_estimated": True,
     "last_blackout": {
         "detected": False,
         "start": "—",
@@ -154,6 +158,59 @@ def save_config(cfg):
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=4, ensure_ascii=False)
 
+# No Frost heater ~160–175 W for ~10–25 min. Compressor SK170K is 125–185 W
+# and stays high for hours under load — so wattage alone is not enough.
+DEFROST_POWER_W = 158.0
+DEFROST_MIN_SEC = 90
+DEFROST_MAX_SEC = 1800
+COMPRESSOR_LOCKOUT_SEC = 180
+LONG_RUN_WARN_SEC = 25200  # 7 h — service guide fault threshold
+CLOUD_SYNC_EVERY_POLLS = 300  # ~20 min at 4 s interval
+PRUNE_EVERY_POLLS = 720
+MAX_REAL_REST_SEC = 5400  # > 90 min is missing telemetry, not compressor rest
+
+_cloud_client = None
+_cloud_client_cfg = None
+
+def get_cloud_client(cfg):
+    global _cloud_client, _cloud_client_cfg
+    key = (cfg.get("api_region"), cfg.get("api_key"), cfg.get("api_secret"), cfg.get("device_id"))
+    if _cloud_client is None or _cloud_client_cfg != key:
+        _cloud_client = tinytuya.Cloud(
+            apiRegion=cfg.get("api_region", "eu"),
+            apiKey=cfg.get("api_key", "").strip(),
+            apiSecret=cfg.get("api_secret", "").strip(),
+            apiDeviceID=cfg.get("device_id", "").strip()
+        )
+        _cloud_client_cfg = key
+    return _cloud_client
+
+def classify_cycle(avg_power, duration_sec):
+    if avg_power >= DEFROST_POWER_W and DEFROST_MIN_SEC <= duration_sec <= DEFROST_MAX_SEC:
+        return "defrost"
+    return "cooling"
+
+def food_safety_label(gap_sec):
+    if gap_sec <= 14400:
+        return "🟢 Оценка без датчика: за ≤4 ч камера обычно теряет около 1°C"
+    if gap_sec <= 28800:
+        return "🟡 Оценка без датчика: 4–8 ч, морозилка может подняться примерно до −10°C"
+    return "🔴 Длительное отключение: проверьте продукты (оценка без датчика)"
+
+def update_restart_lockout(is_active):
+    if is_active:
+        state["protection_active"] = False
+        state["protection_lockout_sec"] = 0
+        state["protection_status_text"] = "Компрессор в работе"
+        return
+    lockout = max(0, COMPRESSOR_LOCKOUT_SEC - int(state.get("rest_duration_sec") or 0))
+    state["protection_lockout_sec"] = lockout
+    state["protection_active"] = lockout > 0
+    if lockout > 0:
+        state["protection_status_text"] = f"Пауза пуска компрессора: {lockout} с"
+    else:
+        state["protection_status_text"] = "Пауза пуска снята"
+
 def get_latest_end_time():
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -167,22 +224,87 @@ def get_latest_end_time():
         pass
     return None
 
+def parse_iso(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except Exception:
+        return None
+
+def format_gap_str(sec):
+    """Journal durations as hours and minutes (no seconds)."""
+    if sec is None or sec < 0:
+        return None
+    total_min = (int(sec) + 30) // 60
+    if total_min < 1:
+        return "1 мин" if sec > 0 else "0 мин"
+    h = total_min // 60
+    m = total_min % 60
+    if h > 0 and m > 0:
+        return f"{h} ч {m} мин"
+    if h > 0:
+        return f"{h} ч"
+    return f"{m} мин"
+
+def fill_rest_after(dt_end, next_st, next_end_label, raw_blackouts, work_dur):
+    """Rest that follows a work cycle: stop -> next start (left-to-right in the journal)."""
+    empty = (0, "—", "—", "—", "—")
+    if not dt_end or not next_st or next_st <= dt_end:
+        return empty
+    diff_sec = int((next_st - dt_end).total_seconds())
+    if diff_sec < 120:
+        return empty
+    is_blackout_cross = False
+    for b_item in raw_blackouts:
+        b1dt = parse_iso(b_item[0])
+        b2dt = parse_iso(b_item[1])
+        if not b1dt or not b2dt:
+            continue
+        t_a = dt_end.timestamp()
+        t_b = next_st.timestamp()
+        b1 = b1dt.timestamp()
+        b2 = b2dt.timestamp()
+        if (t_a <= b1 and t_b >= b2) or (b1 <= t_b <= b2) or (b1 <= t_a <= b2):
+            is_blackout_cross = True
+            break
+    if is_blackout_cross:
+        return (0, "затем отключение", "—", "—", "—")
+    if diff_sec > MAX_REAL_REST_SEC:
+        return (0, "нет записи", "—", "—", "—")
+    rest_start = dt_end.strftime("%H:%M")
+    rest_end = next_end_label or next_st.strftime("%H:%M")
+    krv = "—"
+    if work_dur:
+        krv = f"{round(work_dur / (work_dur + diff_sec), 2):.2f}"
+    return (diff_sec, format_gap_str(diff_sec) or "—", rest_start, rest_end, krv)
+
+def apply_idle_rest_clock():
+    """Rest clock always follows the last saved cycle end, never a Tuya glitch."""
+    db_last_end = get_latest_end_time()
+    if db_last_end:
+        state["rest_start_time"] = db_last_end
+    if state.get("rest_start_time"):
+        r_start_dt = parse_iso(state["rest_start_time"])
+        if r_start_dt:
+            state["rest_duration_sec"] = max(0, int((datetime.now() - r_start_dt).total_seconds()))
+            return
+    state["rest_duration_sec"] = 0
+
 def update_last_blackout_state():
     global state
     try:
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
-        cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY id DESC LIMIT 1")
+        cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY start_time DESC LIMIT 1")
         row = cur.fetchone()
         conn.close()
         if row:
-            st_iso, end_iso, dur_sec, safety = row
+            st_iso, end_iso, dur_sec, _stored_safety = row
             try:
                 dt_st = datetime.fromisoformat(st_iso)
                 dt_end = datetime.fromisoformat(end_iso)
-                h = dur_sec // 3600
-                m = (dur_sec % 3600) // 60
-                dur_str = f"{h} ч {m} мин" if h > 0 else f"{m} мин"
+                dur_str = format_gap_str(dur_sec) or "—"
                 
                 state["last_blackout"] = {
                     "detected": True,
@@ -191,7 +313,7 @@ def update_last_blackout_state():
                     "date": dt_st.strftime("%d.%m.%Y"),
                     "duration_str": dur_str,
                     "duration_sec": dur_sec,
-                    "food_safety": safety
+                    "food_safety": food_safety_label(dur_sec)
                 }
             except Exception:
                 pass
@@ -202,27 +324,22 @@ def sync_cloud_history():
     """Fetches historical logs from Tuya Cloud to reconstruct cycles and blackout outages"""
     cfg = load_config()
     if not (cfg.get("api_key") and cfg.get("device_id") and cfg.get("api_secret")):
-        return
+        return False
     try:
-        c = tinytuya.Cloud(
-            apiRegion=cfg.get("api_region", "eu"),
-            apiKey=cfg["api_key"].strip(),
-            apiSecret=cfg["api_secret"].strip(),
-            apiDeviceID=cfg["device_id"].strip()
-        )
+        c = get_cloud_client(cfg)
         now_ts = int(time.time() * 1000)
-        start_ts = now_ts - (36 * 3600 * 1000)
-        
-        res = c.cloudrequest('/v1.0/devices/' + cfg["device_id"].strip() + '/logs', query={
-            'start_time': start_ts,
-            'end_time': now_ts,
-            'type': '7',
-            'size': 150
-        })
-        
-        logs = res.get('result', {}).get('logs', [])
+        start_ts = now_ts - (48 * 3600 * 1000)
+        res = c.getdevicelog(
+            deviceid=cfg["device_id"].strip(),
+            start=start_ts,
+            end=now_ts,
+            evtype=7,
+            size=0,
+            max_fetches=40
+        )
+        logs = (res.get("result") or {}).get("logs") or []
         if not logs:
-            return
+            return False
         
         events = []
         all_pings = []
@@ -255,12 +372,7 @@ def sync_cloud_history():
             if gap_sec >= 3600 or (gap_sec >= 1800 and is_hardware_reboot):
                 dt_prev = datetime.fromtimestamp(t_prev).isoformat()
                 dt_curr = datetime.fromtimestamp(t_curr).isoformat()
-                if gap_sec <= 14400: # < 4 hours
-                    safety = "🟢 Безопасно: Холод удержан на 100% (камера нагрелась всего на ~1.2°C)"
-                elif gap_sec <= 28800: # 4-8 hours
-                    safety = "🟡 Умеренно: Морозилка держала холод до -10°C"
-                else:
-                    safety = "🔴 Длительное отключение: Проверьте продукты"
+                safety = food_safety_label(gap_sec)
                 
                 cur.execute('''
                     INSERT OR IGNORE INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
@@ -282,6 +394,8 @@ def sync_cloud_history():
             for b1, b2 in blackout_ranges:
                 if (t_a <= b1 and t_b >= b2) or (b1 <= t_b <= b2) or (b1 <= t_a <= b2):
                     return True
+            return False
+
         in_cycle = False
         c_start_ts = None
         c_start_iso = None
@@ -297,7 +411,7 @@ def sync_cloud_history():
                     dur = int(t_prev - c_start_ts)
                     if dur >= 180:
                         avg_p = sum(powers) / len(powers) if powers else 130.0
-                        c_type = "defrost" if (avg_p > 160.0 and dur < 2400) else "cooling"
+                        c_type = classify_cycle(avg_p, dur)
                         cur.execute('''
                             INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
                             VALUES (?, ?, ?, ?, ?, ?)
@@ -321,7 +435,7 @@ def sync_cloud_history():
                     dur = int(t_sec - c_start_ts)
                     if dur >= 180:
                         avg_p = sum(powers) / len(powers) if powers else 130.0
-                        c_type = "defrost" if (avg_p > 160.0 and dur < 2400) else "cooling"
+                        c_type = classify_cycle(avg_p, dur)
                         cur.execute('''
                             INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
                             VALUES (?, ?, ?, ?, ?, ?)
@@ -334,61 +448,71 @@ def sync_cloud_history():
         conn.close()
         
         update_last_blackout_state()
+        return True
     except Exception as e:
         print("Cloud sync notice:", e)
+        return False
 
 sync_cloud_history()
 
-def find_actual_current_cycle_start():
+def find_open_cycle_start():
+    """First sustained compressor-on run after the last saved cycle end.
+
+    Ignores 1-sample Tuya glitches and idle rows written during a process restart.
+    """
+    last_end = get_latest_end_time() or "1970-01-01T00:00:00"
     try:
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
-        cur.execute("SELECT end_time FROM blackouts ORDER BY id DESC LIMIT 1")
-        b_row = cur.fetchone()
-        if b_row and b_row[0]:
-            b_end = b_row[0]
-            cur.execute("SELECT timestamp FROM measurements WHERE is_running = 0 AND timestamp > ? LIMIT 1", (b_end,))
-            stop_after = cur.fetchone()
-            if not stop_after:
-                conn.close()
-                return b_end
-        
-        cur.execute("SELECT timestamp FROM measurements WHERE is_running = 0 ORDER BY id DESC LIMIT 1")
-        row_stop = cur.fetchone()
-        if row_stop and row_stop[0]:
-            last_stop = row_stop[0]
-            cur.execute("SELECT timestamp FROM measurements WHERE is_running = 1 AND timestamp > ? ORDER BY id ASC LIMIT 1", (last_stop,))
-            row_start = cur.fetchone()
-            conn.close()
-            if row_start and row_start[0]:
-                return row_start[0]
+        cur.execute(
+            "SELECT timestamp, power FROM measurements WHERE timestamp > ? ORDER BY timestamp",
+            (last_end,),
+        )
+        rows = cur.fetchall()
         conn.close()
     except Exception:
+        return None
+    run_start = None
+    run_n = 0
+    last_closed_start = None
+    for ts, p in rows:
+        if (p or 0) > 35.0:
+            if run_start is None:
+                run_start = ts
+                run_n = 1
+            else:
+                run_n += 1
+        else:
+            if run_n >= 3:
+                last_closed_start = run_start
+            run_start = None
+            run_n = 0
+    if run_n >= 3:
+        return run_start
+    return last_closed_start
+
+def persist_open_cycle():
+    """Keep the in-progress start time across SIGTERM restarts."""
+    if not state.get("is_running") or not state.get("cycle_start_time"):
+        return
+    try:
+        cfg_save = load_config()
+        cfg_save["current_start_time"] = state["cycle_start_time"]
+        save_config(cfg_save)
+    except Exception:
         pass
-    return None
 
-_cloud_client = None
-_cloud_client_cfg = None
-
-def get_cloud_client(cfg):
-    global _cloud_client, _cloud_client_cfg
-    key = (cfg.get("api_region"), cfg.get("api_key"), cfg.get("api_secret"), cfg.get("device_id"))
-    if _cloud_client is None or _cloud_client_cfg != key:
-        _cloud_client = tinytuya.Cloud(
-            apiRegion=cfg.get("api_region", "eu"),
-            apiKey=cfg.get("api_key", "").strip(),
-            apiSecret=cfg.get("api_secret", "").strip(),
-            apiDeviceID=cfg.get("device_id", "").strip()
-        )
-        _cloud_client_cfg = key
-    return _cloud_client
+def _on_process_stop(signum, frame):
+    persist_open_cycle()
+    raise SystemExit(0)
 
 def prune_old_measurements():
     """Prunes raw 4-second telemetry older than 7 days to keep SQLite light on TV Box"""
     try:
+        cutoff = (datetime.now() - timedelta(days=7)).isoformat()
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
-        cur.execute("DELETE FROM measurements WHERE timestamp < datetime('now', '-7 days')")
+        cur.execute("DELETE FROM measurements WHERE timestamp < ?", (cutoff,))
         conn.commit()
         conn.close()
     except Exception:
@@ -400,6 +524,11 @@ def tuya_poller():
     cycle_voltages = []
     warning_long_sent = False
     poll_count = 0
+    active_streak = 0
+    idle_streak = 0
+    ON_STREAK = 3
+    OFF_STREAK = 3
+    cloud_ok = False
     
     cfg = load_config()
     db_last_end = get_latest_end_time()
@@ -407,15 +536,9 @@ def tuya_poller():
         state["rest_start_time"] = db_last_end
     elif cfg.get("last_stop_time"):
         state["rest_start_time"] = cfg["last_stop_time"]
-    if cfg.get("current_start_time"):
-        state["cycle_start_time"] = cfg["current_start_time"]
-        state["is_running"] = True
-    else:
-        actual_start = find_actual_current_cycle_start()
-        if actual_start:
-            state["cycle_start_time"] = actual_start
-            state["is_running"] = True
-        
+    state["is_running"] = False
+    state["cycle_start_time"] = None
+    apply_idle_rest_clock()
     update_last_blackout_state()
     
     while True:
@@ -427,9 +550,10 @@ def tuya_poller():
             continue
             
         poll_count += 1
-        if poll_count % 60 == 0:
-            sync_cloud_history()
-        if poll_count % 720 == 0:
+        if (not cloud_ok and poll_count % 5 == 0) or poll_count % CLOUD_SYNC_EVERY_POLLS == 0:
+            if sync_cloud_history():
+                cloud_ok = True
+        if poll_count % PRUNE_EVERY_POLLS == 0:
             prune_old_measurements()
             
         try:
@@ -456,11 +580,11 @@ def tuya_poller():
                 current = i_raw / 1000.0 if i_raw > 100 else i_raw
                 
                 state["power"] = round(power, 1)
-                state["voltage"] = round(voltage, 1) if voltage > 0 else 220.0
+                state["voltage"] = round(voltage, 1)
                 state["current"] = round(current, 2)
                 state["last_update"] = datetime.now().strftime("%H:%M:%S")
                 
-                # Check optional external Temperature Sensor
+                # Optional Tuya probe is treated as freezer-only; fridge stays a model.
                 temp_sensor_id = cfg.get("temp_sensor_id", "").strip()
                 state["temp_sensor_id"] = temp_sensor_id
                 if temp_sensor_id and poll_count % 5 == 0:
@@ -476,110 +600,114 @@ def tuya_poller():
                                     state["temp_sensor_connected"] = True
                     except Exception:
                         state["temp_sensor_connected"] = False
-                else:
-                    if not temp_sensor_id:
-                        state["temp_sensor_connected"] = False
+                elif not temp_sensor_id:
+                    state["temp_sensor_connected"] = False
 
-                state["temp_is_estimated"] = not state.get("temp_sensor_connected", False)
+                state["temp_freezer_estimated"] = not state.get("temp_sensor_connected", False)
+                state["temp_fridge_estimated"] = True
+                state["temp_is_estimated"] = state["temp_freezer_estimated"]
                 
                 now_iso = datetime.now().isoformat()
-                is_active = (power > 35.0)
+                is_hot = power > 35.0
+                if is_hot:
+                    active_streak += 1
+                    idle_streak = 0
+                else:
+                    idle_streak += 1
+                    active_streak = 0
+
+                last_end = get_latest_end_time() or ""
+                restored = None
+                open_start = find_open_cycle_start()
+                cfg_start = cfg.get("current_start_time")
+                cands = [x for x in (open_start, cfg_start) if x and x > last_end]
+                if cands:
+                    restored = min(cands)
                 
-                if is_active:
-                    state["rest_duration_sec"] = 0
-                    
-                    if not state["is_running"]:
-                        state["is_running"] = True
-                        actual_start = find_actual_current_cycle_start()
-                        state["cycle_start_time"] = actual_start if actual_start else now_iso
-                        state["cycle_duration_sec"] = 0
-                        cycle_powers = []
-                        cycle_voltages = []
-                        warning_long_sent = False
-                        
+                if not state["is_running"] and (active_streak >= ON_STREAK or (is_hot and restored)):
+                    state["is_running"] = True
+                    state["cycle_start_time"] = restored or now_iso
+                    state["cycle_duration_sec"] = 0
+                    cycle_powers = []
+                    cycle_voltages = []
+                    warning_long_sent = False
+                    cfg_save = load_config()
+                    cfg_save["current_start_time"] = state["cycle_start_time"]
+                    save_config(cfg_save)
+                elif state["is_running"] and restored:
+                    cur_start = state.get("cycle_start_time")
+                    if not cur_start or restored < cur_start:
+                        state["cycle_start_time"] = restored
                         cfg_save = load_config()
-                        cfg_save["current_start_time"] = state["cycle_start_time"]
+                        cfg_save["current_start_time"] = restored
                         save_config(cfg_save)
-                    
+                
+                if state["is_running"] and idle_streak >= OFF_STREAK:
+                    duration = state["cycle_duration_sec"]
+                    end_iso = now_iso
+                    cfg_save = load_config()
+                    cfg_save["last_stop_time"] = end_iso
+                    cfg_save["current_start_time"] = None
+                    save_config(cfg_save)
+                    if duration >= 120:
+                        avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else 131.0
+                        avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
+                        c_type = classify_cycle(avg_p, duration)
+                        conn = sqlite3.connect(DB_FILE)
+                        cur = conn.cursor()
+                        cur.execute('''
+                            INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (state["cycle_start_time"], end_iso, duration, round(avg_p, 1), round(avg_v, 1), c_type))
+                        conn.commit()
+                        conn.close()
+                    state["is_running"] = False
+                    state["cycle_start_time"] = None
+                    state["cycle_duration_sec"] = 0
+                    cycle_powers = []
+                    cycle_voltages = []
+                
+                if state["is_running"]:
+                    state["rest_duration_sec"] = 0
                     if not state["cycle_start_time"]:
-                        actual_start = find_actual_current_cycle_start()
+                        actual_start = find_open_cycle_start()
                         state["cycle_start_time"] = actual_start if actual_start else now_iso
-                        
-                    start_dt = datetime.fromisoformat(state["cycle_start_time"])
+                    start_dt = parse_iso(state["cycle_start_time"]) or datetime.now()
                     state["cycle_duration_sec"] = int((datetime.now() - start_dt).total_seconds())
                     cycle_powers.append(power)
                     cycle_voltages.append(voltage)
+                    update_restart_lockout(True)
                     
-                    # Realtime Defrost Heater vs Compressor classification
                     avg_recent_p = sum(cycle_powers[-8:]) / len(cycle_powers[-8:]) if cycle_powers else power
-                    if avg_recent_p >= 158.0 and state["cycle_duration_sec"] >= 90:
+                    if classify_cycle(avg_recent_p, state["cycle_duration_sec"]) == "defrost":
                         state["current_mode"] = "defrost"
                         state["mode_title"] = "🔥 АВТООТТАЙКА NO FROST (ТЭН 170W)"
                     else:
                         state["current_mode"] = "cooling"
                         state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
                     
-                    # Thermodynamic Temperature Curve (Cooling down)
-                    if state.get("temp_is_estimated", True):
-                        progress = min(1.0, state["cycle_duration_sec"] / 1800.0)
+                    progress = min(1.0, state["cycle_duration_sec"] / 1800.0)
+                    if state.get("temp_freezer_estimated", True):
                         state["temp_freezer"] = round(-16.0 - (3.5 * progress), 1)
+                    if state.get("temp_fridge_estimated", True):
                         state["temp_fridge"] = round(5.2 - (1.6 * progress), 1)
                     
-                    if state["cycle_duration_sec"] > 18000 and not warning_long_sent: # 5 hours threshold
+                    if state["cycle_duration_sec"] > LONG_RUN_WARN_SEC and not warning_long_sent:
                         warning_long_sent = True
                         send_pc_toast(
                             "⚠️ Длительная непрерывная работа",
-                            "Холодильник работает уже более 5 часов подряд без остановки! Проверьте закрытие двери и уплотнители.",
+                            "Холодильник работает уже более 7 часов подряд без остановки. Проверьте дверь, уплотнители и уровень фреона.",
                             is_warning=True
                         )
                 else:
                     state["current_mode"] = "idle"
                     state["mode_title"] = "⚪ ПОЛНЫЙ ПОКОЙ (ОТДЫХ)"
-                    
-                    if state["is_running"]:
-                        state["is_running"] = False
-                        end_iso = now_iso
-                        state["rest_start_time"] = end_iso
-                        duration = state["cycle_duration_sec"]
-                        
-                        cfg_save = load_config()
-                        cfg_save["last_stop_time"] = end_iso
-                        cfg_save["current_start_time"] = None
-                        save_config(cfg_save)
-                        
-                        if duration >= 120:
-                            avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else 131.0
-                            avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
-                            c_type = "defrost" if (avg_p >= 158.0 and duration <= 2700) else "cooling"
-                            
-                            conn = sqlite3.connect(DB_FILE)
-                            cur = conn.cursor()
-                            cur.execute('''
-                                INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
-                                VALUES (?, ?, ?, ?, ?, ?)
-                            ''', (state["cycle_start_time"], end_iso, duration, round(avg_p, 1), round(avg_v, 1), c_type))
-                            conn.commit()
-                            conn.close()
-                        
-                        state["cycle_start_time"] = None
-                        state["cycle_duration_sec"] = 0
-                    
-                    # Track rest duration intelligently
-                    db_last_end = get_latest_end_time()
-                    if db_last_end and (not state.get("rest_start_time") or db_last_end > state["rest_start_time"]):
-                        state["rest_start_time"] = db_last_end
-
-                    if state.get("rest_start_time"):
-                        try:
-                            r_start_dt = datetime.fromisoformat(state["rest_start_time"])
-                            state["rest_duration_sec"] = max(0, int((datetime.now() - r_start_dt).total_seconds()))
-                        except Exception:
-                            state["rest_duration_sec"] = 0
-                    
-                    # Thermodynamic Temperature Curve (Holding & warming up)
-                    if state.get("temp_is_estimated", True):
-                        r_prog = min(1.0, state["rest_duration_sec"] / 3000.0)
+                    apply_idle_rest_clock()
+                    update_restart_lockout(False)
+                    r_prog = min(1.0, state["rest_duration_sec"] / 3000.0)
+                    if state.get("temp_freezer_estimated", True):
                         state["temp_freezer"] = round(-19.5 + (3.0 * r_prog), 1)
+                    if state.get("temp_fridge_estimated", True):
                         state["temp_fridge"] = round(3.6 + (1.4 * r_prog), 1)
                 
                 try:
@@ -588,7 +716,7 @@ def tuya_poller():
                     cur.execute('''
                         INSERT INTO measurements (timestamp, power, voltage, current, is_running, mode, temp_freezer, temp_fridge)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (now_iso, state["power"], state["voltage"], state["current"], 1 if is_active else 0, state["current_mode"], state["temp_freezer"], state["temp_fridge"]))
+                    ''', (now_iso, state["power"], state["voltage"], state["current"], 1 if state["is_running"] else 0, state["current_mode"], state["temp_freezer"], state["temp_fridge"]))
                     conn.commit()
                     conn.close()
                 except Exception:
@@ -682,6 +810,35 @@ def config_api():
     }
     return jsonify(safe_cfg)
 
+def build_live_journal_row():
+    """Open rest/work so the journal is not stuck on the last finished cycle."""
+    now = datetime.now()
+    if state.get("is_running") and state.get("cycle_start_time"):
+        cs = parse_iso(state.get("cycle_start_time"))
+        if not cs:
+            return None
+        dur = int(state.get("cycle_duration_sec") or 0)
+        c_type = state.get("current_mode") if state.get("current_mode") in ("defrost", "cooling") else "cooling"
+        return {
+            "full_end": now.isoformat(),
+            "date": cs.strftime("%d.%m.%Y"),
+            "date_short": cs.strftime("%d.%m"),
+            "start": cs.strftime("%H:%M"),
+            "end": "сейчас",
+            "duration_sec": dur,
+            "duration_str": format_gap_str(max(dur, 1)) or "1 мин",
+            "rest_sec": 0,
+            "rest_str": "ещё работает",
+            "rest_start": "—",
+            "rest_end": "—",
+            "krv": "—",
+            "avg_power": state.get("power") or 0,
+            "avg_voltage": state.get("voltage") or 0,
+            "cycle_type": c_type,
+            "live": True
+        }
+    return None
+
 @app.route("/api/history")
 def get_history():
     conn = sqlite3.connect(DB_FILE)
@@ -706,7 +863,7 @@ def get_history():
     raw_cycles = cur.fetchall()
     
     # Blackouts
-    cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY id DESC LIMIT 20")
+    cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY start_time DESC LIMIT 20")
     raw_blackouts = cur.fetchall()
     conn.close()
     
@@ -723,55 +880,46 @@ def get_history():
         
         rest_sec = 0
         rest_str = "—"
+        rest_start = "—"
+        rest_end = "—"
         krv_val = "—"
         
-        try:
-            dt_st = datetime.fromisoformat(c[0])
-            dt_end = datetime.fromisoformat(c[1])
+        dt_st = parse_iso(c[0])
+        dt_end = parse_iso(c[1])
+        if dt_st:
             date_full = dt_st.strftime("%d.%m.%Y")
             date_short = dt_st.strftime("%d.%m")
             s_time = dt_st.strftime("%H:%M")
-            e_time = dt_end.strftime("%H:%M")
-        except Exception:
-            date_full = "29.08.2026"
-            date_short = "29.08"
+            e_time = dt_end.strftime("%H:%M") if dt_end else "--:--"
+        else:
+            date_full = datetime.now().strftime("%d.%m.%Y")
+            date_short = datetime.now().strftime("%d.%m")
             s_time = "--:--"
             e_time = "--:--"
         
-        if i > 0:
-            prev_end_str = raw_cycles[i-1][1]
-            curr_start_str = c[0]
-            try:
-                dt_prev = datetime.fromisoformat(prev_end_str)
-                dt_curr = datetime.fromisoformat(curr_start_str)
-                diff_sec = max(0, int((dt_curr - dt_prev).total_seconds()))
-                
-                is_blackout_cross = False
-                for b_item in raw_blackouts:
-                    try:
-                        b1 = datetime.fromisoformat(b_item[0]).timestamp()
-                        b2 = datetime.fromisoformat(b_item[1]).timestamp()
-                        t_a = dt_prev.timestamp()
-                        t_b = dt_curr.timestamp()
-                        if (t_a <= b1 and t_b >= b2) or (b1 <= t_b <= b2) or (b1 <= t_a <= b2):
-                            is_blackout_cross = True
-                            break
-                    except Exception:
-                        pass
-                
-                if 120 <= diff_sec <= 5400 and not is_blackout_cross:
-                    rest_sec = diff_sec
-                    total_rest_sec += rest_sec
-                    r_m = rest_sec // 60
-                    r_s = rest_sec % 60
-                    rest_str = f"{r_m} мин {r_s} сек" if r_s > 0 else f"{r_m} мин"
-                    calc_krv = round(dur / (dur + rest_sec), 2)
-                    krv_val = f"{calc_krv:.2f}"
-                else:
-                    rest_str = "—"
-                    krv_val = "—"
-            except Exception:
-                pass
+        if dt_end:
+            next_st = None
+            next_label = None
+            for j in range(i + 1, len(raw_cycles)):
+                cand = parse_iso(raw_cycles[j][0])
+                if cand and cand >= dt_end:
+                    next_st = cand
+                    next_label = cand.strftime("%H:%M")
+                    break
+            if next_st is None and i == len(raw_cycles) - 1:
+                if state.get("is_running") and state.get("cycle_start_time"):
+                    cs = parse_iso(state.get("cycle_start_time"))
+                    if cs and cs >= dt_end:
+                        next_st = cs
+                        next_label = cs.strftime("%H:%M")
+                elif not state.get("is_running"):
+                    next_st = datetime.now()
+                    next_label = "сейчас"
+            rest_sec, rest_str, rest_start, rest_end, krv_val = fill_rest_after(
+                dt_end, next_st, next_label, raw_blackouts, dur
+            )
+            if rest_sec:
+                total_rest_sec += rest_sec
             
         enhanced_cycles.append({
             "full_end": c[1] or "",
@@ -780,9 +928,11 @@ def get_history():
             "start": s_time,
             "end": e_time,
             "duration_sec": dur,
-            "duration_str": f"{dur // 60} мин {dur % 60} сек",
+            "duration_str": format_gap_str(dur) or "—",
             "rest_sec": rest_sec,
             "rest_str": rest_str,
+            "rest_start": rest_start,
+            "rest_end": rest_end,
             "krv": krv_val,
             "avg_power": c[3],
             "avg_voltage": c[4],
@@ -792,7 +942,7 @@ def get_history():
     formatted_blackouts = []
     seen_blackouts = set()
     for b in raw_blackouts:
-        st_iso, end_iso, dur_sec, safety = b
+        st_iso, end_iso, dur_sec, _stored_safety = b
         key = (st_iso[:16], end_iso[:16])
         if key in seen_blackouts:
             continue
@@ -800,9 +950,8 @@ def get_history():
         try:
             dt_st = datetime.fromisoformat(st_iso)
             dt_end = datetime.fromisoformat(end_iso)
-            h = dur_sec // 3600
-            m = (dur_sec % 3600) // 60
-            dur_str = f"{h} ч {m} мин" if h > 0 else f"{m} мин"
+            dur_str = format_gap_str(dur_sec) or "—"
+            safety = food_safety_label(dur_sec)
             b_item = {
                 "date": dt_st.strftime("%d.%m.%Y"),
                 "start": dt_st.strftime("%H:%M"),
@@ -824,6 +973,8 @@ def get_history():
                 "duration_str": dur_str,
                 "rest_sec": 0,
                 "rest_str": "Сеть 0V",
+                "rest_start": "—",
+                "rest_end": "—",
                 "krv": "—",
                 "avg_power": 0.0,
                 "avg_voltage": 0.0,
@@ -835,6 +986,10 @@ def get_history():
 
     # Sort all events chronologically (newest first)
     enhanced_cycles.sort(key=lambda x: str(x.get("full_end", "")), reverse=True)
+
+    live_row = build_live_journal_row()
+    if live_row:
+        enhanced_cycles.insert(0, live_row)
 
     overall_krv = round(total_work_sec / (total_work_sec + total_rest_sec), 2) if (total_work_sec + total_rest_sec) > 0 else 0.38
     
@@ -865,7 +1020,11 @@ if __name__ == "__main__":
     parser.add_argument("--host", default="0.0.0.0", help="Host address to bind (default: 0.0.0.0 for LAN)")
     parser.add_argument("--port", type=int, default=8088, help="Port to listen on (default: 8088)")
     args = parser.parse_args()
-    
+    try:
+        signal.signal(signal.SIGTERM, _on_process_stop)
+        signal.signal(signal.SIGINT, _on_process_stop)
+    except Exception:
+        pass
     os.makedirs(STATIC_DIR, exist_ok=True)
     print(f"SmartFridge Server running at http://{args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False)
