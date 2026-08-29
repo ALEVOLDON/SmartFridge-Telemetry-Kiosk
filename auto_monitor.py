@@ -225,29 +225,38 @@ def sync_cloud_history():
             return
         
         events = []
+        all_pings = []
+        reboot_timestamps = set()
         for row in reversed(logs):
-            if row.get('code') == 'cur_power':
+            t_sec = row['event_time'] / 1000.0
+            all_pings.append(t_sec)
+            code = row.get('code')
+            if code in ['relay_status', 'electricity_coe', 'power_coe', 'light_mode']:
+                reboot_timestamps.add(int(t_sec))
+            if code == 'cur_power':
                 raw_val = float(row.get('value', 0))
                 val = raw_val / 10.0 if raw_val > 500 else raw_val
-                t_sec = row['event_time'] / 1000.0
                 dt_iso = datetime.fromtimestamp(t_sec).isoformat()
                 events.append((t_sec, dt_iso, val))
+        
+        all_pings = sorted(list(set(all_pings)))
         
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
         
-        # 1. Detect and record Blackout gaps (> 900 sec / 15 min between logs)
-        for i in range(1, len(events)):
-            t_prev, dt_prev, val_prev = events[i-1]
-            t_curr, dt_curr, val_curr = events[i]
+        # 1. Detect True Blackouts (offline gap >= 1 hour OR >= 30 min with confirmed hardware reboot)
+        for i in range(1, len(all_pings)):
+            t_prev = all_pings[i-1]
+            t_curr = all_pings[i]
             gap_sec = int(t_curr - t_prev)
             
-            # If gap between cloud updates exceeds 45 minutes without any power reporting, check blackout
-            if gap_sec >= 2700:
-                h = gap_sec // 3600
-                m = (gap_sec % 3600) // 60
+            is_hardware_reboot = any(abs(int(t_curr) - r_ts) <= 15 for r_ts in reboot_timestamps)
+            
+            if gap_sec >= 3600 or (gap_sec >= 1800 and is_hardware_reboot):
+                dt_prev = datetime.fromtimestamp(t_prev).isoformat()
+                dt_curr = datetime.fromtimestamp(t_curr).isoformat()
                 if gap_sec <= 14400: # < 4 hours
-                    safety = "🟢 Безопасно: Холод удержан на 100% (камера нагрелась всего на ~1.5°C)"
+                    safety = "🟢 Безопасно: Холод удержан на 100% (камера нагрелась всего на ~1.2°C)"
                 elif gap_sec <= 28800: # 4-8 hours
                     safety = "🟡 Умеренно: Морозилка держала холод до -10°C"
                 else:
@@ -635,8 +644,13 @@ def get_history():
         })
     
     formatted_blackouts = []
+    seen_blackouts = set()
     for b in raw_blackouts:
         st_iso, end_iso, dur_sec, safety = b
+        key = (st_iso[:16], end_iso[:16])
+        if key in seen_blackouts:
+            continue
+        seen_blackouts.add(key)
         try:
             dt_st = datetime.fromisoformat(st_iso)
             dt_end = datetime.fromisoformat(end_iso)
