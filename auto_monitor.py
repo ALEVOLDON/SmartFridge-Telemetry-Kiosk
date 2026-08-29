@@ -267,13 +267,51 @@ def sync_cloud_history():
                     VALUES (?, ?, ?, ?)
                 ''', (dt_prev, dt_curr, gap_sec, safety))
         
-        # 2. Reconstruct Cycles
+        # 2. Reconstruct Cycles (Blackout-Aware)
+        cur.execute('SELECT start_time, end_time FROM blackouts')
+        blackout_ranges = []
+        for b_st, b_end in cur.fetchall():
+            try:
+                t1 = datetime.fromisoformat(b_st).timestamp()
+                t2 = datetime.fromisoformat(b_end).timestamp()
+                blackout_ranges.append((t1, t2))
+            except Exception:
+                pass
+
+        def in_blackout_span(t_a, t_b):
+            for b1, b2 in blackout_ranges:
+                if (t_a <= b1 and t_b >= b2) or (b1 <= t_b <= b2) or (b1 <= t_a <= b2):
+                    return True
+            return False
+
+        # Clean any erroneously merged cycles > 2.5 hours
+        cur.execute('DELETE FROM cycles WHERE duration_sec > 9000')
+
         in_cycle = False
         c_start_ts = None
         c_start_iso = None
         powers = []
         
-        for t_sec, dt_iso, val in events:
+        for i in range(len(events)):
+            t_sec, dt_iso, val = events[i]
+            
+            # If a blackout occurred between previous event and current event, terminate pre-blackout cycle!
+            if in_cycle and i > 0:
+                t_prev, dt_prev, val_prev = events[i-1]
+                if (t_sec - t_prev) >= 1800 or in_blackout_span(t_prev, t_sec):
+                    dur = int(t_prev - c_start_ts)
+                    if dur >= 180:
+                        avg_p = sum(powers) / len(powers) if powers else 130.0
+                        c_type = "defrost" if (avg_p > 160.0 and dur < 2400) else "cooling"
+                        cur.execute('''
+                            INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (c_start_iso, dt_prev, dur, round(avg_p, 1), 226.0, c_type))
+                    in_cycle = False
+                    powers = []
+                    c_start_ts = None
+                    c_start_iso = None
+            
             if val > 30.0:
                 if not in_cycle:
                     in_cycle = True
@@ -293,6 +331,9 @@ def sync_cloud_history():
                             INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
                             VALUES (?, ?, ?, ?, ?, ?)
                         ''', (c_start_iso, dt_iso, dur, round(avg_p, 1), 226.0, c_type))
+                    powers = []
+                    c_start_ts = None
+                    c_start_iso = None
         
         conn.commit()
         conn.close()
