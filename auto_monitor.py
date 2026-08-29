@@ -687,7 +687,8 @@ def get_history():
         total_work_sec += dur
         
         rest_sec = 0
-        rest_str = "— (первый замер)"
+        rest_str = "—"
+        krv_val = "—"
         
         if i > 0:
             prev_end_str = raw_cycles[i-1][1]
@@ -697,15 +698,20 @@ def get_history():
                 dt_curr = datetime.fromisoformat(curr_start_str)
                 rest_sec = max(0, int((dt_curr - dt_prev).total_seconds()))
                 total_rest_sec += rest_sec
-                r_m = rest_sec // 60
-                r_s = rest_sec % 60
-                rest_str = f"{r_m} мин {r_s} сек" if r_s > 0 else f"{r_m} мин"
+                
+                if rest_sec > 7200:  # > 2 hours (Overnight / inter-day gap)
+                    h = rest_sec // 3600
+                    m = (rest_sec % 3600) // 60
+                    rest_str = f"{h} ч {m} мин (Перерыв)"
+                    krv_val = "—"
+                else:
+                    r_m = rest_sec // 60
+                    r_s = rest_sec % 60
+                    rest_str = f"{r_m} мин {r_s} сек" if r_s > 0 else f"{r_m} мин"
+                    calc_krv = round(dur / (dur + rest_sec), 2) if (dur + rest_sec) > 0 else 0.38
+                    krv_val = f"{calc_krv:.2f}"
             except Exception:
                 pass
-        
-        krv_val = round(dur / (dur + rest_sec), 2) if (dur + rest_sec) > 0 else 0.40
-        if krv_val > 1.0 or krv_val < 0.1:
-            krv_val = 0.38
             
         enhanced_cycles.append({
             "full_end": c[1] or "",

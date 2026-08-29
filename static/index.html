@@ -693,7 +693,7 @@
         let color = '#10b981';
         let bgStyle = '';
         let restDisplay = c.rest_str || '—';
-        let krvDisplay = c.krv ? `${c.krv}` : '0.38';
+        let krvDisplay = (c.krv !== undefined && c.krv !== null && c.krv !== '') ? `${c.krv}` : '—';
         let pwrDisplay = `${c.avg_power} Вт`;
         
         if (c.cycle_type === 'blackout') {
