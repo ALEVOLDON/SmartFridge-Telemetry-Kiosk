@@ -22,7 +22,7 @@ STATIC_DIR = os.path.join(APP_DIR, "static")
 
 app = Flask(__name__, static_folder=STATIC_DIR)
 
-# Global Telemetry State with Temperature Support
+# Global Telemetry State with Temperature and Blackout Tracking
 state = {
     "connected": False,
     "power": 0.0,
@@ -45,7 +45,16 @@ state = {
     "temp_freezer": -18.2,
     "temp_fridge": 4.1,
     "temp_sensor_connected": False,
-    "temp_sensor_id": ""
+    "temp_sensor_id": "",
+    "last_blackout": {
+        "detected": False,
+        "start": "—",
+        "end": "—",
+        "duration_str": "Отключений не зафиксировано",
+        "duration_sec": 0,
+        "date": "—",
+        "food_safety": "🟢 Электросеть стабильна"
+    }
 }
 
 def is_localhost_request():
@@ -100,6 +109,16 @@ def init_db():
             UNIQUE(start_time, end_time)
         )
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS blackouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            start_time TEXT,
+            end_time TEXT,
+            duration_sec INTEGER,
+            food_safety_status TEXT,
+            UNIQUE(start_time, end_time)
+        )
+    ''')
     for col in ["mode TEXT", "temp_freezer REAL", "temp_fridge REAL"]:
         try:
             c.execute(f"ALTER TABLE measurements ADD COLUMN {col}")
@@ -148,8 +167,39 @@ def get_latest_end_time():
         pass
     return None
 
+def update_last_blackout_state():
+    global state
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            st_iso, end_iso, dur_sec, safety = row
+            try:
+                dt_st = datetime.fromisoformat(st_iso)
+                dt_end = datetime.fromisoformat(end_iso)
+                h = dur_sec // 3600
+                m = (dur_sec % 3600) // 60
+                dur_str = f"{h} ч {m} мин" if h > 0 else f"{m} мин"
+                
+                state["last_blackout"] = {
+                    "detected": True,
+                    "start": dt_st.strftime("%H:%M"),
+                    "end": dt_end.strftime("%H:%M"),
+                    "date": dt_st.strftime("%d.%m.%Y"),
+                    "duration_str": dur_str,
+                    "duration_sec": dur_sec,
+                    "food_safety": safety
+                }
+            except Exception:
+                pass
+    except Exception:
+        pass
+
 def sync_cloud_history():
-    """Fetches historical logs from Tuya Cloud to reconstruct cycles"""
+    """Fetches historical logs from Tuya Cloud to reconstruct cycles and blackout outages"""
     cfg = load_config()
     if not (cfg.get("api_key") and cfg.get("device_id") and cfg.get("api_secret")):
         return
@@ -161,13 +211,13 @@ def sync_cloud_history():
             apiDeviceID=cfg["device_id"].strip()
         )
         now_ts = int(time.time() * 1000)
-        start_ts = now_ts - (24 * 3600 * 1000)
+        start_ts = now_ts - (36 * 3600 * 1000)
         
         res = c.cloudrequest('/v1.0/devices/' + cfg["device_id"].strip() + '/logs', query={
             'start_time': start_ts,
             'end_time': now_ts,
             'type': '7',
-            'size': 100
+            'size': 150
         })
         
         logs = res.get('result', {}).get('logs', [])
@@ -186,6 +236,29 @@ def sync_cloud_history():
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
         
+        # 1. Detect and record Blackout gaps (> 900 sec / 15 min between logs)
+        for i in range(1, len(events)):
+            t_prev, dt_prev, val_prev = events[i-1]
+            t_curr, dt_curr, val_curr = events[i]
+            gap_sec = int(t_curr - t_prev)
+            
+            # If gap between cloud updates exceeds 45 minutes without any power reporting, check blackout
+            if gap_sec >= 2700:
+                h = gap_sec // 3600
+                m = (gap_sec % 3600) // 60
+                if gap_sec <= 14400: # < 4 hours
+                    safety = "🟢 Безопасно: Холод удержан на 100% (камера нагрелась всего на ~1.5°C)"
+                elif gap_sec <= 28800: # 4-8 hours
+                    safety = "🟡 Умеренно: Морозилка держала холод до -10°C"
+                else:
+                    safety = "🔴 Длительное отключение: Проверьте продукты"
+                
+                cur.execute('''
+                    INSERT OR IGNORE INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
+                    VALUES (?, ?, ?, ?)
+                ''', (dt_prev, dt_curr, gap_sec, safety))
+        
+        # 2. Reconstruct Cycles
         in_cycle = False
         c_start_ts = None
         c_start_iso = None
@@ -214,6 +287,8 @@ def sync_cloud_history():
         
         conn.commit()
         conn.close()
+        
+        update_last_blackout_state()
     except Exception as e:
         print("Cloud sync notice:", e)
 
@@ -235,6 +310,8 @@ def tuya_poller():
     if cfg.get("current_start_time"):
         state["cycle_start_time"] = cfg["current_start_time"]
         state["is_running"] = True
+        
+    update_last_blackout_state()
     
     while True:
         cfg = load_config()
@@ -481,6 +558,7 @@ def get_history():
     cur.execute("SELECT timestamp, power, voltage, current, is_running, temp_freezer, temp_fridge FROM measurements ORDER BY id DESC LIMIT 50")
     rows = cur.fetchall()
     
+    # Cycles
     cur.execute("""
         SELECT 
             MIN(start_time) as full_start,
@@ -497,6 +575,10 @@ def get_history():
         ORDER BY MAX(end_time) ASC
     """)
     raw_cycles = cur.fetchall()
+    
+    # Blackouts
+    cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY id DESC LIMIT 20")
+    raw_blackouts = cur.fetchall()
     conn.close()
     
     enhanced_cycles = []
@@ -543,6 +625,26 @@ def get_history():
             "cycle_type": c_type
         })
     
+    formatted_blackouts = []
+    for b in raw_blackouts:
+        st_iso, end_iso, dur_sec, safety = b
+        try:
+            dt_st = datetime.fromisoformat(st_iso)
+            dt_end = datetime.fromisoformat(end_iso)
+            h = dur_sec // 3600
+            m = (dur_sec % 3600) // 60
+            dur_str = f"{h} ч {m} мин" if h > 0 else f"{m} мин"
+            formatted_blackouts.append({
+                "date": dt_st.strftime("%d.%m.%Y"),
+                "start": dt_st.strftime("%H:%M"),
+                "end": dt_end.strftime("%H:%M"),
+                "duration_sec": dur_sec,
+                "duration_str": dur_str,
+                "safety": safety
+            })
+        except Exception:
+            pass
+
     overall_krv = round(total_work_sec / (total_work_sec + total_rest_sec), 2) if (total_work_sec + total_rest_sec) > 0 else 0.38
     
     return jsonify({
@@ -559,6 +661,7 @@ def get_history():
             for r in reversed(rows)
         ],
         "cycles": list(reversed(enhanced_cycles)),
+        "blackouts": formatted_blackouts,
         "summary": {
             "overall_krv": overall_krv,
             "total_cycles": len(enhanced_cycles),

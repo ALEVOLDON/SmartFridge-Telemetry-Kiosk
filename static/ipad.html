@@ -80,6 +80,17 @@
         </div>
     </div>
 
+    <!-- Blackout Monitoring Card for iPad -->
+    <div id="ipad-blackout-card" style="background: rgba(15, 23, 42, 0.82); border-radius: 12px; padding: 10px 14px; border: 1px solid rgba(245,158,11,0.3); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-weight:bold; font-size:12.5px; color:#f8fafc;" id="ipad-blackout-title">⚡ Сеть 220V: Питание активно</div>
+            <div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;" id="ipad-blackout-sub">Отключений света не зафиксировано</div>
+        </div>
+        <div id="ipad-blackout-badge" style="font-size:11px; font-weight:bold; color:#10b981; background:rgba(16,185,129,0.2); padding:3px 8px; border-radius:6px;">
+            220V
+        </div>
+    </div>
+
     <!-- 3 Big Dials (Table Layout for 100% Old Safari Support) -->
     <div class="dials-row">
         <div class="dial-cell">
@@ -234,6 +245,17 @@
                             var rEl = document.getElementById('ipad-temp-fridge');
                             var rSign = data.temp_fridge > 0 ? '+' : '';
                             if (rEl) rEl.innerHTML = rSign + data.temp_fridge.toFixed(1) + ' <span class="dial-unit">°C</span>';
+                        // Blackout Info
+                        if (data.last_blackout && data.last_blackout.detected) {
+                            var bTitle = document.getElementById('ipad-blackout-title');
+                            var bSub = document.getElementById('ipad-blackout-sub');
+                            var bBadge = document.getElementById('ipad-blackout-badge');
+                            if (bTitle) bTitle.innerHTML = '⚡ Отключение света: ' + escapeHTML(data.last_blackout.date) + ' (' + escapeHTML(data.last_blackout.start) + ' → ' + escapeHTML(data.last_blackout.end) + ')';
+                            if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(data.last_blackout.duration_str) + '</strong> (' + escapeHTML(data.last_blackout.food_safety) + ')';
+                            if (bBadge) {
+                                bBadge.innerText = data.last_blackout.duration_str;
+                                bBadge.style.color = '#f59e0b';
+                            }
                         }
 
                         var pStatus = document.getElementById('power-status');

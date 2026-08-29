@@ -166,6 +166,20 @@
         <div style="font-size: 13px; color: var(--text-muted);" id="last-sync">Обновление: --:--:--</div>
     </div>
 
+    <!-- Blackout Monitoring Banner -->
+    <div id="blackout-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #f59e0b; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(15, 23, 42, 0.75);">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <span style="font-size:24px;">⚡</span>
+            <div>
+                <div style="font-size:14.5px; font-weight:700; color:#f8fafc;" id="blackout-title">⚡ Монитор отключений электросети</div>
+                <div style="font-size:13px; color:#cbd5e1; margin-top:2px;" id="blackout-subtitle">Анализ стабильности питания 220V...</div>
+            </div>
+        </div>
+        <div id="blackout-badge" style="font-size:12px; font-weight:700; padding:6px 14px; border-radius:12px; background:rgba(245,158,11,0.15); color:#f59e0b; letter-spacing:0.3px;">
+            Сеть: 220V
+        </div>
+    </div>
+
     <!-- Live Cards: Row 1 (Power & Grid) -->
     <div class="grid-3">
         <div class="card">
@@ -278,13 +292,14 @@
                 <button onclick="filterArchive('all')" class="filter-btn active" id="filter-all">Все</button>
                 <button onclick="filterArchive('cooling')" class="filter-btn" id="filter-cooling">🟢 Заморозка</button>
                 <button onclick="filterArchive('defrost')" class="filter-btn" id="filter-defrost">🔥 Оттайка</button>
+                <button onclick="filterArchive('blackout')" class="filter-btn" id="filter-blackout" style="color:#f59e0b; border-color:rgba(245,158,11,0.4);">⚡ Отключения света</button>
                 <span onclick="closeArchiveModal()" style="cursor:pointer; font-size:24px; color:#94a3b8; margin-left:10px; line-height:1;">&times;</span>
             </div>
         </div>
         <!-- Scrollable Body Table -->
         <div style="padding:16px 24px; overflow-y:auto; flex:1;">
-            <table>
-                <thead>
+            <table id="archive-table">
+                <thead id="archive-thead">
                     <tr><th>Начало</th><th>Конец</th><th>Работа</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>
                 </thead>
                 <tbody id="archive-body"></tbody>
@@ -455,6 +470,17 @@
                 if (data.temp_fridge !== undefined) {
                     const rVal = document.getElementById('temp-fridge-val');
                     rVal.innerHTML = `${data.temp_fridge > 0 ? '+' : ''}${data.temp_fridge.toFixed(1)} <span class="unit">°C</span>`;
+                // Update Blackout Status Banner
+                if (data.last_blackout && data.last_blackout.detected) {
+                    const bCard = document.getElementById('blackout-card');
+                    const bTitle = document.getElementById('blackout-title');
+                    const bSub = document.getElementById('blackout-subtitle');
+                    const bBadge = document.getElementById('blackout-badge');
+                    
+                    bTitle.innerHTML = `⚡ Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
+                    bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${escapeHTML(data.last_blackout.food_safety)}`;
+                    bBadge.innerText = data.last_blackout.duration_str;
+                    bBadge.style.color = '#f59e0b';
                 }
 
                 const desc = document.getElementById('live-state-desc');
@@ -616,9 +642,35 @@
         renderArchiveTable(type);
     }
 
+    let allBlackoutsData = [];
+
     function renderArchiveTable(filterType) {
+        const thead = document.getElementById('archive-thead');
         const tbody = document.getElementById('archive-body');
         tbody.innerHTML = '';
+        
+        if (filterType === 'blackout') {
+            thead.innerHTML = '<tr><th>Дата</th><th>Отключение</th><th>Включение</th><th>Длительность</th><th>Сохранность продуктов</th></tr>';
+            if (allBlackoutsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">⚡ Отключений электроэнергии пока не зафиксировано (Сеть стабильна).</td></tr>';
+                return;
+            }
+            allBlackoutsData.forEach(b => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${escapeHTML(b.date)}</strong></td>
+                    <td><span style="color:#ef4444; font-weight:bold;">${escapeHTML(b.start)}</span></td>
+                    <td><span style="color:#10b981; font-weight:bold;">${escapeHTML(b.end)}</span></td>
+                    <td><span style="color:#f59e0b; font-weight:bold;">${escapeHTML(b.duration_str)}</span></td>
+                    <td><span style="color:#cbd5e1;">${escapeHTML(b.safety)}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+            return;
+        }
+
+        // Standard Cycles
+        thead.innerHTML = '<tr><th>Начало</th><th>Конец</th><th>Работа</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>';
         
         let filtered = allCyclesData;
         if (filterType === 'cooling') {
@@ -672,6 +724,7 @@
             .then(r => r.json())
             .then(data => {
                 allCyclesData = data.cycles || [];
+                allBlackoutsData = data.blackouts || [];
                 
                 if (data.summary && data.summary.overall_krv) {
                     const badge = document.getElementById('krv-badge');
