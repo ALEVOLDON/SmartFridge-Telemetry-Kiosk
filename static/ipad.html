@@ -245,6 +245,8 @@
                             var rEl = document.getElementById('ipad-temp-fridge');
                             var rSign = data.temp_fridge > 0 ? '+' : '';
                             if (rEl) rEl.innerHTML = rSign + data.temp_fridge.toFixed(1) + ' <span class="dial-unit">°C</span>';
+                        }
+
                         // Blackout Info
                         if (data.last_blackout && data.last_blackout.detected) {
                             var bTitle = document.getElementById('ipad-blackout-title');

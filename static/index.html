@@ -646,31 +646,6 @@
 
     let allBlackoutsData = [];
 
-    function renderArchiveTable(filterType) {
-        const thead = document.getElementById('archive-thead');
-        const tbody = document.getElementById('archive-body');
-        tbody.innerHTML = '';
-        
-        if (filterType === 'blackout') {
-            thead.innerHTML = '<tr><th>Дата</th><th>Отключение</th><th>Включение</th><th>Длительность</th><th>Сохранность продуктов</th></tr>';
-            if (allBlackoutsData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">⚡ Отключений электроэнергии пока не зафиксировано (Сеть стабильна).</td></tr>';
-                return;
-            }
-            allBlackoutsData.forEach(b => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><strong>${escapeHTML(b.date)}</strong></td>
-                    <td><span style="color:#ef4444; font-weight:bold;">${escapeHTML(b.start)}</span></td>
-                    <td><span style="color:#10b981; font-weight:bold;">${escapeHTML(b.end)}</span></td>
-                    <td><span style="color:#f59e0b; font-weight:bold;">${escapeHTML(b.duration_str)}</span></td>
-                    <td><span style="color:#cbd5e1;">${escapeHTML(b.safety)}</span></td>
-                `;
-                tbody.appendChild(row);
-            });
-            return;
-        }
-
     function createCycleRow(c) {
         const mins = Math.floor(c.duration_sec / 60);
         const secs = c.duration_sec % 60;

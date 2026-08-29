@@ -493,6 +493,13 @@ def tuya_poller():
 t = threading.Thread(target=tuya_poller, daemon=True)
 t.start()
 
+@app.after_request
+def add_cache_headers(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 @app.route("/")
 def index():
     return send_from_directory(STATIC_DIR, "index.html")
