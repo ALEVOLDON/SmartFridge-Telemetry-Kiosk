@@ -470,6 +470,8 @@
                 if (data.temp_fridge !== undefined) {
                     const rVal = document.getElementById('temp-fridge-val');
                     rVal.innerHTML = `${data.temp_fridge > 0 ? '+' : ''}${data.temp_fridge.toFixed(1)} <span class="unit">°C</span>`;
+                }
+
                 // Update Blackout Status Banner
                 if (data.last_blackout && data.last_blackout.detected) {
                     const bCard = document.getElementById('blackout-card');
