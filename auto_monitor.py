@@ -652,21 +652,19 @@ def get_history():
     cur.execute("SELECT timestamp, power, voltage, current, is_running, temp_freezer, temp_fridge FROM measurements ORDER BY id DESC LIMIT 50")
     rows = cur.fetchall()
     
-    # Cycles
+    # Cycles - group by exact date and start time to keep all history intact!
     cur.execute("""
         SELECT 
             MIN(start_time) as full_start,
             MAX(end_time) as full_end,
-            strftime('%H:%M', MIN(start_time)) as s_time, 
-            strftime('%H:%M', MAX(end_time)) as e_time, 
             MAX(duration_sec) as max_dur, 
             avg_power, 
             avg_voltage, 
             cycle_type 
         FROM cycles 
         WHERE duration_sec >= 120
-        GROUP BY strftime('%H:%M', end_time)
-        ORDER BY MAX(end_time) ASC
+        GROUP BY DATE(start_time), strftime('%H:%M', start_time)
+        ORDER BY MIN(start_time) ASC
     """)
     raw_cycles = cur.fetchall()
     
@@ -681,14 +679,27 @@ def get_history():
     
     for i in range(len(raw_cycles)):
         c = raw_cycles[i]
-        dur = c[4]
-        c_type = c[7] if len(c) > 7 and c[7] else "cooling"
+        dur = c[2]
+        c_type = c[5] if len(c) > 5 and c[5] else "cooling"
         
         total_work_sec += dur
         
         rest_sec = 0
         rest_str = "—"
         krv_val = "—"
+        
+        try:
+            dt_st = datetime.fromisoformat(c[0])
+            dt_end = datetime.fromisoformat(c[1])
+            date_full = dt_st.strftime("%d.%m.%Y")
+            date_short = dt_st.strftime("%d.%m")
+            s_time = dt_st.strftime("%H:%M")
+            e_time = dt_end.strftime("%H:%M")
+        except Exception:
+            date_full = "29.08.2026"
+            date_short = "29.08"
+            s_time = "--:--"
+            e_time = "--:--"
         
         if i > 0:
             prev_end_str = raw_cycles[i-1][1]
@@ -727,15 +738,17 @@ def get_history():
             
         enhanced_cycles.append({
             "full_end": c[1] or "",
-            "start": c[2],
-            "end": c[3],
+            "date": date_full,
+            "date_short": date_short,
+            "start": s_time,
+            "end": e_time,
             "duration_sec": dur,
             "duration_str": f"{dur // 60} мин {dur % 60} сек",
             "rest_sec": rest_sec,
             "rest_str": rest_str,
             "krv": krv_val,
-            "avg_power": c[5],
-            "avg_voltage": c[6],
+            "avg_power": c[3],
+            "avg_voltage": c[4],
             "cycle_type": c_type
         })
     
@@ -766,6 +779,8 @@ def get_history():
             # Also insert directly into main events stream for main table
             enhanced_cycles.append({
                 "full_end": end_iso,
+                "date": dt_st.strftime("%d.%m.%Y"),
+                "date_short": dt_st.strftime("%d.%m"),
                 "start": dt_st.strftime("%H:%M"),
                 "end": dt_end.strftime("%H:%M"),
                 "duration_sec": dur_sec,

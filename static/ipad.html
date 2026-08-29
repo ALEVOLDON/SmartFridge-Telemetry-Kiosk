@@ -147,6 +147,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Дата</th>
                     <th>Старт</th>
                     <th>Стоп</th>
                     <th>Работа / Оттайка</th>
@@ -156,7 +157,7 @@
                 </tr>
             </thead>
             <tbody id="history-body">
-                <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:15px;">Загрузка циклов...</td></tr>
+                <tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:15px;">Загрузка циклов...</td></tr>
             </tbody>
         </table>
         <div style="margin-top: 14px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
@@ -179,6 +180,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Дата</th>
                             <th>Старт</th>
                             <th>Стоп</th>
                             <th>Работа</th>
@@ -393,6 +395,7 @@
             var badgeClass = 'badge badge-green';
             var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
             var pwrStr = (c.avg_power || 0) + ' Вт';
+            var dateStr = c.date_short || c.date || '';
             
             if (c.cycle_type === 'blackout') {
                 badgeClass = 'badge badge-orange';
@@ -406,6 +409,7 @@
             }
             
             return '<tr>' +
+                '<td><span style="color:#94a3b8; font-weight:bold;">' + escapeHTML(dateStr) + '</span></td>' +
                 '<td><strong>' + escapeHTML(c.start) + '</strong></td>' +
                 '<td><strong>' + escapeHTML(c.end) + '</strong></td>' +
                 '<td><span class="' + badgeClass + '">' + escapeHTML(durStr) + '</span></td>' +
