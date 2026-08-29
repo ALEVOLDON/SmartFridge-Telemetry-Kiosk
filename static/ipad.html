@@ -145,20 +145,18 @@
     <div class="history-card">
         <h3>История последних циклов (Заморозка и оттайка)</h3>
         <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
-            <table style="min-width: 580px; width: 100%;">
+            <table style="width: 100%;">
                 <thead>
                     <tr>
                         <th>Дата</th>
-                        <th>Старт</th>
-                        <th>Стоп</th>
-                        <th>Работа / Оттайка</th>
+                        <th>Работа</th>
                         <th>Отдых</th>
-                        <th>Мощность</th>
+                        <th>Вт</th>
                         <th>Режим</th>
                     </tr>
                 </thead>
                 <tbody id="history-body">
-                    <tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:15px;">Загрузка циклов...</td></tr>
+                    <tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:15px;">Загрузка циклов...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -182,15 +180,13 @@
                 </div>
             </div>
             <div style="padding:10px; overflow-y:auto; overflow-x:auto; -webkit-overflow-scrolling:touch; flex:1;">
-                <table style="min-width:580px; width:100%;">
+                <table style="width:100%;">
                     <thead>
                         <tr style="position:sticky; top:0; background:#1e293b; z-index:10;">
                             <th>Дата</th>
-                            <th>Старт</th>
-                            <th>Стоп</th>
                             <th>Работа</th>
                             <th>Отдых</th>
-                            <th>Мощность</th>
+                            <th>Вт</th>
                             <th>Режим</th>
                         </tr>
                     </thead>
@@ -216,6 +212,18 @@
             }
         }
 
+        function formatHm(sec) {
+            sec = parseInt(sec, 10) || 0;
+            if (sec < 0) sec = 0;
+            var totalMin = Math.round(sec / 60);
+            if (totalMin < 1 && sec > 0) totalMin = 1;
+            var h = Math.floor(totalMin / 60);
+            var m = totalMin % 60;
+            if (h > 0 && m > 0) return h + ' ч ' + m + ' мин';
+            if (h > 0) return h + ' ч';
+            return m + ' мин';
+        }
+
         function formatSeconds(sec) {
             sec = parseInt(sec, 10) || 0;
             var h = Math.floor(sec / 3600);
@@ -230,6 +238,8 @@
 
         var failedPolls = 0;
         var isAutoScanning = false;
+        var lastStatus = null;
+        var lastStatusAt = 0;
 
         function autoDiscoverNewIP() {
             if (isAutoScanning) return;
@@ -241,19 +251,43 @@
             var found = false;
             var currentHost = window.location.hostname;
             var subnetPrefix = '192.168.0.';
-            var match = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+$/);
+            var currentLast = 1;
+            var match = currentHost.match(/^(\d+\.\d+\.\d+)\.(\d+)$/);
             if (match) {
                 subnetPrefix = match[1] + '.';
+                currentLast = parseInt(match[2], 10) || 1;
             }
             
-            for (var i = 2; i <= 254; i++) {
-                (function(ipNum) {
-                    var probeXhr = new XMLHttpRequest();
-                    var targetIp = subnetPrefix + ipNum;
-                    probeXhr.open('GET', 'http://' + targetIp + ':8088/api/status', true);
-                    probeXhr.timeout = 2500;
-                    probeXhr.onreadystatechange = function() {
-                        if (probeXhr.readyState === 4 && probeXhr.status === 200 && !found) {
+            var ordered = [];
+            var seen = {};
+            function addOctet(n) {
+                if (n < 2 || n > 254 || seen[n] || n === currentLast) return;
+                seen[n] = true;
+                ordered.push(n);
+            }
+            var d;
+            for (d = 1; d <= 253; d++) {
+                addOctet(currentLast + d);
+                addOctet(currentLast - d);
+            }
+            
+            var BATCH = 20;
+            var idx = 0;
+            
+            function probeOne(ipNum, done) {
+                var targetIp = subnetPrefix + ipNum;
+                var probeXhr = new XMLHttpRequest();
+                var finished = false;
+                function finish() {
+                    if (finished) return;
+                    finished = true;
+                    if (done) done();
+                }
+                probeXhr.open('GET', 'http://' + targetIp + ':8088/api/status', true);
+                probeXhr.timeout = 2000;
+                probeXhr.onreadystatechange = function() {
+                    if (probeXhr.readyState === 4) {
+                        if (probeXhr.status === 200 && !found) {
                             try {
                                 var res = JSON.parse(probeXhr.responseText);
                                 if (res && (res.connected !== undefined || res.power !== undefined)) {
@@ -266,14 +300,37 @@
                                 }
                             } catch(e) {}
                         }
-                    };
-                    probeXhr.send();
-                })(i);
+                        finish();
+                    }
+                };
+                probeXhr.onerror = finish;
+                probeXhr.ontimeout = finish;
+                probeXhr.send();
             }
+            
+            function runBatch() {
+                if (found || idx >= ordered.length) {
+                    isAutoScanning = false;
+                    return;
+                }
+                var end = Math.min(idx + BATCH, ordered.length);
+                var pending = end - idx;
+                var i;
+                for (i = idx; i < end; i++) {
+                    (function(n) {
+                        probeOne(n, function() {
+                            pending--;
+                            if (pending <= 0 && !found) runBatch();
+                        });
+                    })(ordered[i]);
+                }
+                idx = end;
+            }
+            runBatch();
             
             setTimeout(function() {
                 isAutoScanning = false;
-            }, 8000);
+            }, 45000);
         }
 
         function loadStatus() {
@@ -295,15 +352,17 @@
                             document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
                             document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | Сеть: ' + vVal.toFixed(0) + ' В';
                             
-                            // Temperatures
-                            var isEst = (data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected);
+                            var freezerEst = (data.temp_freezer_estimated !== undefined)
+                                ? data.temp_freezer_estimated
+                                : ((data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected));
+                            var fridgeEst = (data.temp_fridge_estimated !== undefined) ? data.temp_fridge_estimated : true;
                             var fStatus = document.getElementById('ipad-freezer-status');
                             var rStatus = document.getElementById('ipad-fridge-status');
                             if (fStatus) {
-                                fStatus.innerHTML = isEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
+                                fStatus.innerHTML = freezerEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
                             }
                             if (rStatus) {
-                                rStatus.innerHTML = isEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
+                                rStatus.innerHTML = fridgeEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
                             }
 
                             if (data.temp_freezer !== undefined) {
@@ -336,6 +395,8 @@
                             var timerVal = document.getElementById('timer-val');
                             var timerHint = document.getElementById('timer-hint');
                             
+                            lastStatus = data;
+                            lastStatusAt = Date.now();
                             if (data.current_mode === 'defrost') {
                                 pStatus.innerHTML = '🔥 Оттайка (ТЭН)';
                                 pStatus.className = 'dial-status color-orange';
@@ -343,7 +404,6 @@
                                 timerBox.style.borderColor = '#f97316';
                                 timerMode.innerHTML = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST';
                                 timerMode.className = 'timer-mode color-orange';
-                                timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
                                 timerVal.className = 'timer-num color-orange';
                                 timerHint.innerHTML = '🔥 Компрессор отключен. ТЭН (~165 Вт) растапливает иней на испарителе.';
                             } else if (data.is_running) {
@@ -353,24 +413,28 @@
                                 timerBox.style.borderColor = '#10b981';
                                 timerMode.innerHTML = '🟢 АКТИВНЫЙ ЦИКЛ: ОХЛАЖДЕНИЕ (РАБОТА)';
                                 timerMode.className = 'timer-mode color-green';
-                                timerVal.innerHTML = formatSeconds(data.cycle_duration_sec);
                                 timerVal.className = 'timer-num color-green';
-                                timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатная норма: 15–45 минут (до 4 ч при загрузке).';
+                                timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатно 15–45 мин; при загрузке норма до 3.5–5 ч, тревога после 7 ч.';
                             } else {
                                 pStatus.innerHTML = '⚪ Отдых';
                                 pStatus.className = 'dial-status color-gray';
                                 
-                                var rSec = data.rest_duration_sec || 0;
+                                var rSec = Number(data.rest_duration_sec) || 0;
                                 var rMin = Math.floor(rSec / 60);
                                 var est = Math.max(0, 45 - rMin);
+                                var lockout = data.protection_lockout_sec || 0;
                                 
                                 timerBox.style.borderColor = '#06b6d4';
                                 timerMode.innerHTML = '⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА';
                                 timerMode.className = 'timer-mode color-cyan';
-                                timerVal.innerHTML = formatSeconds(rSec);
                                 timerVal.className = 'timer-num color-cyan';
-                                timerHint.innerHTML = '🧊 Холодильник держит мороз. Отдых: <strong>' + rMin + ' мин</strong> (норма 35–55 мин). Запуск через ~<strong>' + est + ' мин</strong>.';
+                                var restHint = '🧊 Холодильник держит мороз. Отдых: <strong>' + rMin + ' мин</strong> (норма 35–55 мин). Запуск через ~<strong>' + est + ' мин</strong>.';
+                                if (data.protection_active && lockout > 0) {
+                                    restHint += ' Пауза пуска: <strong>' + lockout + ' с</strong>.';
+                                }
+                                timerHint.innerHTML = restHint;
                             }
+                            tickLiveTimer();
                         } catch(e) {}
                     } else {
                         failedPolls++;
@@ -409,33 +473,51 @@
             modal.style.display = 'none';
         }
 
+        function ipadTwoLine(top, bot, topColor) {
+            return '<div style="line-height:1.3;"><strong style="color:' + topColor + ';">' + escapeHTML(top) + '</strong><br><span style="font-size:11px;color:#94a3b8;">' + escapeHTML(bot) + '</span></div>';
+        }
+
         function getIpadRowHtml(c) {
-            var durMin = Math.floor((c.duration_sec || 0) / 60);
-            var durSec = (c.duration_sec || 0) % 60;
-            var durStr = durMin + 'м ' + durSec + 'с';
+            var durStr = c.duration_str || formatHm(c.duration_sec);
             var restStr = c.rest_str || '—';
-            var badgeClass = 'badge badge-green';
+            var restFrom = c.rest_start || '—';
+            var restTo = c.rest_end || '—';
+            var workColor = '#10b981';
+            var restColor = '#06b6d4';
             var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
             var pwrStr = (c.avg_power || 0) + ' Вт';
             var dateStr = c.date_short || c.date || '';
             
-            if (c.cycle_type === 'blackout') {
-                badgeClass = 'badge badge-orange';
-                modeBadge = '<span style="color:#f59e0b; font-weight:bold;">⚡ Отключение света</span>';
-                durStr = '⚡ ' + (c.duration_str || durStr);
-                restStr = '⚡ Сбой 220V';
-                pwrStr = '0 Вт (Сеть)';
+            if (c.live) {
+                if (c.cycle_type === 'idle') {
+                    modeBadge = '<span style="color:#06b6d4; font-weight:bold;">⚪ Отдых (сейчас)</span>';
+                    workColor = '#94a3b8';
+                } else if (c.cycle_type === 'defrost') {
+                    modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка (сейчас)</span>';
+                    workColor = '#f97316';
+                } else {
+                    modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка (сейчас)</span>';
+                }
+            } else if (c.cycle_type === 'blackout') {
+                modeBadge = '<span style="color:#f59e0b; font-weight:bold;">⚡ Свет</span>';
+                durStr = c.duration_str || durStr;
+                restStr = 'сеть 0V';
+                restFrom = '—';
+                restTo = '—';
+                pwrStr = '0 Вт';
+                workColor = '#f59e0b';
             } else if (c.cycle_type === 'defrost') {
-                badgeClass = 'badge badge-orange';
                 modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка</span>';
+                workColor = '#f97316';
             }
+
+            var workTop = (c.start || '—') + ' → ' + (c.end || '—');
+            var restTop = restFrom + ' → ' + restTo;
             
             return '<tr>' +
                 '<td><span style="color:#94a3b8; font-weight:bold;">' + escapeHTML(dateStr) + '</span></td>' +
-                '<td><strong>' + escapeHTML(c.start) + '</strong></td>' +
-                '<td><strong>' + escapeHTML(c.end) + '</strong></td>' +
-                '<td><span class="' + badgeClass + '">' + escapeHTML(durStr) + '</span></td>' +
-                '<td><span class="badge badge-blue">' + escapeHTML(restStr) + '</span></td>' +
+                '<td>' + ipadTwoLine(workTop, durStr, workColor) + '</td>' +
+                '<td>' + ipadTwoLine(restTop, restStr, restColor) + '</td>' +
                 '<td>' + escapeHTML(pwrStr) + '</td>' +
                 '<td>' + modeBadge + '</td>' +
             '</tr>';
@@ -445,7 +527,7 @@
             var tbody = document.getElementById('ipad-archive-body');
             tbody.innerHTML = '';
             if (ipadAllCycles.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">Архив пуст.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">Архив пуст.</td></tr>';
                 return;
             }
             var html = '';
@@ -482,11 +564,23 @@
             xhr.send();
         }
 
-        // Auto Refresh Loop every 3 seconds
+        function tickLiveTimer() {
+            if (!lastStatus) return;
+            var timerVal = document.getElementById('timer-val');
+            if (!timerVal) return;
+            var elapsed = Math.floor((Date.now() - lastStatusAt) / 1000);
+            if (lastStatus.current_mode === 'defrost' || lastStatus.is_running) {
+                timerVal.innerHTML = formatSeconds((lastStatus.cycle_duration_sec || 0) + elapsed);
+            } else {
+                timerVal.innerHTML = formatSeconds((Number(lastStatus.rest_duration_sec) || 0) + elapsed);
+            }
+        }
+
         loadStatus();
         loadHistory();
         setInterval(loadStatus, 3000);
-        setInterval(loadHistory, 10000);
+        setInterval(tickLiveTimer, 1000);
+        setInterval(loadHistory, 30000);
     </script>
 </body>
 </html>

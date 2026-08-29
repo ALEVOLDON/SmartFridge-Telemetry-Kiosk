@@ -264,10 +264,10 @@
         <div style="overflow-x:auto;">
             <table>
                 <thead>
-                    <tr><th>Дата</th><th>Начало</th><th>Конец</th><th>Работа (Заморозка)</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Вердикт</th></tr>
+                    <tr><th>Дата</th><th>Начало работы</th><th>Конец работы</th><th>Работа</th><th>Начало отдыха</th><th>Конец отдыха</th><th>Отдых</th><th>КРВ</th><th>Ср. мощность</th><th>Вердикт</th></tr>
                 </thead>
                 <tbody id="cycles-body">
-                    <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">Автоматические циклы будут появляться здесь по мере работы холодильника.</td></tr>
+                    <tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">Автоматические циклы будут появляться здесь по мере работы холодильника.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -300,7 +300,7 @@
         <div style="padding:16px 24px; overflow-y:auto; flex:1;">
             <table id="archive-table">
                 <thead id="archive-thead">
-                    <tr><th>Начало</th><th>Конец</th><th>Работа</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>
+                    <tr><th>Дата</th><th>Начало работы</th><th>Конец работы</th><th>Работа</th><th>Начало отдыха</th><th>Конец отдыха</th><th>Отдых</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>
                 </thead>
                 <tbody id="archive-body"></tbody>
             </table>
@@ -427,6 +427,17 @@
             .then(() => alert('🔔 Тестовое оповещение отправлено в Windows! Посмотрите в правый нижний угол экрана.'));
     }
 
+    function formatHm(sec) {
+        sec = Math.max(0, parseInt(sec, 10) || 0);
+        let totalMin = Math.round(sec / 60);
+        if (totalMin < 1 && sec > 0) totalMin = 1;
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        if (h > 0 && m > 0) return h + ' ч ' + m + ' мин';
+        if (h > 0) return h + ' ч';
+        return m + ' мин';
+    }
+
     function formatSec(sec) {
         const h = String(Math.floor(sec / 3600)).padStart(2, '0');
         const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
@@ -436,6 +447,9 @@
 
     let failedPolls = 0;
     let isAutoScanning = false;
+    let historyTick = 0;
+    let lastStatus = null;
+    let lastStatusAt = 0;
 
     function autoDiscoverNewIP() {
         if (isAutoScanning) return;
@@ -445,20 +459,37 @@
         if (cloudText) cloudText.innerText = '⚡ Потеря связи. Автопоиск нового IP сервера в сети...';
         
         let found = false;
-        let currentHost = window.location.hostname;
+        const currentHost = window.location.hostname;
         let subnetPrefix = '192.168.0.';
-        const match = currentHost.match(/^(\d+\.\d+\.\d+)\.\d+$/);
+        let currentLast = 1;
+        const match = currentHost.match(/^(\d+\.\d+\.\d+)\.(\d+)$/);
         if (match) {
             subnetPrefix = match[1] + '.';
+            currentLast = parseInt(match[2], 10) || 1;
         }
         
-        const scanIps = [];
-        for (let i = 2; i <= 254; i++) {
-            scanIps.push(`${subnetPrefix}${i}`);
+        const ordered = [];
+        const seen = {};
+        function addOctet(n) {
+            if (n < 2 || n > 254 || seen[n] || n === currentLast) return;
+            seen[n] = true;
+            ordered.push(n);
+        }
+        for (let d = 1; d <= 253; d++) {
+            addOctet(currentLast + d);
+            addOctet(currentLast - d);
         }
         
-        scanIps.forEach(targetIp => {
-            fetch(`http://${targetIp}:8088/api/status`, { mode: 'cors' })
+        const BATCH = 24;
+        let idx = 0;
+        
+        function probe(ipNum, done) {
+            const targetIp = subnetPrefix + ipNum;
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timer = setTimeout(() => { if (controller) controller.abort(); }, 2000);
+            const opts = { mode: 'cors' };
+            if (controller) opts.signal = controller.signal;
+            fetch(`http://${targetIp}:8088/api/status`, opts)
                 .then(r => r.json())
                 .then(res => {
                     if (res && (res.connected !== undefined || res.power !== undefined) && !found) {
@@ -466,16 +497,35 @@
                         isAutoScanning = false;
                         failedPolls = 0;
                         if (currentHost !== targetIp && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-                            window.location.replace(`http://${targetIp}:8088/`);
+                            window.location.replace(`http://${targetIp}:8088${window.location.pathname}`);
                         }
                     }
                 })
-                .catch(() => {});
-        });
+                .catch(() => {})
+                .then(() => {
+                    clearTimeout(timer);
+                    if (done) done();
+                });
+        }
         
-        setTimeout(() => {
-            isAutoScanning = false;
-        }, 8000);
+        function runBatch() {
+            if (found || idx >= ordered.length) {
+                isAutoScanning = false;
+                return;
+            }
+            const slice = ordered.slice(idx, idx + BATCH);
+            idx += BATCH;
+            let pending = slice.length;
+            slice.forEach(n => {
+                probe(n, () => {
+                    pending--;
+                    if (pending <= 0 && !found) runBatch();
+                });
+            });
+        }
+        runBatch();
+        
+        setTimeout(() => { isAutoScanning = false; }, 45000);
     }
 
     function pollStatus() {
@@ -500,30 +550,35 @@
                 document.getElementById('live-voltage').innerHTML = `${data.voltage.toFixed(1)} <span class="unit">В</span>`;
                 document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
                 
-                // Update Temperature displays
-                const isEstimated = (data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected);
+                const freezerEst = (data.temp_freezer_estimated !== undefined)
+                    ? data.temp_freezer_estimated
+                    : ((data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected));
+                const fridgeEst = (data.temp_fridge_estimated !== undefined) ? data.temp_fridge_estimated : true;
                 const fTag = document.getElementById('freezer-tag');
                 const rTag = document.getElementById('fridge-tag');
                 const fDesc = document.getElementById('freezer-desc');
                 const rDesc = document.getElementById('fridge-desc');
                 
-                if (fTag && rTag) {
-                    if (isEstimated) {
+                if (fTag) {
+                    if (freezerEst) {
                         fTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
                         fTag.style.color = '#38bdf8';
                         fTag.style.background = 'rgba(56,189,248,0.15)';
                         if (fDesc) fDesc.innerText = 'Теплофизическая модель (физический датчик не подключен)';
-                        
-                        rTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
-                        rTag.style.color = '#10b981';
-                        rTag.style.background = 'rgba(16,185,129,0.15)';
-                        if (rDesc) rDesc.innerText = 'Теплофизическая модель (физический датчик не подключен)';
                     } else {
                         fTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
                         fTag.style.color = '#10b981';
                         fTag.style.background = 'rgba(16,185,129,0.15)';
                         if (fDesc) fDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
-                        
+                    }
+                }
+                if (rTag) {
+                    if (fridgeEst) {
+                        rTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
+                        rTag.style.color = '#10b981';
+                        rTag.style.background = 'rgba(16,185,129,0.15)';
+                        if (rDesc) rDesc.innerText = 'Теплофизическая модель (отдельный датчик камеры не подключен)';
+                    } else {
                         rTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
                         rTag.style.color = '#10b981';
                         rTag.style.background = 'rgba(16,185,129,0.15)';
@@ -558,13 +613,14 @@
                 const timerVal = document.getElementById('auto-timer');
                 const verdictEl = document.getElementById('cycle-verdict');
                 
+                lastStatus = data;
+                lastStatusAt = Date.now();
                 if (data.current_mode === 'defrost') {
                     desc.innerText = '🔥 Автооттайка No Frost (ТЭН)';
                     desc.style.color = '#f97316';
                     
                     timerTitle.innerText = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST (ТЭН)';
                     timerTitle.style.color = '#f97316';
-                    timerVal.innerText = formatSec(data.cycle_duration_sec);
                     timerVal.style.color = '#f97316';
                     verdictEl.innerHTML = '🔥 Компрессор отключен. Электронагреватель (ТЭН ~165 Вт) растапливает иней на испарителе. Норма: <strong>10–25 минут</strong>.';
                 } else if (data.is_running) {
@@ -573,23 +629,27 @@
                     
                     timerTitle.innerText = '🟢 АКТИВНЫЙ РЕЖИМ: ОХЛАЖДЕНИЕ (КОМПРЕССОР)';
                     timerTitle.style.color = '#10b981';
-                    timerVal.innerText = formatSec(data.cycle_duration_sec);
                     timerVal.style.color = '#10b981';
-                    verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты в камере. Норма цикла: <strong>15–45 минут</strong>.';
+                    verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты. Штатный цикл <strong>15–45 мин</strong>; при загрузке норма до <strong>3.5–5 ч</strong>.';
                 } else {
                     desc.innerText = '⚪ Компрессор выключен (Отдых)';
                     desc.style.color = '#94a3b8';
                     
-                    const restSec = data.rest_duration_sec || 0;
+                    const restSec = Number(data.rest_duration_sec) || 0;
                     const restMin = Math.floor(restSec / 60);
                     const estRemain = Math.max(0, 45 - restMin);
+                    const lockout = data.protection_lockout_sec || 0;
                     
                     timerTitle.innerText = '⚪ АКТИВНЫЙ РЕЖИМ: ОТДЫХ КОМПРЕССОРА (СТОЯНКА)';
                     timerTitle.style.color = '#06b6d4';
-                    timerVal.innerText = formatSec(restSec);
                     timerVal.style.color = '#06b6d4';
-                    verdictEl.innerHTML = `🧊 Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
+                    let restHtml = `🧊 Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
+                    if (data.protection_active && lockout > 0) {
+                        restHtml += ` Пауза пуска: <strong>${lockout} с</strong>.`;
+                    }
+                    verdictEl.innerHTML = restHtml;
                 }
+                tickLiveTimer();
 
                 // Health & Anomaly Diagnostics Banner Update
                 const healthCard = document.getElementById('health-card');
@@ -613,32 +673,32 @@
                         healthCard.style.borderLeftColor = '#10b981';
                         healthIcon.innerText = '❄️';
                         healthTitle.innerText = '🟢 Штатная заморозка (Охлаждение в норме)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин (норма: 15–45 мин). Температура опускается.`;
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин (норма пустого цикла: 15–45 мин). Температура опускается.`;
                         healthBadge.innerText = 'Охлаждение: Норма';
                         healthBadge.style.color = '#10b981';
                         healthBadge.style.background = 'rgba(16, 185, 129, 0.15)';
-                    } else if (durMin <= 120) {
+                    } else if (durMin <= 150) {
                         healthCard.style.borderLeftColor = '#f59e0b';
                         healthIcon.innerText = '⏳';
                         healthTitle.innerText = '🟡 Интенсивный донабор холода (> 45 мин)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Это норма при открывании дверей, вечерней нагрузке или просадке напряжения сети.`;
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Норма при открывании дверей или малой загрузке (1.5–2.5 ч).`;
                         healthBadge.innerText = 'Донабор холода / Загрузка';
                         healthBadge.style.color = '#f59e0b';
                         healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
-                    } else if (durMin <= 240) {
+                    } else if (durMin <= 420) {
                         healthCard.style.borderLeftColor = '#f97316';
                         healthIcon.innerText = '📦';
-                        healthTitle.innerText = '🟠 Глубокая проморозка (> 2 ч)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Штатный режим после отключения света (блэкаута) или большой загрузки теплых продуктов (норма до 3.5–5 ч).`;
-                        healthBadge.innerText = 'После блэкаута / Загрузка';
+                        healthTitle.innerText = '🟠 Глубокая проморозка (загрузка / после блэкаута)';
+                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Штатно после отключения света или большой загрузки теплых продуктов (норма 3.5–5 ч, запас до 7 ч).`;
+                        healthBadge.innerText = 'Загрузка / после блэкаута';
                         healthBadge.style.color = '#f97316';
                         healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
                     } else {
                         healthCard.style.borderLeftColor = '#ef4444';
                         healthIcon.innerText = '⚠️';
-                        healthTitle.innerText = '🔴 Внимание: Непрерывная работа компрессора (> 4 ч)';
-                        healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте закрытие дверей, уплотнители или уровень фреона.`;
-                        healthBadge.innerText = 'Тревога: Работа > 4ч';
+                        healthTitle.innerText = '🔴 Внимание: Непрерывная работа компрессора (> 7 ч)';
+                        healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте дверь, уплотнители, термостат и уровень фреона.`;
+                        healthBadge.innerText = 'Тревога: Работа > 7ч';
                         healthBadge.style.color = '#ef4444';
                         healthBadge.style.background = 'rgba(239, 68, 68, 0.15)';
                     }
@@ -687,8 +747,10 @@
                     liveChart.update();
                 }
 
-                // Update cycles history table
-                updateCyclesTable();
+                historyTick++;
+                if (historyTick === 1 || historyTick % 10 === 0) {
+                    updateCyclesTable();
+                }
             })
             .catch(err => {
                 console.error(err);
@@ -729,21 +791,36 @@
     let allBlackoutsData = [];
 
     function createCycleRow(c) {
-        const mins = Math.floor(c.duration_sec / 60);
-        const secs = c.duration_sec % 60;
-        let durStr = `${mins} мин ${secs} сек`;
+        const mins = Math.floor((c.duration_sec || 0) / 60);
+        let durStr = c.duration_str || formatHm(c.duration_sec);
         let verdict = '🟢 Заморозка (Компрессор)';
         let color = '#10b981';
         let bgStyle = '';
         let restDisplay = c.rest_str || '—';
+        let restFrom = c.rest_start || '—';
+        let restTo = c.rest_end || '—';
         let krvDisplay = (c.krv !== undefined && c.krv !== null && c.krv !== '') ? `${c.krv}` : '—';
         let pwrDisplay = `${c.avg_power} Вт`;
         
-        if (c.cycle_type === 'blackout') {
+        if (c.live) {
+            if (c.cycle_type === 'idle') {
+                verdict = '⚪ Отдых (сейчас)';
+                color = '#06b6d4';
+            } else if (c.cycle_type === 'defrost') {
+                verdict = '🔥 Оттайка (сейчас)';
+                color = '#f97316';
+            } else {
+                verdict = '🟢 Заморозка (сейчас)';
+                color = '#10b981';
+            }
+            bgStyle = 'background: rgba(56,189,248,0.10);';
+        } else if (c.cycle_type === 'blackout') {
             durStr = `⚡ ${c.duration_str || durStr}`;
             verdict = `⚡ Отключение света (${c.duration_str || durStr})`;
             color = '#f59e0b';
             restDisplay = '⚡ Сбой 220V';
+            restFrom = '—';
+            restTo = '—';
             krvDisplay = '—';
             pwrDisplay = '0 Вт (Сеть)';
             bgStyle = 'background: rgba(245,158,11,0.08);';
@@ -767,6 +844,8 @@
             <td><strong>${escapeHTML(c.start)}</strong></td>
             <td><strong>${escapeHTML(c.end)}</strong></td>
             <td><span style="color:${color}; font-weight:bold;">${escapeHTML(durStr)}</span></td>
+            <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restFrom)}</span></td>
+            <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restTo)}</span></td>
             <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restDisplay)}</span></td>
             <td><span style="font-weight:600; color:#f8fafc;">${escapeHTML(krvDisplay)}</span></td>
             <td>${escapeHTML(pwrDisplay)}</td>
@@ -802,7 +881,7 @@
         }
 
         // Standard Cycles
-        thead.innerHTML = '<tr><th>Дата</th><th>Начало</th><th>Конец</th><th>Работа</th><th>Отдых до цикла</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>';
+        thead.innerHTML = '<tr><th>Дата</th><th>Начало работы</th><th>Конец работы</th><th>Работа</th><th>Начало отдыха</th><th>Конец отдыха</th><th>Отдых</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>';
         
         let filtered = allCyclesData;
         if (filterType === 'cooling') {
@@ -812,7 +891,7 @@
         }
 
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;">В этой категории пока нет записей.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#94a3b8; padding:30px;">В этой категории пока нет записей.</td></tr>';
             return;
         }
 
@@ -849,7 +928,20 @@
             .catch(console.error);
     }
 
+    function tickLiveTimer() {
+        if (!lastStatus) return;
+        const timerVal = document.getElementById('auto-timer');
+        if (!timerVal) return;
+        const elapsed = Math.floor((Date.now() - lastStatusAt) / 1000);
+        if (lastStatus.current_mode === 'defrost' || lastStatus.is_running) {
+            timerVal.innerText = formatSec((lastStatus.cycle_duration_sec || 0) + elapsed);
+        } else {
+            timerVal.innerText = formatSec((Number(lastStatus.rest_duration_sec) || 0) + elapsed);
+        }
+    }
+
     setInterval(pollStatus, 3000);
+    setInterval(tickLiveTimer, 1000);
     pollStatus();
     updateCyclesTable();
 </script>
