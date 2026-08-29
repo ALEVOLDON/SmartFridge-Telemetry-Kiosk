@@ -67,26 +67,36 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
         cur.execute("""
-            SELECT 
-                strftime('%d.%m.%Y', MIN(start_time)),
-                strftime('%H:%M', MIN(start_time)),
-                strftime('%H:%M', MAX(end_time)),
-                MAX(duration_sec),
+            SELECT
+                start_time,
+                end_time,
+                duration_sec,
                 avg_power,
                 avg_voltage,
                 cycle_type
             FROM cycles
             WHERE duration_sec >= 120
-            GROUP BY DATE(end_time), strftime('%H:%M', end_time)
-            ORDER BY MIN(start_time) DESC LIMIT 50
+            ORDER BY start_time DESC, id DESC
+            LIMIT 50
         """)
         for r in cur.fetchall():
-            total_min = (r[3] + 30) // 60
+            st_iso, end_iso, dur_sec, avg_power, avg_voltage, cycle_type = r
+            try:
+                dt_st = datetime.fromisoformat(st_iso) if st_iso else None
+                dt_end = datetime.fromisoformat(end_iso) if end_iso else None
+            except ValueError:
+                dt_st = dt_end = None
+            date_s = dt_st.strftime("%d.%m.%Y") if dt_st else "—"
+            start_s = dt_st.strftime("%H:%M") if dt_st else "--:--"
+            end_s = dt_end.strftime("%H:%M") if dt_end else "--:--"
+            total_min = ((dur_sec or 0) + 30) // 60
             hh, mm = divmod(total_min, 60)
             dur_s = f"{hh} ч {mm} мин" if hh and mm else (f"{hh} ч" if hh else f"{mm} мин")
-            c_type = r[6] if r[6] else "cooling"
+            c_type = cycle_type if cycle_type else "cooling"
             verdict = "🔥 No Frost Defrost" if c_type == "defrost" else "🟢 Cooling (Compressor)"
-            cycles.append((r[0], r[1], r[2], dur_s, f"{r[4]} W", f"{r[5]} V", verdict))
+            pwr_s = f"{avg_power} W" if avg_power is not None else "— W"
+            volt_s = f"{avg_voltage} V" if avg_voltage is not None else "— V"
+            cycles.append((date_s, start_s, end_s, dur_s, pwr_s, volt_s, verdict))
         conn.close()
 
     h1 = doc.add_heading('Recorded Operational Cycles', level=1)

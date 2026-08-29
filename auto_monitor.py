@@ -915,19 +915,19 @@ def get_history():
     cur.execute("SELECT timestamp, power, voltage, current, is_running, temp_freezer, temp_fridge FROM measurements ORDER BY id DESC LIMIT 50")
     rows = cur.fetchall()
     
-    # Cycles - group by exact date and start time to keep all history intact!
+    # One row per cycles record. GROUP BY end-minute mixed avg_power/cycle_type
+    # from an arbitrary SQLite row when two cycles ended in the same minute.
     cur.execute("""
-        SELECT 
-            MIN(start_time) as full_start,
-            MAX(end_time) as full_end,
-            MAX(duration_sec) as max_dur, 
-            avg_power, 
-            avg_voltage, 
-            cycle_type 
-        FROM cycles 
+        SELECT
+            start_time,
+            end_time,
+            duration_sec,
+            avg_power,
+            avg_voltage,
+            cycle_type
+        FROM cycles
         WHERE duration_sec >= 120
-        GROUP BY DATE(end_time), strftime('%H:%M', end_time)
-        ORDER BY MIN(start_time) ASC
+        ORDER BY start_time ASC, id ASC
     """)
     raw_cycles = cur.fetchall()
     
