@@ -2,10 +2,12 @@ import os
 import sys
 import time
 import json
+import socket
 import sqlite3
 import argparse
 import threading
 import signal
+import subprocess
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, send_from_directory
 import tinytuya
@@ -50,6 +52,7 @@ state = {
     "temp_is_estimated": True,
     "temp_freezer_estimated": True,
     "temp_fridge_estimated": True,
+    "connection_source": "",
     "last_blackout": {
         "detected": False,
         "start": "—",
@@ -132,6 +135,10 @@ def init_db():
         c.execute("ALTER TABLE cycles ADD COLUMN cycle_type TEXT")
     except Exception:
         pass
+    try:
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_cycles_start_end ON cycles(start_time, end_time)")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 
@@ -150,6 +157,10 @@ def load_config():
         "api_secret": "",
         "device_id": "",
         "temp_sensor_id": "",
+        "local_key": "",
+        "device_ip": "",
+        "device_mac": "",
+        "local_version": 3.5,
         "last_stop_time": None,
         "current_start_time": None
     }
@@ -379,11 +390,19 @@ def update_last_blackout_state():
         pass
 
 def sync_cloud_history():
-    """Fetches historical logs from Tuya Cloud to reconstruct cycles and blackout outages"""
+    """Fetches historical logs from Tuya Cloud ONLY if local database is empty"""
     cfg = load_config()
     if not (cfg.get("api_key") and cfg.get("device_id") and cfg.get("api_secret")):
         return False
     try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT count(*) FROM cycles")
+        c_count = cur.fetchone()[0]
+        conn.close()
+        if c_count > 5:
+            return True
+            
         c = get_cloud_client(cfg)
         now_ts = int(time.time() * 1000)
         start_ts = now_ts - (48 * 3600 * 1000)
@@ -393,7 +412,7 @@ def sync_cloud_history():
             end=now_ts,
             evtype=7,
             size=0,
-            max_fetches=40
+            max_fetches=5
         )
         logs = (res.get("result") or {}).get("logs") or []
         if not logs:
@@ -575,6 +594,224 @@ def _on_process_stop(signum, frame):
     persist_open_cycle()
     raise SystemExit(0)
 
+_local_dev = None
+_local_ident = None
+_local_fail_until = 0.0
+_last_ip_scan = 0.0
+_last_lan_rule = 0.0
+
+def _ensure_lan_route():
+    """Keep 192.168.0.0/24 on eth0; byedpi tun0 otherwise swallows the plug."""
+    global _last_lan_rule
+    now = time.time()
+    if now - _last_lan_rule < 30:
+        return
+    _last_lan_rule = now
+    try:
+        subprocess.run(["ip", "rule", "del", "pref", "9000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
+        subprocess.run(["ip", "rule", "add", "to", "192.168.0.0/24", "lookup", "main", "pref", "9000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
+        subprocess.run(["ip", "rule", "del", "pref", "9001"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
+        subprocess.run(["ip", "rule", "add", "from", "192.168.0.0/24", "lookup", "main", "pref", "9001"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
+    except Exception:
+        pass
+
+def _tcp_open(ip, port=6668, timeout=0.5):
+    try:
+        sock = socket.create_connection((ip, int(port)), timeout=timeout)
+        sock.close()
+        return True
+    except Exception:
+        return False
+
+def _norm_mac(mac):
+    return (mac or "").strip().lower().replace(":", "-").replace(".", "-")
+
+def _arp_pairs():
+    pairs = []
+    blobs = []
+    try:
+        with open("/proc/net/arp", "r", encoding="utf-8", errors="replace") as f:
+            blobs.append(f.read())
+    except Exception:
+        pass
+    for cmd in (["ip", "-o", "neigh"], ["ip", "neigh"], ["arp", "-a"]):
+        try:
+            blobs.append(subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=3).decode("utf-8", "replace"))
+        except Exception:
+            continue
+    for blob in blobs:
+        for raw in blob.replace(":", "-").splitlines():
+            low = raw.lower()
+            ip = None
+            mac = None
+            for tok in low.replace("(", " ").replace(")", " ").split():
+                if tok.count(".") == 3 and tok[0].isdigit():
+                    ip = tok.strip(",")
+                elif tok.count("-") == 5 and len(tok) >= 17:
+                    mac = tok[:17]
+            if ip and mac and not mac.startswith("00-00-00"):
+                pairs.append((ip, mac))
+    return pairs
+
+def _scan_tuya_port(subnet="192.168.0."):
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+    except Exception:
+        return []
+    found = []
+
+    def check(i):
+        ip = subnet + str(i)
+        return ip if _tcp_open(ip, 6668, 0.4) else None
+
+    try:
+        with ThreadPoolExecutor(max_workers=32) as pool:
+            for ip in pool.map(check, range(2, 255)):
+                if ip:
+                    found.append(ip)
+    except Exception:
+        pass
+    return found
+
+def discover_plug_ip(cfg):
+    """Keep using a live TCP/6668 address; rediscover by MAC if DHCP moved the plug."""
+    global _last_ip_scan
+    saved = (cfg.get("device_ip") or "").strip()
+    mac = _norm_mac(cfg.get("device_mac"))
+    if saved and _tcp_open(saved):
+        return saved
+    for ip, hw in _arp_pairs():
+        if mac and _norm_mac(hw) == mac and _tcp_open(ip):
+            return ip
+    now = time.time()
+    if now - _last_ip_scan < 45:
+        return saved
+    _last_ip_scan = now
+    hits = _scan_tuya_port()
+    if mac:
+        arp = dict(_arp_pairs())
+        for ip in hits:
+            if _norm_mac(arp.get(ip, "")) == mac:
+                return ip
+    if saved in hits:
+        return saved
+    if len(hits) == 1:
+        return hits[0]
+    return saved
+
+def _close_local():
+    global _local_dev, _local_ident
+    dev = _local_dev
+    _local_dev = None
+    _local_ident = None
+    if dev is None:
+        return
+    try:
+        dev.close()
+    except Exception:
+        pass
+
+def _remember_plug(cfg, ip, ver):
+    changed = False
+    if ip and cfg.get("device_ip") != ip:
+        cfg["device_ip"] = ip
+        changed = True
+    if ver and float(cfg.get("local_version") or 0) != float(ver):
+        cfg["local_version"] = float(ver)
+        changed = True
+    if changed:
+        try:
+            save_config(cfg)
+        except Exception:
+            pass
+
+def _local_status(cfg):
+    """One short local read. Protocol 3.5 on this plug; never block 30s on 3.4."""
+    global _local_dev, _local_ident
+    loc_key = (cfg.get("local_key") or "").strip()
+    dev_id = (cfg.get("device_id") or "").strip()
+    if not (loc_key and dev_id):
+        return None
+    _ensure_lan_route()
+    ip = discover_plug_ip(cfg)
+    if not ip:
+        return None
+    ver = float(cfg.get("local_version") or 3.5)
+    ident = (dev_id, ip, loc_key, ver)
+    if _local_dev is None or _local_ident != ident:
+        _close_local()
+        d = tinytuya.OutletDevice(
+            dev_id,
+            ip,
+            loc_key,
+            version=ver,
+            persist=True,
+            connection_timeout=2,
+            connection_retry_limit=1,
+            connection_retry_delay=0,
+        )
+        d.set_retry(False)
+        _local_dev = d
+        _local_ident = ident
+    data = _local_dev.status()
+    if not (isinstance(data, dict) and "dps" in data):
+        return None
+    dps = data.get("dps") or {}
+    _remember_plug(cfg, ip, ver)
+    return {
+        "ok": True,
+        "source": "local_wifi",
+        "p_raw": float(dps.get("19", dps.get(19, 0)) or 0),
+        "v_raw": float(dps.get("20", dps.get(20, 0)) or 0),
+        "i_raw": float(dps.get("18", dps.get(18, 0)) or 0),
+    }
+
+def _cloud_error_text(res):
+    if not isinstance(res, dict):
+        return "Tuya Cloud request error"
+    return res.get("msg") or res.get("Payload") or res.get("Error") or "Tuya Cloud request error"
+
+def fetch_device_telemetry(cfg):
+    """Local Tuya on the LAN first; Cloud only if the plug socket is down."""
+    global _local_fail_until
+    now = time.time()
+    if now >= _local_fail_until:
+        try:
+            local = _local_status(cfg)
+            if local:
+                _local_fail_until = 0.0
+                return local
+        except Exception:
+            pass
+        _close_local()
+        _local_fail_until = now + 20
+
+    c = get_cloud_client(cfg)
+    res = c.getstatus(cfg.get("device_id", "").strip())
+    if res and isinstance(res, dict) and "result" in res:
+        p_raw, v_raw, i_raw = 0, 0, 0
+        for item in res.get("result", []):
+            code = item.get("code", "")
+            val = item.get("value", 0)
+            if code in ["cur_power", "cur_power_a", "phase_a_active_power", "active_power"]:
+                p_raw = float(val)
+            elif code in ["cur_voltage", "cur_voltage_a", "voltage"]:
+                v_raw = float(val)
+            elif code in ["cur_current", "cur_current_a", "current"]:
+                i_raw = float(val)
+        return {
+            "ok": True,
+            "source": "tuya_cloud",
+            "p_raw": p_raw,
+            "v_raw": v_raw,
+            "i_raw": i_raw,
+        }
+
+    return {
+        "ok": False,
+        "msg": _cloud_error_text(res),
+    }
+
 def prune_old_measurements():
     """Prunes raw 4-second telemetry older than 7 days to keep SQLite light on TV Box"""
     try:
@@ -625,24 +862,18 @@ def tuya_poller():
         if poll_count % PRUNE_EVERY_POLLS == 0:
             prune_old_measurements()
             
+        sleep_sec = 16
         try:
-            c = get_cloud_client(cfg)
-            res = c.getstatus(cfg["device_id"].strip())
+            tele = fetch_device_telemetry(cfg)
             
-            if res and isinstance(res, dict) and "result" in res:
+            if tele.get("ok"):
                 state["connected"] = True
                 state["error_message"] = ""
+                state["connection_source"] = tele.get("source", "tuya_cloud")
                 
-                p_raw, v_raw, i_raw = 0, 0, 0
-                for item in res.get("result", []):
-                    code = item.get("code", "")
-                    val = item.get("value", 0)
-                    if code in ["cur_power", "cur_power_a", "phase_a_active_power", "active_power"]:
-                        p_raw = float(val)
-                    elif code in ["cur_voltage", "cur_voltage_a", "voltage"]:
-                        v_raw = float(val)
-                    elif code in ["cur_current", "cur_current_a", "current"]:
-                        i_raw = float(val)
+                p_raw = tele.get("p_raw", 0)
+                v_raw = tele.get("v_raw", 0)
+                i_raw = tele.get("i_raw", 0)
                 
                 power = p_raw / 10.0 if p_raw > 500 else p_raw
                 voltage = v_raw / 10.0 if v_raw > 500 else v_raw
@@ -658,6 +889,7 @@ def tuya_poller():
                 state["temp_sensor_id"] = temp_sensor_id
                 if temp_sensor_id and poll_count % 5 == 0:
                     try:
+                        c = get_cloud_client(cfg)
                         t_res = c.getstatus(temp_sensor_id)
                         if t_res and "result" in t_res:
                             for t_item in t_res.get("result", []):
@@ -730,37 +962,44 @@ def tuya_poller():
                         ''', (state["cycle_start_time"], end_iso, duration, round(avg_p, 1), round(avg_v, 1), c_type))
                         conn.commit()
                         conn.close()
+                    
                     state["is_running"] = False
                     state["cycle_start_time"] = None
                     state["cycle_duration_sec"] = 0
+                    state["rest_start_time"] = end_iso
+                    state["rest_duration_sec"] = 0
+                    active_streak = 0
+                    idle_streak = 0
                     cycle_powers = []
                     cycle_voltages = []
-                
+                    
                 if state["is_running"]:
-                    state["rest_duration_sec"] = 0
-                    if not state["cycle_start_time"]:
-                        actual_start = find_open_cycle_start()
-                        state["cycle_start_time"] = actual_start if actual_start else now_iso
-                    start_dt = parse_iso(state["cycle_start_time"]) or datetime.now()
-                    state["cycle_duration_sec"] = int((datetime.now() - start_dt).total_seconds())
+                    try:
+                        st_dt = datetime.fromisoformat(state["cycle_start_time"])
+                        state["cycle_duration_sec"] = max(0, int((datetime.now() - st_dt).total_seconds()))
+                    except Exception:
+                        state["cycle_duration_sec"] = 0
+                        
                     cycle_powers.append(power)
                     cycle_voltages.append(voltage)
+                    state["rest_duration_sec"] = 0
                     update_restart_lockout(True)
                     
-                    avg_recent_p = sum(cycle_powers[-8:]) / len(cycle_powers[-8:]) if cycle_powers else power
-                    if classify_cycle(avg_recent_p, state["cycle_duration_sec"], cooling_since_last_defrost_sec(), cycle_powers) == "defrost":
+                    live_avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else power
+                    c_type = classify_cycle(live_avg_p, state["cycle_duration_sec"], cooling_since_last_defrost_sec(), cycle_powers)
+                    if c_type == "defrost":
                         state["current_mode"] = "defrost"
-                        state["mode_title"] = "🔥 АВТООТТАЙКА NO FROST (ТЭН 170W)"
+                        state["mode_title"] = "🔥 АВТООТТАЙКА NO FROST (ТЭН)"
                     else:
                         state["current_mode"] = "cooling"
                         state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
                     
-                    progress = min(1.0, state["cycle_duration_sec"] / 1800.0)
+                    c_prog = min(1.0, state["cycle_duration_sec"] / 3600.0)
                     if state.get("temp_freezer_estimated", True):
-                        state["temp_freezer"] = round(-16.0 - (3.5 * progress), 1)
+                        state["temp_freezer"] = round(-16.0 - (5.0 * c_prog), 1)
                     if state.get("temp_fridge_estimated", True):
-                        state["temp_fridge"] = round(5.2 - (1.6 * progress), 1)
-                    
+                        state["temp_fridge"] = round(5.2 - (2.2 * c_prog), 1)
+                        
                     if state["cycle_duration_sec"] > LONG_RUN_WARN_SEC and not warning_long_sent:
                         warning_long_sent = True
                         send_pc_toast(
@@ -793,13 +1032,22 @@ def tuya_poller():
                 
             else:
                 state["connected"] = False
-                state["error_message"] = res.get("msg", "Tuya Cloud request error")
+                state["connection_source"] = ""
+                state["error_message"] = tele.get("msg", "Tuya request error")
+                sleep_sec = 10
                 
         except Exception as e:
             state["connected"] = False
+            state["connection_source"] = ""
             state["error_message"] = str(e)
-            
-        time.sleep(4)
+            sleep_sec = 10
+
+        if state.get("connected"):
+            if state.get("connection_source") == "local_wifi":
+                sleep_sec = 5 if state.get("is_running") else 10
+            else:
+                sleep_sec = 6 if state.get("is_running") else 16
+        time.sleep(max(2, int(sleep_sec)))
 
 t = threading.Thread(target=tuya_poller, daemon=True)
 t.start()

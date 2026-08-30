@@ -7,6 +7,13 @@ DNS1=192.168.0.1
 DNS2=8.8.8.8
 
 ip link set eth0 up 2>/dev/null
+
+# byedpi tun0 steals 192.168.0.0/24 (ip route get plug -> tun0). LAN must stay on eth0.
+ip rule del pref 9000 2>/dev/null
+ip rule add to 192.168.0.0/24 lookup main pref 9000 2>/dev/null
+ip rule del pref 9001 2>/dev/null
+ip rule add from 192.168.0.0/24 lookup main pref 9001 2>/dev/null
+
 CUR=$(ip -4 -o addr show eth0 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -n 1)
 if [ "$CUR" = "$WANT_IP" ]; then
     exit 0
