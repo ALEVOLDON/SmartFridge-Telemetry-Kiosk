@@ -2,6 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Samsung RT34MB — iPad Kiosk</title>
     
@@ -77,6 +79,17 @@
                     ⛶ Экран
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Network Channel & Cloud Quota Card for iPad -->
+    <div id="ipad-quota-card" style="background: rgba(15, 23, 42, 0.88); border-radius: 12px; padding: 10px 14px; border: 1px solid #10b981; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-weight:bold; font-size:12.5px; color:#f8fafc;" id="ipad-channel-title">🏠 Канал: Прямой локальный Wi-Fi (без облака)</div>
+            <div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;" id="ipad-quota-sub">🛡️ Расход облака: 0/день | 100% экономия квоты</div>
+        </div>
+        <div id="ipad-quota-badge" style="font-size:11px; font-weight:bold; color:#10b981; background:rgba(16,185,129,0.2); padding:4px 10px; border-radius:6px;">
+            50 000 / 50 000
         </div>
     </div>
 
@@ -226,10 +239,10 @@
 
         function formatSeconds(sec) {
             sec = parseInt(sec, 10) || 0;
+            if (sec < 0) sec = 0;
             var h = Math.floor(sec / 3600);
             var m = Math.floor((sec % 3600) / 60);
             var s = sec % 60;
-            
             var hStr = (h < 10 ? '0' : '') + h;
             var mStr = (m < 10 ? '0' : '') + m;
             var sStr = (s < 10 ? '0' : '') + s;
@@ -239,7 +252,33 @@
         var failedPolls = 0;
         var isAutoScanning = false;
         var lastStatus = null;
-        var lastStatusAt = 0;
+        var liveTimerSec = 0;
+        var liveTimerMode = '';
+
+        function renderIpadTimer() {
+            var timerVal = document.getElementById('timer-val');
+            if (timerVal) {
+                timerVal.innerHTML = formatSeconds(liveTimerSec);
+            }
+        }
+
+        function syncIpadTimer(data) {
+            if (!data) return;
+            var running = (data.current_mode === 'defrost' || data.is_running);
+            var mode = running ? 'run' : 'rest';
+            var srvSec = running ? (Number(data.cycle_duration_sec) || 0) : (Number(data.rest_duration_sec) || 0);
+            
+            if (liveTimerMode !== mode) {
+                liveTimerMode = mode;
+                liveTimerSec = srvSec;
+                renderIpadTimer();
+            } else {
+                if (Math.abs(liveTimerSec - srvSec) > 3) {
+                    liveTimerSec = srvSec;
+                    renderIpadTimer();
+                }
+            }
+        }
 
         function autoDiscoverNewIP() {
             if (isAutoScanning) return;
@@ -377,6 +416,39 @@
                                 if (rEl) rEl.innerHTML = rSign + data.temp_fridge.toFixed(1) + ' <span class="dial-unit">°C</span>';
                             }
 
+                            // Channel & Quota Card for iPad
+                            var qCard = document.getElementById('ipad-quota-card');
+                            var qTitle = document.getElementById('ipad-channel-title');
+                            var qSub = document.getElementById('ipad-quota-sub');
+                            var qBadge = document.getElementById('ipad-quota-badge');
+                            var quota = data.cloud_quota || {};
+                            var rem = (quota.remaining !== undefined) ? quota.remaining : 50000;
+                            var tot = quota.total_limit || 50000;
+                            var todayUsed = quota.used_today || 0;
+                            var isLan = (data.connection_source === 'local_wifi');
+
+                            if (qCard && qTitle && qSub) {
+                                if (isLan) {
+                                    qCard.style.borderColor = '#10b981';
+                                    qTitle.innerHTML = '🏠 Канал: <strong>Прямой локальный Wi-Fi</strong>';
+                                    qSub.innerHTML = '🛡️ Запросов в облако сегодня: <strong>' + todayUsed + '</strong> (100% экономия)';
+                                    if (qBadge) {
+                                        qBadge.innerText = 'Квота: ' + rem + ' / ' + tot;
+                                        qBadge.style.color = '#10b981';
+                                        qBadge.style.background = 'rgba(16,185,129,0.2)';
+                                    }
+                                } else {
+                                    qCard.style.borderColor = '#f59e0b';
+                                    qTitle.innerHTML = '☁️ Канал: <strong>Tuya Cloud (Эко-резерв)</strong>';
+                                    qSub.innerHTML = '⚠️ Запросов сегодня: <strong>' + todayUsed + '</strong> | ' + escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день');
+                                    if (qBadge) {
+                                        qBadge.innerText = 'Квота: ' + rem + ' / ' + tot;
+                                        qBadge.style.color = '#f59e0b';
+                                        qBadge.style.background = 'rgba(245,158,11,0.2)';
+                                    }
+                                }
+                            }
+
                             // Blackout Info
                             if (data.last_blackout && data.last_blackout.detected) {
                                 var bTitle = document.getElementById('ipad-blackout-title');
@@ -397,7 +469,6 @@
                             var timerHint = document.getElementById('timer-hint');
                             
                             lastStatus = data;
-                            lastStatusAt = Date.now();
                             if (data.current_mode === 'defrost') {
                                 pStatus.innerHTML = '🔥 Оттайка (ТЭН)';
                                 pStatus.className = 'dial-status color-orange';
@@ -435,7 +506,7 @@
                                 }
                                 timerHint.innerHTML = restHint;
                             }
-                            tickLiveTimer();
+                            syncIpadTimer(data);
                         } catch(e) {}
                     } else {
                         failedPolls++;
@@ -566,14 +637,9 @@
         }
 
         function tickLiveTimer() {
-            if (!lastStatus) return;
-            var timerVal = document.getElementById('timer-val');
-            if (!timerVal) return;
-            var elapsed = Math.floor((Date.now() - lastStatusAt) / 1000);
-            if (lastStatus.current_mode === 'defrost' || lastStatus.is_running) {
-                timerVal.innerHTML = formatSeconds((lastStatus.cycle_duration_sec || 0) + elapsed);
-            } else {
-                timerVal.innerHTML = formatSeconds((Number(lastStatus.rest_duration_sec) || 0) + elapsed);
+            if (lastStatus) {
+                liveTimerSec++;
+                renderIpadTimer();
             }
         }
 

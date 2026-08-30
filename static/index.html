@@ -166,6 +166,27 @@
         <div style="font-size: 13px; color: var(--text-muted);" id="last-sync">Обновление: --:--:--</div>
     </div>
 
+    <!-- Network Channel & Cloud Quota Card -->
+    <div id="channel-quota-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #10b981; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(15, 23, 42, 0.85);">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <span id="channel-icon" style="font-size:26px;">🏠</span>
+            <div>
+                <div style="font-size:14.5px; font-weight:700; color:#f8fafc;" id="channel-title">Канал связи: Прямой локальный Wi-Fi (без облака)</div>
+                <div style="font-size:13px; color:#cbd5e1; margin-top:2px;" id="channel-subtitle">
+                    🛡️ Запросов в облако сегодня: <strong>0</strong> | 100% экономия: лимиты не тратятся
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div id="quota-badge" style="font-size:12px; font-weight:700; padding:6px 14px; border-radius:12px; background:rgba(16,185,129,0.15); color:#10b981; letter-spacing:0.3px;">
+                Квота: 50 000 / 50 000
+            </div>
+            <div id="channel-badge" style="font-size:12px; font-weight:700; padding:6px 14px; border-radius:12px; background:rgba(56,189,248,0.15); color:#38bdf8; letter-spacing:0.3px;">
+                LAN: 0 запросов
+            </div>
+        </div>
+    </div>
+
     <!-- Blackout Monitoring Banner -->
     <div id="blackout-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #f59e0b; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(15, 23, 42, 0.75);">
         <div style="display:flex; align-items:center; gap:14px;">
@@ -449,7 +470,41 @@
     let isAutoScanning = false;
     let historyTick = 0;
     let lastStatus = null;
-    let lastStatusAt = 0;
+    let liveTimerSec = 0;
+    let liveTimerMode = '';
+
+    function syncLiveTimer(data) {
+        if (!data) return;
+        const isRun = (data.current_mode === 'defrost' || data.is_running);
+        const mode = isRun ? 'run' : 'rest';
+        const srvSec = isRun ? (Number(data.cycle_duration_sec) || 0) : (Number(data.rest_duration_sec) || 0);
+        
+        if (liveTimerMode !== mode) {
+            liveTimerMode = mode;
+            liveTimerSec = srvSec;
+            renderLiveTimer();
+        } else {
+            // Only resync if local stopwatch diverged by more than 3 seconds
+            if (Math.abs(liveTimerSec - srvSec) > 3) {
+                liveTimerSec = srvSec;
+                renderLiveTimer();
+            }
+        }
+    }
+
+    function renderLiveTimer() {
+        const timerVal = document.getElementById('auto-timer');
+        if (timerVal) {
+            timerVal.innerText = formatSec(liveTimerSec);
+        }
+    }
+
+    function tickLiveTimer() {
+        if (lastStatus) {
+            liveTimerSec++;
+            renderLiveTimer();
+        }
+    }
 
     function autoDiscoverNewIP() {
         if (isAutoScanning) return;
@@ -550,6 +605,54 @@
                     cloudText.innerText = data.error_message || 'Ожидание настройки API Tuya Cloud';
                 }
 
+                // Update Channel & Quota Card
+                const qCard = document.getElementById('channel-quota-card');
+                const qIcon = document.getElementById('channel-icon');
+                const qTitle = document.getElementById('channel-title');
+                const qSub = document.getElementById('channel-subtitle');
+                const qBadge = document.getElementById('quota-badge');
+                const cBadge = document.getElementById('channel-badge');
+
+                const quota = data.cloud_quota || {};
+                const rem = quota.remaining !== undefined ? quota.remaining : 50000;
+                const tot = quota.total_limit || 50000;
+                const todayUsed = quota.used_today || 0;
+                const isLan = (data.connection_source === 'local_wifi');
+
+                if (qCard && qTitle && qSub) {
+                    if (isLan) {
+                        qCard.style.borderLeftColor = '#10b981';
+                        qIcon.innerText = '🏠';
+                        qTitle.innerHTML = 'Канал связи: <strong>Прямой локальный Wi-Fi</strong> (без облака)';
+                        qSub.innerHTML = `🛡️ Запросов в облако сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || '100% экономия: лимиты не тратятся')}`;
+                        if (qBadge) {
+                            qBadge.innerText = `Квота: ${rem} / ${tot}`;
+                            qBadge.style.color = '#10b981';
+                            qBadge.style.background = 'rgba(16,185,129,0.15)';
+                        }
+                        if (cBadge) {
+                            cBadge.innerText = 'LAN: 0 запросов';
+                            cBadge.style.color = '#38bdf8';
+                            cBadge.style.background = 'rgba(56,189,248,0.15)';
+                        }
+                    } else {
+                        qCard.style.borderLeftColor = '#f59e0b';
+                        qIcon.innerText = '☁️';
+                        qTitle.innerHTML = 'Канал связи: <strong>Tuya Cloud API (Эко-резерв)</strong>';
+                        qSub.innerHTML = `⚠️ Запросов сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день')}`;
+                        if (qBadge) {
+                            qBadge.innerText = `Остаток квоты: ${rem} / ${tot}`;
+                            qBadge.style.color = '#f59e0b';
+                            qBadge.style.background = 'rgba(245,158,11,0.15)';
+                        }
+                        if (cBadge) {
+                            cBadge.innerText = 'Облако: Эко 25/60с';
+                            cBadge.style.color = '#f59e0b';
+                            cBadge.style.background = 'rgba(245,158,11,0.15)';
+                        }
+                    }
+                }
+
                 document.getElementById('live-power').innerHTML = `${data.power.toFixed(1)} <span class="unit">Вт</span>`;
                 document.getElementById('live-voltage').innerHTML = `${data.voltage.toFixed(1)} <span class="unit">В</span>`;
                 document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
@@ -618,7 +721,7 @@
                 const verdictEl = document.getElementById('cycle-verdict');
                 
                 lastStatus = data;
-                lastStatusAt = Date.now();
+                syncLiveTimer(data);
                 if (data.current_mode === 'defrost') {
                     desc.innerText = '🔥 Автооттайка No Frost (ТЭН)';
                     desc.style.color = '#f97316';
@@ -653,7 +756,6 @@
                     }
                     verdictEl.innerHTML = restHtml;
                 }
-                tickLiveTimer();
 
                 // Health & Anomaly Diagnostics Banner Update
                 const healthCard = document.getElementById('health-card');
@@ -936,12 +1038,7 @@
         if (!lastStatus) return;
         const timerVal = document.getElementById('auto-timer');
         if (!timerVal) return;
-        const elapsed = Math.floor((Date.now() - lastStatusAt) / 1000);
-        if (lastStatus.current_mode === 'defrost' || lastStatus.is_running) {
-            timerVal.innerText = formatSec((lastStatus.cycle_duration_sec || 0) + elapsed);
-        } else {
-            timerVal.innerText = formatSec((Number(lastStatus.rest_duration_sec) || 0) + elapsed);
-        }
+        timerVal.innerText = formatSec(liveElapsedSec());
     }
 
     setInterval(pollStatus, 3000);

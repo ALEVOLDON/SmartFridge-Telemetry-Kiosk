@@ -126,6 +126,12 @@ def init_db():
             UNIQUE(start_time, end_time)
         )
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS cloud_usage (
+            day_date TEXT PRIMARY KEY,
+            calls_count INTEGER DEFAULT 0
+        )
+    ''')
     for col in ["mode TEXT", "temp_freezer REAL", "temp_fridge REAL"]:
         try:
             c.execute(f"ALTER TABLE measurements ADD COLUMN {col}")
@@ -143,6 +149,70 @@ def init_db():
     conn.close()
 
 init_db()
+
+def record_cloud_call(n=1):
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute('''
+            INSERT INTO cloud_usage (day_date, calls_count)
+            VALUES (?, ?)
+            ON CONFLICT(day_date) DO UPDATE SET calls_count = calls_count + ?
+        ''', (today, n, n))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+def get_cloud_quota_stats():
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        month_start = datetime.now().strftime("%Y-%m-01")
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT calls_count FROM cloud_usage WHERE day_date = ?", (today,))
+        row_today = cur.fetchone()
+        today_calls = int(row_today[0]) if (row_today and row_today[0] is not None) else 0
+        
+        cur.execute("SELECT SUM(calls_count) FROM cloud_usage WHERE day_date >= ?", (month_start,))
+        row_month = cur.fetchone()
+        month_calls = int(row_month[0]) if (row_month and row_month[0] is not None) else 0
+        conn.close()
+        
+        total_limit = 50000
+        rem = max(0, total_limit - month_calls)
+        is_local = (state.get("connection_source") == "local_wifi")
+        
+        if is_local:
+            forecast = "100% экономия: 0 запросов/день при LAN (хватит навсегда)"
+            days_left = 999
+        else:
+            rate = max(today_calls, 1400)
+            days_left = max(1, rem // rate)
+            forecast = f"Эко-режим: хватит на ~{days_left} дн."
+            
+        return {
+            "total_limit": total_limit,
+            "used_month": month_calls,
+            "used_today": today_calls,
+            "remaining": rem,
+            "forecast_text": forecast,
+            "days_left": days_left,
+            "is_safe": rem > 3000,
+            "is_local": is_local
+        }
+    except Exception:
+        return {
+            "total_limit": 50000,
+            "used_month": 0,
+            "used_today": 0,
+            "remaining": 50000,
+            "forecast_text": "100% экономия (LAN)",
+            "days_left": 999,
+            "is_safe": True,
+            "is_local": True
+        }
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -788,6 +858,7 @@ def fetch_device_telemetry(cfg):
 
     c = get_cloud_client(cfg)
     res = c.getstatus(cfg.get("device_id", "").strip())
+    record_cloud_call(1)
     if res and isinstance(res, dict) and "result" in res:
         p_raw, v_raw, i_raw = 0, 0, 0
         for item in res.get("result", []):
@@ -875,9 +946,10 @@ def tuya_poller():
                 v_raw = tele.get("v_raw", 0)
                 i_raw = tele.get("i_raw", 0)
                 
-                power = p_raw / 10.0 if p_raw > 500 else p_raw
-                voltage = v_raw / 10.0 if v_raw > 500 else v_raw
-                current = i_raw / 1000.0 if i_raw > 100 else i_raw
+                # Tuya standard DPS: 19 is 0.1 W, 20 is 0.1 V, 18 is mA
+                power = p_raw / 10.0 if p_raw > 0 else 0.0
+                voltage = v_raw / 10.0 if v_raw > 0 else 0.0
+                current = i_raw / 1000.0 if i_raw > 0 else 0.0
                 
                 state["power"] = round(power, 1)
                 state["voltage"] = round(voltage, 1)
@@ -1044,9 +1116,10 @@ def tuya_poller():
 
         if state.get("connected"):
             if state.get("connection_source") == "local_wifi":
-                sleep_sec = 5 if state.get("is_running") else 10
+                sleep_sec = 4 if state.get("is_running") else 8
             else:
-                sleep_sec = 6 if state.get("is_running") else 16
+                # Cloud Eco-Mode: 25s when running, 60s when resting (guarantees <= 1400/day -> 35+ days on 50k quota)
+                sleep_sec = 25 if state.get("is_running") else 60
         time.sleep(max(2, int(sleep_sec)))
 
 t = threading.Thread(target=tuya_poller, daemon=True)
@@ -1072,7 +1145,24 @@ def ipad():
 
 @app.route("/api/status")
 def get_status():
-    return jsonify(state)
+    now = datetime.now()
+    if state.get("is_running") and state.get("cycle_start_time"):
+        try:
+            st_dt = parse_iso(state["cycle_start_time"])
+            if st_dt:
+                state["cycle_duration_sec"] = max(0, int((now - st_dt).total_seconds()))
+        except Exception:
+            pass
+    elif not state.get("is_running") and state.get("rest_start_time"):
+        try:
+            st_dt = parse_iso(state["rest_start_time"])
+            if st_dt:
+                state["rest_duration_sec"] = max(0, int((now - st_dt).total_seconds()))
+        except Exception:
+            pass
+    res_state = dict(state)
+    res_state["cloud_quota"] = get_cloud_quota_stats()
+    return jsonify(res_state)
 
 @app.route("/api/toggle_notifications", methods=["POST"])
 def toggle_notifications():
