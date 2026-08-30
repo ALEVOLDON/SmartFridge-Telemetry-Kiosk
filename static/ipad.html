@@ -350,7 +350,8 @@
                             document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
                             document.getElementById('volt-val').innerHTML = vVal.toFixed(1) + ' <span class="dial-unit">В</span>';
                             document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
-                            document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | Сеть: ' + vVal.toFixed(0) + ' В';
+                            var src = (data.connection_source === 'local_wifi') ? 'LAN' : 'облако';
+                            document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | ' + src + ' | Сеть: ' + vVal.toFixed(0) + ' В';
                             
                             var freezerEst = (data.temp_freezer_estimated !== undefined)
                                 ? data.temp_freezer_estimated

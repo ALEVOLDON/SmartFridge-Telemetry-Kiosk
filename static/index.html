@@ -539,7 +539,11 @@
                 const cloudText = document.getElementById('cloud-text');
                 if (data.connected) {
                     cloudDot.className = 'dot dot-green';
-                    cloudText.innerText = 'Tuya Cloud API: Подключено (Онлайн)';
+                    if (data.connection_source === 'local_wifi') {
+                        cloudText.innerText = 'Розетка по локальной сети (без облака)';
+                    } else {
+                        cloudText.innerText = 'Tuya Cloud API: запасной канал';
+                    }
                     document.getElementById('last-sync').innerText = 'Обновлено: ' + (data.last_update || '--');
                 } else {
                     cloudDot.className = 'dot dot-red';
