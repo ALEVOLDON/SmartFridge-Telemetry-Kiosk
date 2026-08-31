@@ -1,18 +1,19 @@
 <div align="center">
 
 # 🧊 SmartFridge-Telemetry-Kiosk
-### Turn Any Vintage Refrigerator into a Smart IoT Hub for \$0 using an Android TV Box, Smart Plug & Retired iPad
+### Turn Any Vintage Refrigerator into a Smart IoT Hub for $0 using an Android TV Box, Smart Plug & Retired iPad
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Backend-Flask-green.svg?logo=flask)](https://flask.palletsprojects.com/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-lightgrey.svg?logo=sqlite)](https://sqlite.org/)
 [![Termux](https://img.shields.io/badge/Deploy-Android%20Termux%20(3W)-success.svg?logo=android)](https://termux.dev/)
 [![iOS Legacy](https://img.shields.io/badge/Kiosk-iOS%208--12%20WebKit%20(ES5)-orange.svg?logo=apple)](https://apple.com)
+[![LAN Direct](https://img.shields.io/badge/LAN%20Direct-TinyTuya%20(0%20Cloud)-brightgreen.svg)](https://github.com/jasonacox/tinytuya)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <br />
 
-<img src="photo_2026-08-27_23-22-12.jpg" alt="Vintage iPad 3 Retina Kiosk mounted on Samsung RT34MB Refrigerator" width="650" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+<img src="docs/photo_2026-08-27_23-22-12.jpg" alt="Vintage iPad 3 Retina Kiosk mounted on Samsung RT34MB Refrigerator" width="650" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
 
 *A retired 2012 iPad 3 (Retina Display, iOS 9.3.6, Model MD369KS/A) running an ultra-lightweight ES5 dashboard mounted directly on the refrigerator door, powered by a 24/7 background microserver on an Android TV Box.*
 
@@ -28,12 +29,13 @@ When a repair technician claims that your refrigerator compressor is running exc
 
 ### 🌟 Key Highlights
 
+- 🏠 **Dual-Channel LAN Direct Polling (0 Cloud Quota Usage):** Directly reads smart plug sensors via local Wi-Fi network (TinyTuya LAN UDP/TCP) at 3-second intervals with **100% quota savings**, automatically failing over to Tuya Cloud API only if local Wi-Fi drops.
 - 🍏 **Second Life for E-Waste (Vintage iPad Kiosk):** Ancient iPads (tested on **iPad 3 Retina iOS 9.3.6**, iPad 2, iPad 4, iPad mini 1-2) that cannot open modern heavy web frameworks run a dedicated, ultra-responsive **pure ES5 / CSS3 table-based dashboard** (`/ipad`) with zero dependencies.
-- 🤖 **3-Watt 24/7 Autonomous Microserver:** Runs seamlessly inside **Termux on a \$15 Android TV Box (H96 Max / Rockchip RK3318 / Amlogic)**, replacing expensive Raspberry Pi hardware.
-- ⚡ **Tuya IoT Energy Monitoring:** Reads voltage, active wattage, and RMS amperage every 3–5 seconds from standard Tuya/Smart Life Wi-Fi plugs via OpenAPI.
-- 📊 **Thermodynamic Duty Cycle Calculation (КРВ):** Automatically computes the coefficient of working time ($КРВ \approx 0.35 - 0.50$ is nominal).
-- 🛡️ **Power Outage Resilience & Cloud Backfill:** Automatically pulls missing cycle telemetry from Tuya Cloud on boot to ensure zero data gaps during grid blackouts.
-- 📄 **Automated Diagnostic Word / Google Docs Generator:** Generates comprehensive `.docx` technical audit reports with cycle tables and electrical statistics for warranty/service defense.
+- 🤖 **3-Watt 24/7 Autonomous Microserver:** Runs seamlessly inside **Termux on a $15 Android TV Box (H96 Max / Rockchip RK3318 / Amlogic)**, replacing expensive Raspberry Pi hardware.
+- 🔔 **Gentle Musical Audio Engine:** Synthesized soft 2-tone chime (`chime.wav` + WebAudio) that signals cycle completion with permanent iOS Safari background audio unlock and on/off toggles.
+- 📱 **Mobile App Bar & Slide-out Drawer:** Fully responsive modern smartphone UI with slide-out drawer menu, quick actions, audio testing, and table rows filter.
+- 🖨️ **Professional PDF Report Printing:** Instant black-and-white, ink-friendly PDF generation with automated drawer suppression and full cycle history export.
+- ⚡ **Power Outage Resilience & Food Safety:** Automatically records blackouts, estimates thermal rise during power outages, and reconciles state without data gaps.
 
 ---
 
@@ -41,20 +43,21 @@ When a repair technician claims that your refrigerator compressor is running exc
 
 ```mermaid
 graph TD
-    A["🔌 Tuya Wi-Fi Smart Plug (16A / RMS Meter)"] -->|"Real-time Watts, Volts, Amps"| B["☁️ Tuya OpenAPI Cloud"]
+    A["🔌 Tuya Wi-Fi Smart Plug (16A / RMS Meter)"] -->|"Direct Local LAN (TinyTuya 3s)"| C
+    A -.->|"Fallback OpenAPI"| B["☁️ Tuya OpenAPI Cloud"]
     
-    subgraph "24/7 Local Microserver (Android TV Box / PC)"
-        C["🤖 Python 3 (Termux / Daemon)"]
+    subgraph "24/7 Local Microserver (Android TV Box / Termux)"
+        C["🤖 Python 3 (auto_monitor.py)"]
         D["🗄️ SQLite Database (fridge_data.db)"]
         E["🚀 Flask REST API (:8088)"]
         
-        B -->|"HTTPS Polling + Cloud Sync"| C
+        B -.->|"Backup Cloud Sync"| C
         C -->|"Save Measurements & Cycles"| D
         D -->|"Query Telemetry & Duty Cycle"| E
     end
     
     subgraph "Client Dashboards"
-        E -->|"Modern Chart.js Web App"| F["💻 PC & Modern Smartphones (POCO/iPhone)"]
+        E -->|"Responsive Web App + Drawer"| F["📱 Smartphones (iPhone / Android) & 💻 PC"]
         E -->|"Pure ES5 Lightweight Kiosk (/ipad)"| G["🍏 Vintage iPad 2/3 (Fridge Door Tablet)"]
     end
 ```
@@ -79,6 +82,44 @@ $$\text{Duty Cycle (КРВ)} = \frac{T_{\text{cooling}}}{T_{\text{cooling}} + T_
 
 ---
 
+## 📁 Project Directory Structure
+
+```text
+Samsung_RT34MB_Monitor/
+│
+├── 🚀 auto_monitor.py          # Core 24/7 background telemetry server
+├── ⚙️ config.json              # Active configuration & API credentials
+├── ⚙️ config.example.json      # Template configuration file
+├── 🗄️ fridge_data.db           # SQLite telemetry & duty cycle database
+├── 📦 requirements.txt         # Python dependencies
+├── 📖 README.md, LICENSE       # Project documentation & MIT license
+│
+├── 📁 static/                  # Web dashboard assets
+│   ├── index.html              # Responsive Dashboard (Mobile / Tablet / PC)
+│   ├── ipad.html               # Vintage iPad Kiosk UI (Pure ES5 / CSS3)
+│   ├── chime.wav               # Gentle musical audio chime asset
+│   ├── chart.umd.min.js        # Local Chart.js library
+│   ├── manifest.json           # PWA standalone web app manifest
+│   └── *.png, *.ico            # App icons and responsive UI backgrounds
+│
+├── 📁 scripts/                 # Automation & utility scripts
+│   ├── find_fridge.py          # Auto-discovery tool for smart plugs on LAN
+│   ├── generate_report.py      # Diagnostic text report generator
+│   ├── h96_start_fridge.sh     # Android TV Box boot daemon script
+│   ├── h96_keep_eth_ip.sh      # Static network binding utility
+│   ├── start_monitor.bat       # Windows launcher
+│   └── start_monitor.vbs       # Silent background Windows launcher
+│
+├── 📁 docs/                    # Technical manuals & reports
+│   ├── *.docx                  # Diagnostic audit reports & Word docs
+│   ├── *.md                    # Technical history & release notes
+│   └── *.jpg, *.txt            # Photo references and notes
+│
+└── 📁 data_backups/            # Historical SQLite database backups
+```
+
+---
+
 ## 🚀 Quick Start Guide
 
 ### 1. Hardware Requirements
@@ -88,12 +129,7 @@ $$\text{Duty Cycle (КРВ)} = \frac{T_{\text{cooling}}}{T_{\text{cooling}} + T_
    - A Raspberry Pi, mini-PC, or home Windows/Linux PC.
 3. **Display (Optional):** An old iPad 2/3/4 mounted with magnetic tape or a stand.
 
-### 2. Tuya Cloud API Setup
-1. Register a free developer account on [Tuya IoT Platform](https://iot.tuya.com/).
-2. Create a Cloud Development Project and link your Smart Life / Tuya mobile app via QR code.
-3. Obtain your `Access ID (API Key)`, `Access Secret`, and `Device ID`.
-
-### 3. Installation
+### 2. Installation
 
 ```bash
 # Clone the repository
@@ -117,7 +153,7 @@ Edit `config.json` with your Tuya credentials:
 }
 ```
 
-### 4. Running the Server
+### 3. Running the Server
 
 ```bash
 # Run standalone server
@@ -142,7 +178,7 @@ pip install flask tinytuya requests
 git clone https://github.com/YOUR_USERNAME/SmartFridge-Telemetry-Kiosk.git
 cd SmartFridge-Telemetry-Kiosk
 termux-wake-lock
-nohup python auto_monitor.py > monitor.log 2>&1 &
+nohup python auto_monitor.py > /sdcard/monitor.log 2>&1 &
 ```
 
 ---
