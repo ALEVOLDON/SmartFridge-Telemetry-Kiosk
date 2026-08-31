@@ -119,13 +119,106 @@
             border-color: #3b82f6;
         }
 
+        /* Mobile Menu Drawer */
+        .mobile-menu-btn {
+            display: none;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f8fafc;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        .mobile-menu-btn:hover, .mobile-menu-btn:active {
+            background: rgba(51, 65, 85, 0.95);
+            border-color: var(--accent-blue);
+        }
+
+        .drawer-backdrop {
+            display: none;
+            position: fixed;
+            z-index: 3000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .drawer-content {
+            position: fixed;
+            z-index: 3001;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            max-width: 85vw;
+            height: 100%;
+            background: #1e293b;
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            transition: right 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+        .drawer-content.open {
+            right: 0;
+        }
+        .drawer-header {
+            padding: 16px 20px;
+            background: rgba(15, 23, 42, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .drawer-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 20px;
+            color: #e2e8f0;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            transition: background 0.15s;
+            background: transparent;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            width: 100%;
+            text-align: left;
+        }
+        .drawer-item:hover, .drawer-item:active {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+        }
+        .drawer-section-title {
+            padding: 14px 20px 6px 20px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         /* Mobile & Tablet Responsiveness */
         @media (max-width: 768px) {
             body { padding: 12px; }
-            .header { flex-direction: column; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
-            .title-group h1 { font-size: 20px; }
-            .btn-group { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
-            .btn-group .btn { flex: 1 1 calc(50% - 4px); justify-content: center; font-size: 13px; padding: 8px 12px; }
+            .header { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+            .title-group h1 { font-size: 18px; }
+            .title-group p { display: none; }
+            .desktop-btn-group { display: none !important; }
+            .mobile-menu-btn { display: inline-flex !important; }
             .grid-3 { grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
             .main-stat { font-size: 32px; }
             .cycle-box { flex-direction: column; align-items: flex-start; padding: 16px; gap: 12px; }
@@ -141,16 +234,77 @@
 
         @media (max-width: 480px) {
             body { padding: 8px; }
-            .title-group h1 { font-size: 18px; }
-            .btn-group .btn { flex: 1 1 100%; font-size: 13px; padding: 10px 14px; }
-            .main-stat { font-size: 30px; }
-            .timer-val { font-size: 26px; }
-            .card { padding: 14px; border-radius: 12px; }
+            .title-group h1 { font-size: 16px; }
+            .main-stat { font-size: 28px; }
+            .timer-val { font-size: 24px; }
+            .card { padding: 12px; border-radius: 12px; }
         }
     </style>
 </head>
 <body>
 <audio id="pc-audio-player" preload="auto" src="/static/chime.wav" style="display:none;"></audio>
+
+<!-- Mobile Slide-out Drawer Menu -->
+<div class="drawer-backdrop" id="drawer-backdrop" onclick="closeMobileDrawer()"></div>
+<div class="drawer-content" id="drawer-content">
+    <div class="drawer-header">
+        <div>
+            <div style="font-weight: 700; font-size: 15.5px; color: #f8fafc; display:flex; align-items:center; gap:6px;">
+                🧊 <span>Samsung RT34MB</span>
+            </div>
+            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">Мобильное меню</div>
+        </div>
+        <button onclick="closeMobileDrawer()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            ✕
+        </button>
+    </div>
+
+    <!-- Section 1: Screens -->
+    <div class="drawer-section-title">📂 Разделы</div>
+    <button class="drawer-item" onclick="closeMobileDrawer(); window.scrollTo({top:0, behavior:'smooth'});">
+        <span>🏠</span>
+        <span>Главный дашборд</span>
+    </button>
+    <button class="drawer-item" onclick="closeMobileDrawer(); openArchiveModal();">
+        <span>📜</span>
+        <span>Полный архив циклов</span>
+    </button>
+    <a class="drawer-item" href="/ipad">
+        <span>📟</span>
+        <span>Режим Киоска iPad / Планшет</span>
+    </a>
+
+    <!-- Section 2: Controls & Audio -->
+    <div class="drawer-section-title">⚙️ Управление и звук</div>
+    <button class="drawer-item" onclick="togglePcSound(); syncDrawerSoundUI();">
+        <span id="drawer-sound-icon">🔔</span>
+        <span id="drawer-sound-text">Звуковой сигнал: ВКЛ</span>
+    </button>
+    <button class="drawer-item" onclick="toggleFullScreen(); closeMobileDrawer();">
+        <span>⛶</span>
+        <span>Полноэкранный режим</span>
+    </button>
+    <button class="drawer-item" onclick="testNotification(); closeMobileDrawer();">
+        <span>🔔</span>
+        <span>Тест оповещения</span>
+    </button>
+    <button class="drawer-item" onclick="openSettings(); closeMobileDrawer();">
+        <span>⚙️</span>
+        <span>Настройки Tuya API</span>
+    </button>
+    <button class="drawer-item" onclick="window.print(); closeMobileDrawer();">
+        <span>🖨</span>
+        <span>Печать отчета</span>
+    </button>
+
+    <!-- Section 3: Status Info -->
+    <div class="drawer-section-title">🛡️ Инфо о системе</div>
+    <div style="padding: 12px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6; background: rgba(15,23,42,0.6); margin: 6px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+        <div>Сервер: <strong style="color:#f8fafc;">H96 Max (192.168.0.103)</strong></div>
+        <div id="drawer-channel-info">Канал: <strong style="color:#10b981;">LAN (без облака)</strong></div>
+        <div id="drawer-quota-info">Квота: <strong style="color:#10b981;">50 000 / 50 000</strong></div>
+    </div>
+</div>
 
 <div class="container">
     <!-- Header -->
@@ -159,13 +313,18 @@
             <h1>🧊 Авто-Монитор: Samsung RT34MB</h1>
             <p>Автоматический опрос умной розетки через Tuya Cloud каждые 5 сек</p>
         </div>
-        <div class="btn-group">
+        <!-- Desktop Action Buttons -->
+        <div class="btn-group desktop-btn-group">
             <button class="btn btn-secondary" onclick="togglePcSound()" id="pc-sound-btn" style="color:#10b981; border-color:rgba(16,185,129,0.4);">🔔 Звук: ВКЛ</button>
             <button class="btn btn-secondary" onclick="toggleFullScreen()" id="fs-btn">⛶ На весь экран</button>
             <button class="btn btn-secondary" onclick="testNotification()">🔔 Тест оповещения</button>
             <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки API</button>
             <button class="btn btn-secondary" onclick="window.print()">🖨 Печать отчета</button>
         </div>
+        <!-- Mobile Menu Hamburger Trigger -->
+        <button class="mobile-menu-btn" onclick="openMobileDrawer()" id="mobile-menu-toggle">
+            ☰ Меню
+        </button>
     </div>
 
     <!-- Cloud Status Banner -->
@@ -511,15 +670,50 @@
 
     function updateSoundButtonUI() {
         const btn = document.getElementById('pc-sound-btn');
-        if (!btn) return;
-        if (soundEnabled) {
-            btn.innerHTML = '🔔 Звук: ВКЛ';
-            btn.style.color = '#10b981';
-            btn.style.borderColor = 'rgba(16,185,129,0.4)';
-        } else {
-            btn.innerHTML = '🔕 Звук: ВЫКЛ';
-            btn.style.color = '#94a3b8';
-            btn.style.borderColor = 'rgba(148,163,184,0.3)';
+        if (btn) {
+            if (soundEnabled) {
+                btn.innerHTML = '🔔 Звук: ВКЛ';
+                btn.style.color = '#10b981';
+                btn.style.borderColor = 'rgba(16,185,129,0.4)';
+            } else {
+                btn.innerHTML = '🔕 Звук: ВЫКЛ';
+                btn.style.color = '#94a3b8';
+                btn.style.borderColor = 'rgba(148,163,184,0.3)';
+            }
+        }
+        syncDrawerSoundUI();
+    }
+
+    function syncDrawerSoundUI() {
+        const icon = document.getElementById('drawer-sound-icon');
+        const text = document.getElementById('drawer-sound-text');
+        if (icon && text) {
+            if (soundEnabled) {
+                icon.innerText = '🔔';
+                text.innerHTML = 'Звуковой сигнал: <strong style="color:#10b981;">ВКЛ</strong>';
+            } else {
+                icon.innerText = '🔕';
+                text.innerHTML = 'Звуковой сигнал: <strong style="color:#94a3b8;">ВЫКЛ</strong>';
+            }
+        }
+    }
+
+    function openMobileDrawer() {
+        syncDrawerSoundUI();
+        const backdrop = document.getElementById('drawer-backdrop');
+        const content = document.getElementById('drawer-content');
+        if (backdrop && content) {
+            backdrop.style.display = 'block';
+            setTimeout(() => { content.classList.add('open'); }, 10);
+        }
+    }
+
+    function closeMobileDrawer() {
+        const backdrop = document.getElementById('drawer-backdrop');
+        const content = document.getElementById('drawer-content');
+        if (backdrop && content) {
+            content.classList.remove('open');
+            setTimeout(() => { backdrop.style.display = 'none'; }, 280);
         }
     }
 
@@ -712,6 +906,15 @@
                             cBadge.style.background = 'rgba(245,158,11,0.15)';
                         }
                     }
+                }
+
+                const dChan = document.getElementById('drawer-channel-info');
+                const dQuota = document.getElementById('drawer-quota-info');
+                if (dChan) {
+                    dChan.innerHTML = isLan ? 'Канал: <strong style="color:#10b981;">Прямой LAN Wi-Fi (0 обл.)</strong>' : 'Канал: <strong style="color:#f59e0b;">Tuya Cloud API</strong>';
+                }
+                if (dQuota) {
+                    dQuota.innerHTML = `Квота: <strong style="color:#10b981;">${rem} / ${tot}</strong>`;
                 }
 
                 document.getElementById('live-power').innerHTML = `${data.power.toFixed(1)} <span class="unit">Вт</span>`;
