@@ -986,10 +986,7 @@ def tuya_poller():
                     active_streak += 1
                     idle_streak = 0
                 else:
-                    if power <= 15.0:
-                        idle_streak += 2
-                    else:
-                        idle_streak += 1
+                    idle_streak += 1
                     active_streak = 0
 
                 last_end = get_latest_end_time() or ""
@@ -1271,6 +1268,24 @@ def get_history():
         ORDER BY start_time ASC, id ASC
     """)
     raw_cycles = cur.fetchall()
+    
+    # Merge micro-split cycles (where rest between fragments is <= 90 seconds)
+    merged_raw_cycles = []
+    for c in raw_cycles:
+        if not merged_raw_cycles:
+            merged_raw_cycles.append(list(c))
+            continue
+        prev = merged_raw_cycles[-1]
+        prev_end = parse_iso(prev[1])
+        cur_st = parse_iso(c[0])
+        if prev_end and cur_st and 0 <= (cur_st - prev_end).total_seconds() <= 90 and prev[5] == c[5]:
+            prev[1] = c[1]
+            prev[2] = prev[2] + c[2] + int((cur_st - prev_end).total_seconds())
+            prev[3] = round((prev[3] + c[3]) / 2.0, 1)
+            prev[4] = round((prev[4] + c[4]) / 2.0, 1)
+        else:
+            merged_raw_cycles.append(list(c))
+    raw_cycles = merged_raw_cycles
     
     # Blackouts
     cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY start_time DESC LIMIT 20")
