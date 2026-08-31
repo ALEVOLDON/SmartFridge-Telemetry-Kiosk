@@ -9,6 +9,7 @@ ipconfig.txt
 *.db-journal
 *.log
 monitor.log
+data_backups/
 
 # Personal & Generated Documents
 *.docx
