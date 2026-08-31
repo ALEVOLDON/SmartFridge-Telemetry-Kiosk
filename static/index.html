@@ -769,9 +769,33 @@
     }
 
     function testNotification() {
-        fetch('/api/test_notification', {method: 'POST'})
-            .then(r => r.json())
-            .then(() => alert('🔔 Тестовое оповещение отправлено в Windows! Посмотрите в правый нижний угол экрана.'));
+        // 1. Play chime sound directly on device
+        playGentleChime();
+        
+        // 2. Trigger native Web Notification if supported
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                try {
+                    new Notification('🧊 Авто-Монитор: Samsung RT34MB', {
+                        body: '🔔 Тест связи: Звук и оповещения работают отлично!',
+                        icon: '/static/icon-192.png'
+                    });
+                } catch(e) {}
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        try {
+                            new Notification('🧊 Авто-Монитор: Samsung RT34MB', {
+                                body: '🔔 Оповещения активированы!',
+                                icon: '/static/icon-192.png'
+                            });
+                        } catch(e) {}
+                    }
+                });
+            }
+        }
+        
+        alert('🔔 Звуковой сигнал колокольчика и тестовое оповещение успешно воспроизведены!');
     }
 
     function printReport() {
