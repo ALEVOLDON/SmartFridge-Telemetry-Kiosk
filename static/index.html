@@ -470,6 +470,7 @@
     let isAutoScanning = false;
     let historyTick = 0;
     let lastStatus = null;
+    let prevRunningState = null;
     let liveTimerSec = 0;
     let liveTimerMode = '';
 
@@ -853,8 +854,14 @@
                     liveChart.update();
                 }
 
+                if (prevRunningState !== null && prevRunningState !== data.is_running) {
+                    updateCyclesTable();
+                    historyTick = 0;
+                }
+                prevRunningState = data.is_running;
+
                 historyTick++;
-                if (historyTick === 1 || historyTick % 10 === 0) {
+                if (historyTick === 1 || historyTick % 3 === 0) {
                     updateCyclesTable();
                 }
             })

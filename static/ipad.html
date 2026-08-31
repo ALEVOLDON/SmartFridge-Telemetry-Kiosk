@@ -252,6 +252,7 @@
         var failedPolls = 0;
         var isAutoScanning = false;
         var lastStatus = null;
+        var prevRunningState = null;
         var liveTimerSec = 0;
         var liveTimerMode = '';
 
@@ -506,6 +507,10 @@
                                 }
                                 timerHint.innerHTML = restHint;
                             }
+                            if (prevRunningState !== null && prevRunningState !== data.is_running) {
+                                loadHistory();
+                            }
+                            prevRunningState = data.is_running;
                             syncIpadTimer(data);
                         } catch(e) {}
                     } else {
@@ -647,7 +652,7 @@
         loadHistory();
         setInterval(loadStatus, 3000);
         setInterval(tickLiveTimer, 1000);
-        setInterval(loadHistory, 30000);
+        setInterval(loadHistory, 8000);
     </script>
 </body>
 </html>

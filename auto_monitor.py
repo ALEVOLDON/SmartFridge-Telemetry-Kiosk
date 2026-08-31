@@ -903,8 +903,8 @@ def tuya_poller():
     poll_count = 0
     active_streak = 0
     idle_streak = 0
-    ON_STREAK = 3
-    OFF_STREAK = 3
+    ON_STREAK = 2
+    OFF_STREAK = 2
     cloud_ok = False
     
     cfg = load_config()
@@ -1116,7 +1116,7 @@ def tuya_poller():
 
         if state.get("connected"):
             if state.get("connection_source") == "local_wifi":
-                sleep_sec = 4 if state.get("is_running") else 8
+                sleep_sec = 3 if state.get("is_running") else 5
             else:
                 # Cloud Eco-Mode: 25s when running, 60s when resting (guarantees <= 1400/day -> 35+ days on 50k quota)
                 sleep_sec = 25 if state.get("is_running") else 60
