@@ -1039,15 +1039,6 @@
                 }
             })
             .catch(console.error);
-    }
-
-    function tickLiveTimer() {
-        if (!lastStatus) return;
-        const timerVal = document.getElementById('auto-timer');
-        if (!timerVal) return;
-        timerVal.innerText = formatSec(liveElapsedSec());
-    }
-
     setInterval(pollStatus, 3000);
     setInterval(tickLiveTimer, 1000);
     pollStatus();
