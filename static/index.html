@@ -86,7 +86,7 @@
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.9));
             color: #38bdf8;
             border: 1px solid rgba(56, 189, 248, 0.35);
-            padding: 10px 24px;
+            padding: 10px 20px;
             border-radius: 10px;
             font-weight: 700;
             cursor: pointer;
@@ -94,7 +94,10 @@
             font-size: 13.5px;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            gap: 6px;
             box-shadow: 0 4px 14px rgba(0,0,0,0.25);
         }
         .btn-archive:hover {
@@ -581,12 +584,12 @@
                 </tbody>
             </table>
         </div>
-        <div style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+        <div style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
             <button class="btn-archive" onclick="openArchiveModal()">
-                📜 Открыть полный журнал и фильтры (<span id="total-cycles-btn">0</span> циклов)
+                📜 Полный журнал (<span id="total-cycles-btn">0</span>)
             </button>
-            <button class="btn btn-secondary" onclick="printReport()" style="padding:10px 18px; font-size:13.5px; border-radius:10px;">
-                🖨 Распечатать всю историю в PDF
+            <button class="btn btn-secondary" onclick="printReport()" style="padding:10px 18px; font-size:13.5px; border-radius:10px; white-space:nowrap;">
+                🖨 Печать в PDF
             </button>
         </div>
     </div>
