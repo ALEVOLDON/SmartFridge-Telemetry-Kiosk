@@ -75,6 +75,9 @@
                 <div class="sub" id="last-sync">Синхронизация с розеткой Tuya...</div>
             </div>
             <div>
+                <button onclick="toggleIpadSound()" id="ipad-sound-btn" style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
+                    🔔 Звук: ВКЛ
+                </button>
                 <button onclick="toggleIpadFS()" id="ipad-fs-btn" style="background: rgba(15,23,42,0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 6px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">
                     ⛶ Экран
                 </button>
@@ -255,6 +258,97 @@
         var prevRunningState = null;
         var liveTimerSec = 0;
         var liveTimerMode = '';
+
+        var soundEnabled = true;
+        try {
+            if (window.localStorage && window.localStorage.getItem('ipad_sound_enabled') !== null) {
+                soundEnabled = (window.localStorage.getItem('ipad_sound_enabled') === 'true');
+            }
+        } catch(e) {}
+
+        var audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    audioCtx = new AudioContextClass();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        // Warm, calm, pleasant melodic chime (E5 659Hz -> B5 988Hz harmonized chime with soft fade)
+        function playGentleChime() {
+            if (!soundEnabled) return;
+            try {
+                var ctx = getAudioContext();
+                if (!ctx) return;
+                
+                var now = ctx.currentTime;
+                
+                // Note 1: E5 (659.25 Hz)
+                var osc1 = ctx.createOscillator();
+                var gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(659.25, now);
+                gain1.gain.setValueAtTime(0.001, now);
+                gain1.gain.exponentialRampToValueAtTime(0.12, now + 0.05);
+                gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.85);
+                
+                // Note 2: B5 (987.77 Hz) slightly delayed (+0.18s) - creates a serene musical chime
+                var osc2 = ctx.createOscillator();
+                var gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(987.77, now + 0.18);
+                gain2.gain.setValueAtTime(0.001, now + 0.18);
+                gain2.gain.exponentialRampToValueAtTime(0.10, now + 0.23);
+                gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.18);
+                osc2.stop(now + 1.25);
+            } catch(e) {}
+        }
+
+        function updateSoundButtonUI() {
+            var btn = document.getElementById('ipad-sound-btn');
+            if (!btn) return;
+            if (soundEnabled) {
+                btn.innerHTML = '🔔 Звук: ВКЛ';
+                btn.style.color = '#10b981';
+                btn.style.borderColor = 'rgba(16,185,129,0.4)';
+                btn.style.background = 'rgba(16,185,129,0.15)';
+            } else {
+                btn.innerHTML = '🔕 Звук: ВЫКЛ';
+                btn.style.color = '#94a3b8';
+                btn.style.borderColor = 'rgba(148,163,184,0.3)';
+                btn.style.background = 'rgba(15,23,42,0.8)';
+            }
+        }
+
+        function toggleIpadSound() {
+            getAudioContext();
+            soundEnabled = !soundEnabled;
+            try {
+                if (window.localStorage) {
+                    window.localStorage.setItem('ipad_sound_enabled', String(soundEnabled));
+                }
+            } catch(e) {}
+            updateSoundButtonUI();
+            if (soundEnabled) {
+                playGentleChime();
+            }
+        }
+
+        window.addEventListener('touchstart', function() { getAudioContext(); }, false);
+        window.addEventListener('click', function() { getAudioContext(); }, false);
 
         function renderIpadTimer() {
             var timerVal = document.getElementById('timer-val');
@@ -509,6 +603,9 @@
                             }
                             if (prevRunningState !== null && prevRunningState !== data.is_running) {
                                 loadHistory();
+                                if (prevRunningState === true && data.is_running === false) {
+                                    playGentleChime();
+                                }
                             }
                             prevRunningState = data.is_running;
                             syncIpadTimer(data);
@@ -650,6 +747,7 @@
 
         loadStatus();
         loadHistory();
+        updateSoundButtonUI();
         setInterval(loadStatus, 3000);
         setInterval(tickLiveTimer, 1000);
         setInterval(loadHistory, 8000);
