@@ -67,6 +67,7 @@
     </style>
 </head>
 <body>
+    <audio id="ipad-audio-player" preload="auto" src="/static/chime.wav" style="display:none;"></audio>
 
     <div class="header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -266,7 +267,9 @@
             }
         } catch(e) {}
 
+        var isAudioUnlocked = false;
         var audioCtx = null;
+
         function getAudioContext() {
             if (!audioCtx) {
                 var AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -280,40 +283,77 @@
             return audioCtx;
         }
 
-        // Warm, calm, pleasant melodic chime (E5 659Hz -> B5 988Hz harmonized chime with soft fade)
+        function getChimePlayer() {
+            var a = document.getElementById('ipad-audio-player');
+            if (!a) {
+                a = new Audio('/static/chime.wav');
+            }
+            return a;
+        }
+
+        function unlockIpadAudio() {
+            try {
+                var a = getChimePlayer();
+                if (a && !isAudioUnlocked) {
+                    a.play();
+                    setTimeout(function() {
+                        a.pause();
+                        a.currentTime = 0;
+                        isAudioUnlocked = true;
+                    }, 40);
+                }
+                getAudioContext();
+            } catch(e) {}
+        }
+
         function playGentleChime() {
             if (!soundEnabled) return;
             try {
+                var a = getChimePlayer();
+                if (a) {
+                    a.currentTime = 0;
+                    a.volume = 1.0;
+                    var p = a.play();
+                    if (p && p.catch) {
+                        p.catch(function() {
+                            playWebAudioFallback();
+                        });
+                    }
+                    return;
+                }
+            } catch(e) {}
+            playWebAudioFallback();
+        }
+
+        function playWebAudioFallback() {
+            try {
                 var ctx = getAudioContext();
                 if (!ctx) return;
-                
                 var now = ctx.currentTime;
                 
-                // Note 1: E5 (659.25 Hz)
                 var osc1 = ctx.createOscillator();
                 var gain1 = ctx.createGain();
                 osc1.type = 'sine';
                 osc1.frequency.setValueAtTime(659.25, now);
                 gain1.gain.setValueAtTime(0.001, now);
-                gain1.gain.exponentialRampToValueAtTime(0.12, now + 0.05);
-                gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+                gain1.gain.exponentialRampToValueAtTime(0.5, now + 0.05);
+                gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.85);
                 osc1.connect(gain1);
                 gain1.connect(ctx.destination);
                 osc1.start(now);
-                osc1.stop(now + 0.85);
-                
-                // Note 2: B5 (987.77 Hz) slightly delayed (+0.18s) - creates a serene musical chime
+                osc1.stop(now + 0.9);
+
                 var osc2 = ctx.createOscillator();
                 var gain2 = ctx.createGain();
                 osc2.type = 'sine';
                 osc2.frequency.setValueAtTime(987.77, now + 0.18);
                 gain2.gain.setValueAtTime(0.001, now + 0.18);
-                gain2.gain.exponentialRampToValueAtTime(0.10, now + 0.23);
-                gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+                gain2.gain.exponentialRampToValueAtTime(0.45, now + 0.23);
+                gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.3);
                 osc2.connect(gain2);
                 gain2.connect(ctx.destination);
                 osc2.start(now + 0.18);
-                osc2.stop(now + 1.25);
+                osc2.stop(now + 1.35);
             } catch(e) {}
         }
 
@@ -334,7 +374,7 @@
         }
 
         function toggleIpadSound() {
-            getAudioContext();
+            unlockIpadAudio();
             soundEnabled = !soundEnabled;
             try {
                 if (window.localStorage) {
@@ -347,8 +387,9 @@
             }
         }
 
-        window.addEventListener('touchstart', function() { getAudioContext(); }, false);
-        window.addEventListener('click', function() { getAudioContext(); }, false);
+        window.addEventListener('touchstart', unlockIpadAudio, false);
+        window.addEventListener('touchend', unlockIpadAudio, false);
+        window.addEventListener('click', unlockIpadAudio, false);
 
         function renderIpadTimer() {
             var timerVal = document.getElementById('timer-val');

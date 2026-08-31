@@ -141,6 +141,7 @@
     </style>
 </head>
 <body>
+<audio id="pc-audio-player" preload="auto" src="/static/chime.wav" style="display:none;"></audio>
 
 <div class="container">
     <!-- Header -->
@@ -150,6 +151,7 @@
             <p>Автоматический опрос умной розетки через Tuya Cloud каждые 5 сек</p>
         </div>
         <div class="btn-group">
+            <button class="btn btn-secondary" onclick="togglePcSound()" id="pc-sound-btn" style="color:#10b981; border-color:rgba(16,185,129,0.4);">🔔 Звук: ВКЛ</button>
             <button class="btn btn-secondary" onclick="toggleFullScreen()" id="fs-btn">⛶ На весь экран</button>
             <button class="btn btn-secondary" onclick="testNotification()">🔔 Тест оповещения</button>
             <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки API</button>
@@ -473,6 +475,50 @@
     let prevRunningState = null;
     let liveTimerSec = 0;
     let liveTimerMode = '';
+
+    let soundEnabled = true;
+    try {
+        if (localStorage.getItem('pc_sound_enabled') !== null) {
+            soundEnabled = (localStorage.getItem('pc_sound_enabled') === 'true');
+        }
+    } catch(e) {}
+
+    function playGentleChime() {
+        if (!soundEnabled) return;
+        try {
+            const a = document.getElementById('pc-audio-player');
+            if (a) {
+                a.currentTime = 0;
+                a.volume = 1.0;
+                a.play().catch(() => {});
+            }
+        } catch(e) {}
+    }
+
+    function updateSoundButtonUI() {
+        const btn = document.getElementById('pc-sound-btn');
+        if (!btn) return;
+        if (soundEnabled) {
+            btn.innerHTML = '🔔 Звук: ВКЛ';
+            btn.style.color = '#10b981';
+            btn.style.borderColor = 'rgba(16,185,129,0.4)';
+        } else {
+            btn.innerHTML = '🔕 Звук: ВЫКЛ';
+            btn.style.color = '#94a3b8';
+            btn.style.borderColor = 'rgba(148,163,184,0.3)';
+        }
+    }
+
+    function togglePcSound() {
+        soundEnabled = !soundEnabled;
+        try {
+            localStorage.setItem('pc_sound_enabled', String(soundEnabled));
+        } catch(e) {}
+        updateSoundButtonUI();
+        if (soundEnabled) {
+            playGentleChime();
+        }
+    }
 
     function syncLiveTimer(data) {
         if (!data) return;
@@ -857,6 +903,9 @@
                 if (prevRunningState !== null && prevRunningState !== data.is_running) {
                     updateCyclesTable();
                     historyTick = 0;
+                    if (prevRunningState === true && data.is_running === false) {
+                        playGentleChime();
+                    }
                 }
                 prevRunningState = data.is_running;
 
@@ -1043,6 +1092,7 @@
 
     setInterval(pollStatus, 3000);
     setInterval(tickLiveTimer, 1000);
+    updateSoundButtonUI();
     pollStatus();
     updateCyclesTable();
 </script>

@@ -986,7 +986,10 @@ def tuya_poller():
                     active_streak += 1
                     idle_streak = 0
                 else:
-                    idle_streak += 1
+                    if power <= 15.0:
+                        idle_streak += 2
+                    else:
+                        idle_streak += 1
                     active_streak = 0
 
                 last_end = get_latest_end_time() or ""
