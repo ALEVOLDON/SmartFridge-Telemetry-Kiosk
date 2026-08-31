@@ -239,6 +239,115 @@
             .timer-val { font-size: 24px; }
             .card { padding: 12px; border-radius: 12px; }
         }
+
+        /* Professional Clean Print Stylesheet */
+        @media print {
+            .drawer-backdrop,
+            .drawer-content,
+            .mobile-menu-btn,
+            .desktop-btn-group,
+            .btn-group,
+            .btn-archive,
+            .modal,
+            #archive-modal,
+            #settings-modal,
+            audio {
+                display: none !important;
+                visibility: hidden !important;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 11pt !important;
+            }
+            .container {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .header {
+                border-bottom: 2px solid #0f172a !important;
+                padding-bottom: 8px !important;
+                margin-bottom: 14px !important;
+            }
+            .title-group h1 {
+                font-size: 18pt !important;
+                color: #0f172a !important;
+                text-shadow: none !important;
+            }
+            .title-group p {
+                display: block !important;
+                color: #475569 !important;
+                font-size: 10pt !important;
+            }
+
+            .cloud-banner,
+            .card,
+            .cycle-box,
+            .chart-card,
+            #channel-quota-card {
+                background: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                box-shadow: none !important;
+                border-radius: 8px !important;
+                padding: 10px 12px !important;
+                margin-bottom: 12px !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                color: #0f172a !important;
+                page-break-inside: avoid;
+            }
+
+            .card-title {
+                color: #475569 !important;
+                font-size: 10pt !important;
+            }
+            .main-stat {
+                color: #0f172a !important;
+                text-shadow: none !important;
+                font-size: 20pt !important;
+            }
+            .unit {
+                color: #64748b !important;
+            }
+            .timer-val {
+                color: #0284c7 !important;
+                background: #f0f9ff !important;
+                border-color: #bae6fd !important;
+                text-shadow: none !important;
+            }
+
+            .grid-3 {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr 1fr !important;
+                gap: 10px !important;
+            }
+
+            table {
+                width: 100% !important;
+                font-size: 9pt !important;
+                border-collapse: collapse !important;
+            }
+            th {
+                background: #f1f5f9 !important;
+                color: #0f172a !important;
+                border: 1px solid #cbd5e1 !important;
+                padding: 6px 8px !important;
+            }
+            td {
+                border: 1px solid #e2e8f0 !important;
+                color: #1e293b !important;
+                padding: 6px 8px !important;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
@@ -292,7 +401,7 @@
         <span>⚙️</span>
         <span>Настройки Tuya API</span>
     </button>
-    <button class="drawer-item" onclick="window.print(); closeMobileDrawer();">
+    <button class="drawer-item" onclick="printReport();">
         <span>🖨</span>
         <span>Печать отчета</span>
     </button>
@@ -319,7 +428,7 @@
             <button class="btn btn-secondary" onclick="toggleFullScreen()" id="fs-btn">⛶ На весь экран</button>
             <button class="btn btn-secondary" onclick="testNotification()">🔔 Тест оповещения</button>
             <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки API</button>
-            <button class="btn btn-secondary" onclick="window.print()">🖨 Печать отчета</button>
+            <button class="btn btn-secondary" onclick="printReport()">🖨 Печать отчета</button>
         </div>
         <!-- Mobile Menu Hamburger Trigger -->
         <button class="mobile-menu-btn" onclick="openMobileDrawer()" id="mobile-menu-toggle">
@@ -621,6 +730,13 @@
         fetch('/api/test_notification', {method: 'POST'})
             .then(r => r.json())
             .then(() => alert('🔔 Тестовое оповещение отправлено в Windows! Посмотрите в правый нижний угол экрана.'));
+    }
+
+    function printReport() {
+        closeMobileDrawer();
+        setTimeout(() => {
+            window.print();
+        }, 150);
     }
 
     function formatHm(sec) {
