@@ -293,16 +293,34 @@
 
         function unlockIpadAudio() {
             try {
+                var ctx = getAudioContext();
+                if (ctx) {
+                    var buffer = ctx.createBuffer(1, 1, 22050);
+                    var source = ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(ctx.destination);
+                    if (source.start) {
+                        source.start(0);
+                    } else if (source.noteOn) {
+                        source.noteOn(0);
+                    }
+                }
                 var a = getChimePlayer();
-                if (a && !isAudioUnlocked) {
-                    a.play();
-                    setTimeout(function() {
+                if (a) {
+                    a.load();
+                    var p = a.play();
+                    if (p && p.then) {
+                        p.then(function() {
+                            a.pause();
+                            a.currentTime = 0;
+                            isAudioUnlocked = true;
+                        }).catch(function(){});
+                    } else {
                         a.pause();
                         a.currentTime = 0;
                         isAudioUnlocked = true;
-                    }, 40);
+                    }
                 }
-                getAudioContext();
             } catch(e) {}
         }
 
@@ -313,16 +331,12 @@
                 if (a) {
                     a.currentTime = 0;
                     a.volume = 1.0;
-                    var p = a.play();
-                    if (p && p.catch) {
-                        p.catch(function() {
-                            playWebAudioFallback();
-                        });
-                    }
-                    return;
+                    a.play();
                 }
             } catch(e) {}
-            playWebAudioFallback();
+            try {
+                playWebAudioFallback();
+            } catch(e) {}
         }
 
         function playWebAudioFallback() {
