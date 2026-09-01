@@ -438,7 +438,7 @@
     <!-- Section 3: Status Info -->
     <div class="drawer-section-title">🛡️ Инфо о системе</div>
     <div style="padding: 12px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6; background: rgba(15,23,42,0.6); margin: 6px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-        <div>Сервер: <strong style="color:#f8fafc;">H96 Max (192.168.0.103)</strong></div>
+        <div>Сервер: <strong style="color:#f8fafc;" id="drawer-server-ip">Локальная сеть</strong></div>
         <div id="drawer-channel-info">Канал: <strong style="color:#10b981;">LAN (без облака)</strong></div>
         <div id="drawer-quota-info">Квота: <strong style="color:#10b981;">50 000 / 50 000</strong></div>
     </div>
@@ -1105,8 +1105,12 @@
                     }
                 }
 
+                const dSrv = document.getElementById('drawer-server-ip');
                 const dChan = document.getElementById('drawer-channel-info');
                 const dQuota = document.getElementById('drawer-quota-info');
+                if (dSrv) {
+                    dSrv.innerText = (window.location.hostname || 'localhost') + (window.location.port ? ':' + window.location.port : '');
+                }
                 if (dChan) {
                     dChan.innerHTML = isLan ? 'Канал: <strong style="color:#10b981;">Прямой LAN Wi-Fi (0 обл.)</strong>' : 'Канал: <strong style="color:#f59e0b;">Tuya Cloud API</strong>';
                 }
