@@ -9,6 +9,7 @@
 [![Termux](https://img.shields.io/badge/Deploy-Android%20Termux%20(3W)-success.svg?logo=android)](https://termux.dev/)
 [![iOS Legacy](https://img.shields.io/badge/Kiosk-iOS%208--12%20WebKit%20(ES5)-orange.svg?logo=apple)](https://apple.com)
 [![LAN Direct](https://img.shields.io/badge/LAN%20Direct-TinyTuya%20(0%20Cloud)-brightgreen.svg)](https://github.com/jasonacox/tinytuya)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blueviolet.svg)](https://alevoldon.github.io/SmartFridge-Telemetry-Kiosk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <br />
