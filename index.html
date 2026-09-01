@@ -1036,58 +1036,42 @@
     }
 
     
-    // --- GITHUB PAGES INTERACTIVE DEMO ENGINE ---
+    
+    // ================= GITHUB PAGES DEMO MODE FALLBACK =================
     const isGhPages = window.location.hostname.includes('github.io') || window.location.protocol === 'file:';
-    let demoTick = 0;
-    let demoPower = 131.5;
-    let demoVoltage = 219.0;
+    let demoTimer = 0;
+    let demoPower = 132.4;
+    let demoVoltage = 219.8;
     let demoIsRunning = true;
-    let demoSec = 620;
+    let demoCycleSec = 840;
 
-    const mockHistoryData = {
-        "measurements": [
-            {"time": "14:20", "power": 131.2, "voltage": 208.5, "current": 0.63, "is_running": true, "temp_freezer": -18.8, "temp_fridge": 4.1},
-            {"time": "14:21", "power": 130.8, "voltage": 208.2, "current": 0.63, "is_running": true, "temp_freezer": -18.8, "temp_fridge": 4.1},
-            {"time": "14:22", "power": 132.1, "voltage": 208.9, "current": 0.63, "is_running": true, "temp_freezer": -18.9, "temp_fridge": 4.0},
-            {"time": "14:23", "power": 131.6, "voltage": 208.4, "current": 0.63, "is_running": true, "temp_freezer": -18.9, "temp_fridge": 4.0},
-            {"time": "14:24", "power": 131.0, "voltage": 208.7, "current": 0.63, "is_running": true, "temp_freezer": -19.0, "temp_fridge": 4.0}
-        ],
-        "cycles": [
-            { "full_end": "2026-09-01T14:25:00", "date": "01.09.2026", "date_short": "01.09", "start": "13:59", "end": "14:25", "duration_sec": 1560, "duration_str": "26 мин", "rest_sec": 3000, "rest_str": "50 мин", "rest_start": "14:25", "rest_end": "15:15", "krv": "0.34", "avg_power": 131.2, "avg_voltage": 208.5, "cycle_type": "cooling" },
-            { "full_end": "2026-09-01T13:13:00", "date": "01.09.2026", "date_short": "01.09", "start": "12:33", "end": "13:13", "duration_sec": 2400, "duration_str": "40 мин", "rest_sec": 2760, "rest_str": "46 мин", "rest_start": "13:13", "rest_end": "13:59", "krv": "0.47", "avg_power": 133.0, "avg_voltage": 209.1, "cycle_type": "cooling" },
-            { "full_end": "2026-09-01T11:39:00", "date": "01.09.2026", "date_short": "01.09", "start": "11:19", "end": "11:39", "duration_sec": 1200, "duration_str": "20 мин", "rest_sec": 3300, "rest_str": "55 мин", "rest_start": "11:39", "rest_end": "12:33", "krv": "0.27", "avg_power": 129.8, "avg_voltage": 211.4, "cycle_type": "cooling" },
-            { "full_end": "2026-09-01T10:25:00", "date": "01.09.2026", "date_short": "01.09", "start": "10:04", "end": "10:25", "duration_sec": 1260, "duration_str": "21 мин", "rest_sec": 3240, "rest_str": "54 мин", "rest_start": "10:25", "rest_end": "11:19", "krv": "0.28", "avg_power": 130.5, "avg_voltage": 210.8, "cycle_type": "cooling" },
-            { "full_end": "2026-09-01T08:05:00", "date": "01.09.2026", "date_short": "01.09", "start": "07:45", "end": "08:05", "duration_sec": 1200, "duration_str": "20 мин", "rest_sec": 1080, "rest_str": "18 мин", "rest_start": "08:05", "rest_end": "08:23", "krv": "0.53", "avg_power": 164.5, "avg_voltage": 212.0, "cycle_type": "defrost" },
-            { "full_end": "2026-09-01T06:50:00", "date": "01.09.2026", "date_short": "01.09", "start": "06:22", "end": "06:50", "duration_sec": 1680, "duration_str": "28 мин", "rest_sec": 3300, "rest_str": "55 мин", "rest_start": "06:50", "rest_end": "07:45", "krv": "0.34", "avg_power": 132.1, "avg_voltage": 214.2, "cycle_type": "cooling" }
-        ],
-        "blackouts": [
-            { "date": "29.08.2026", "start": "13:00", "end": "15:03", "duration_sec": 7380, "duration_str": "2 ч 3 мин", "safety": "🟢 Оценка без датчика: за ≤4 ч камера обычно теряет около 1°C" }
-        ],
-        "summary": {
-            "overall_krv": 0.35,
-            "total_cycles": 92,
-            "krv_status": "🟢 Отличный (энергоэффективный)"
-        }
-    };
+    const sampleCycles = [
+        { "full_end": "2026-09-01T14:25:00", "date": "01.09.2026", "date_short": "01.09", "start": "13:59", "end": "14:25", "duration_sec": 1560, "duration_str": "26 мин", "rest_sec": 3000, "rest_str": "50 мин", "rest_start": "14:25", "rest_end": "15:15", "krv": "0.34", "avg_power": 131.2, "avg_voltage": 208.5, "cycle_type": "cooling" },
+        { "full_end": "2026-09-01T13:13:00", "date": "01.09.2026", "date_short": "01.09", "start": "12:33", "end": "13:13", "duration_sec": 2400, "duration_str": "40 мин", "rest_sec": 2760, "rest_str": "46 мин", "rest_start": "13:13", "rest_end": "13:59", "krv": "0.47", "avg_power": 133.0, "avg_voltage": 209.1, "cycle_type": "cooling" },
+        { "full_end": "2026-09-01T11:39:00", "date": "01.09.2026", "date_short": "01.09", "start": "11:19", "end": "11:39", "duration_sec": 1200, "duration_str": "20 мин", "rest_sec": 3300, "rest_str": "55 мин", "rest_start": "11:39", "rest_end": "12:33", "krv": "0.27", "avg_power": 129.8, "avg_voltage": 211.4, "cycle_type": "cooling" },
+        { "full_end": "2026-09-01T10:25:00", "date": "01.09.2026", "date_short": "01.09", "start": "10:04", "end": "10:25", "duration_sec": 1260, "duration_str": "21 мин", "rest_sec": 3240, "rest_str": "54 мин", "rest_start": "10:25", "rest_end": "11:19", "krv": "0.28", "avg_power": 130.5, "avg_voltage": 210.8, "cycle_type": "cooling" },
+        { "full_end": "2026-09-01T08:05:00", "date": "01.09.2026", "date_short": "01.09", "start": "07:45", "end": "08:05", "duration_sec": 1200, "duration_str": "20 мин", "rest_sec": 1080, "rest_str": "18 мин", "rest_start": "08:05", "rest_end": "08:23", "krv": "0.53", "avg_power": 164.5, "avg_voltage": 212.0, "cycle_type": "defrost" },
+        { "full_end": "2026-09-01T06:50:00", "date": "01.09.2026", "date_short": "01.09", "start": "06:22", "end": "06:50", "duration_sec": 1680, "duration_str": "28 мин", "rest_sec": 3300, "rest_str": "55 мин", "rest_start": "06:50", "rest_end": "07:45", "krv": "0.34", "avg_power": 132.1, "avg_voltage": 214.2, "cycle_type": "cooling" }
+    ];
 
-    function generateMockStatus() {
-        demoTick++;
+    function getMockStatus() {
+        demoTimer++;
         if (demoIsRunning) {
-            demoPower = 129.5 + Math.sin(demoTick / 4) * 3.5 + (Math.random() * 1.5);
-            demoSec += 3;
-            if (demoSec > 1600) {
+            demoPower = 129 + Math.sin(demoTimer / 5) * 4 + (Math.random() * 2);
+            demoCycleSec += 3;
+            if (demoCycleSec > 1600) {
                 demoIsRunning = false;
-                demoSec = 0;
+                demoCycleSec = 0;
             }
         } else {
             demoPower = 0.0;
-            demoSec += 3;
-            if (demoSec > 3000) {
+            demoCycleSec += 3;
+            if (demoCycleSec > 2800) {
                 demoIsRunning = true;
-                demoSec = 0;
+                demoCycleSec = 0;
             }
         }
-        demoVoltage = 219.2 + Math.sin(demoTick / 6) * 2.5;
+        demoVoltage = 219 + Math.sin(demoTimer / 8) * 3;
 
         return {
             "connected": true,
@@ -1097,10 +1081,10 @@
             "current": demoPower > 10 ? (demoPower / demoVoltage) : 0.0,
             "is_running": demoIsRunning,
             "current_mode": demoIsRunning ? "cooling" : "idle",
-            "cycle_duration_sec": demoIsRunning ? demoSec : 0,
-            "rest_duration_sec": !demoIsRunning ? demoSec : 0,
+            "cycle_duration_sec": demoIsRunning ? demoCycleSec : 0,
+            "rest_duration_sec": !demoIsRunning ? demoCycleSec : 0,
             "last_update": new Date().toTimeString().split(' ')[0],
-            "temp_freezer": demoIsRunning ? -18.8 : -17.5,
+            "temp_freezer": demoIsRunning ? -18.8 : -17.4,
             "temp_fridge": 4.1,
             "temp_freezer_estimated": true,
             "temp_fridge_estimated": true,
@@ -1108,7 +1092,7 @@
                 "remaining": 49994,
                 "total_limit": 50000,
                 "used_today": 6,
-                "forecast_text": "100% экономия: 0 запросов/день при LAN (хватит навсегда)"
+                "forecast_text": "100% экономия: 0 запросов/день при LAN"
             },
             "last_blackout": {
                 "detected": true,
@@ -1130,302 +1114,6 @@
             .then(r => r.json())
             .then(data => {
                 handleStatusPayload(data);
-            });
-    }
-
-    function handleStatusPayload(data) {
-                failedPolls = 0;
-                isAutoScanning = false;
-                
-                const cloudDot = document.getElementById('cloud-dot');
-                const cloudText = document.getElementById('cloud-text');
-                if (data.connected) {
-                    cloudDot.className = 'dot dot-green';
-                    if (data.connection_source === 'local_wifi') {
-                        cloudText.innerText = 'Розетка по локальной сети (без облака)';
-                    } else {
-                        cloudText.innerText = 'Tuya Cloud API: запасной канал';
-                    }
-                    document.getElementById('last-sync').innerText = 'Обновлено: ' + (data.last_update || '--');
-                } else {
-                    cloudDot.className = 'dot dot-red';
-                    cloudText.innerText = data.error_message || 'Ожидание настройки API Tuya Cloud';
-                }
-
-                // Update Channel & Quota Card
-                const qCard = document.getElementById('channel-quota-card');
-                const qIcon = document.getElementById('channel-icon');
-                const qTitle = document.getElementById('channel-title');
-                const qSub = document.getElementById('channel-subtitle');
-                const qBadge = document.getElementById('quota-badge');
-                const cBadge = document.getElementById('channel-badge');
-
-                const quota = data.cloud_quota || {};
-                const rem = quota.remaining !== undefined ? quota.remaining : 50000;
-                const tot = quota.total_limit || 50000;
-                const todayUsed = quota.used_today || 0;
-                const isLan = (data.connection_source === 'local_wifi');
-
-                if (qCard && qTitle && qSub) {
-                    if (isLan) {
-                        qCard.style.borderLeftColor = '#10b981';
-                        qIcon.innerText = '🏠';
-                        qTitle.innerHTML = 'Канал связи: <strong>Прямой локальный Wi-Fi</strong> (без облака)';
-                        qSub.innerHTML = `🛡️ Запросов в облако сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || '100% экономия: лимиты не тратятся')}`;
-                        if (qBadge) {
-                            qBadge.innerText = `Квота: ${rem} / ${tot}`;
-                            qBadge.style.color = '#10b981';
-                            qBadge.style.background = 'rgba(16,185,129,0.15)';
-                        }
-                        if (cBadge) {
-                            cBadge.innerText = 'LAN: 0 запросов';
-                            cBadge.style.color = '#38bdf8';
-                            cBadge.style.background = 'rgba(56,189,248,0.15)';
-                        }
-                    } else {
-                        qCard.style.borderLeftColor = '#f59e0b';
-                        qIcon.innerText = '☁️';
-                        qTitle.innerHTML = 'Канал связи: <strong>Tuya Cloud API (Эко-резерв)</strong>';
-                        qSub.innerHTML = `⚠️ Запросов сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день')}`;
-                        if (qBadge) {
-                            qBadge.innerText = `Остаток квоты: ${rem} / ${tot}`;
-                            qBadge.style.color = '#f59e0b';
-                            qBadge.style.background = 'rgba(245,158,11,0.15)';
-                        }
-                        if (cBadge) {
-                            cBadge.innerText = 'Облако: Эко 25/60с';
-                            cBadge.style.color = '#f59e0b';
-                            cBadge.style.background = 'rgba(245,158,11,0.15)';
-                        }
-                    }
-                }
-
-                const dSrv = document.getElementById('drawer-server-ip');
-                const dChan = document.getElementById('drawer-channel-info');
-                const dQuota = document.getElementById('drawer-quota-info');
-                if (dSrv) {
-                    dSrv.innerText = (window.location.hostname || 'localhost') + (window.location.port ? ':' + window.location.port : '');
-                }
-                if (dChan) {
-                    dChan.innerHTML = isLan ? 'Канал: <strong style="color:#10b981;">Прямой LAN Wi-Fi (0 обл.)</strong>' : 'Канал: <strong style="color:#f59e0b;">Tuya Cloud API</strong>';
-                }
-                if (dQuota) {
-                    dQuota.innerHTML = `Квота: <strong style="color:#10b981;">${rem} / ${tot}</strong>`;
-                }
-
-                document.getElementById('live-power').innerHTML = `${data.power.toFixed(1)} <span class="unit">Вт</span>`;
-                document.getElementById('live-voltage').innerHTML = `${data.voltage.toFixed(1)} <span class="unit">В</span>`;
-                document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
-                
-                const freezerEst = (data.temp_freezer_estimated !== undefined)
-                    ? data.temp_freezer_estimated
-                    : ((data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected));
-                const fridgeEst = (data.temp_fridge_estimated !== undefined) ? data.temp_fridge_estimated : true;
-                const fTag = document.getElementById('freezer-tag');
-                const rTag = document.getElementById('fridge-tag');
-                const fDesc = document.getElementById('freezer-desc');
-                const rDesc = document.getElementById('fridge-desc');
-                
-                if (fTag) {
-                    if (freezerEst) {
-                        fTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
-                        fTag.style.color = '#38bdf8';
-                        fTag.style.background = 'rgba(56,189,248,0.15)';
-                        if (fDesc) fDesc.innerText = 'Теплофизическая модель (физический датчик не подключен)';
-                    } else {
-                        fTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
-                        fTag.style.color = '#10b981';
-                        fTag.style.background = 'rgba(16,185,129,0.15)';
-                        if (fDesc) fDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
-                    }
-                }
-                if (rTag) {
-                    if (fridgeEst) {
-                        rTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
-                        rTag.style.color = '#10b981';
-                        rTag.style.background = 'rgba(16,185,129,0.15)';
-                        if (rDesc) rDesc.innerText = 'Теплофизическая модель (отдельный датчик камеры не подключен)';
-                    } else {
-                        rTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
-                        rTag.style.color = '#10b981';
-                        rTag.style.background = 'rgba(16,185,129,0.15)';
-                        if (rDesc) rDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
-                    }
-                }
-                
-                if (data.temp_freezer !== undefined) {
-                    const fVal = document.getElementById('temp-freezer-val');
-                    if (fVal) fVal.innerHTML = `${data.temp_freezer > 0 ? '+' : ''}${data.temp_freezer.toFixed(1)} <span class="unit">°C</span>`;
-                }
-                if (data.temp_fridge !== undefined) {
-                    const rVal = document.getElementById('temp-fridge-val');
-                    if (rVal) rVal.innerHTML = `${data.temp_fridge > 0 ? '+' : ''}${data.temp_fridge.toFixed(1)} <span class="unit">°C</span>`;
-                }
-
-                // Update Blackout Status Banner
-                if (data.last_blackout && data.last_blackout.detected) {
-                    const bCard = document.getElementById('blackout-card');
-                    const bTitle = document.getElementById('blackout-title');
-                    const bSub = document.getElementById('blackout-subtitle');
-                    const bBadge = document.getElementById('blackout-badge');
-                    
-                    bTitle.innerHTML = `⚡ Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
-                    bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${escapeHTML(data.last_blackout.food_safety)}`;
-                    bBadge.innerText = data.last_blackout.duration_str;
-                    bBadge.style.color = '#f59e0b';
-                }
-
-                const desc = document.getElementById('live-state-desc');
-                const timerTitle = document.getElementById('timer-title');
-                const timerVal = document.getElementById('auto-timer');
-                const verdictEl = document.getElementById('cycle-verdict');
-                
-                lastStatus = data;
-                syncLiveTimer(data);
-                if (data.current_mode === 'defrost') {
-                    desc.innerText = '🔥 Автооттайка No Frost (ТЭН)';
-                    desc.style.color = '#f97316';
-                    
-                    timerTitle.innerText = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST (ТЭН)';
-                    timerTitle.style.color = '#f97316';
-                    timerVal.style.color = '#f97316';
-                    verdictEl.innerHTML = '🔥 Компрессор отключен. Электронагреватель (ТЭН ~165 Вт) растапливает иней на испарителе. Норма: <strong>10–25 минут</strong>.';
-                } else if (data.is_running) {
-                    desc.innerText = '🟢 Компрессор работает (Охлаждение)';
-                    desc.style.color = '#10b981';
-                    
-                    timerTitle.innerText = '🟢 АКТИВНЫЙ РЕЖИМ: ОХЛАЖДЕНИЕ (КОМПРЕССОР)';
-                    timerTitle.style.color = '#10b981';
-                    timerVal.style.color = '#10b981';
-                    verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты. Штатный цикл <strong>15–45 мин</strong>; при загрузке норма до <strong>3.5–5 ч</strong>.';
-                } else {
-                    desc.innerText = '⚪ Компрессор выключен (Отдых)';
-                    desc.style.color = '#94a3b8';
-                    
-                    const restSec = Number(data.rest_duration_sec) || 0;
-                    const restMin = Math.floor(restSec / 60);
-                    const estRemain = Math.max(0, 45 - restMin);
-                    const lockout = data.protection_lockout_sec || 0;
-                    
-                    timerTitle.innerText = '⚪ АКТИВНЫЙ РЕЖИМ: ОТДЫХ КОМПРЕССОРА (СТОЯНКА)';
-                    timerTitle.style.color = '#06b6d4';
-                    timerVal.style.color = '#06b6d4';
-                    let restHtml = `🧊 Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
-                    if (data.protection_active && lockout > 0) {
-                        restHtml += ` Пауза пуска: <strong>${lockout} с</strong>.`;
-                    }
-                    verdictEl.innerHTML = restHtml;
-                }
-
-                // Health & Anomaly Diagnostics Banner Update
-                const healthCard = document.getElementById('health-card');
-                const healthIcon = document.getElementById('health-icon');
-                const healthTitle = document.getElementById('health-title');
-                const healthSubtitle = document.getElementById('health-subtitle');
-                const healthBadge = document.getElementById('health-badge');
-
-                if (data.current_mode === 'defrost') {
-                    const durMin = Math.floor(data.cycle_duration_sec / 60);
-                    healthCard.style.borderLeftColor = '#f97316';
-                    healthIcon.innerText = '🔥';
-                    healthTitle.innerText = '🔥 Автооттайка испарителя No Frost (ТЭН)';
-                    healthSubtitle.innerText = `Компрессор спит. Нагреватель растапливает иней уже ${durMin} мин (норма: 10–25 мин). Талая вода уходит в дренаж.`;
-                    healthBadge.innerText = 'Оттайка: ТЭН 165W';
-                    healthBadge.style.color = '#f97316';
-                    healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
-                } else if (data.is_running) {
-                    const durMin = Math.floor(data.cycle_duration_sec / 60);
-                    if (durMin <= 45) {
-                        healthCard.style.borderLeftColor = '#10b981';
-                        healthIcon.innerText = '❄️';
-                        healthTitle.innerText = '🟢 Штатная заморозка (Охлаждение в норме)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин (норма пустого цикла: 15–45 мин). Температура опускается.`;
-                        healthBadge.innerText = 'Охлаждение: Норма';
-                        healthBadge.style.color = '#10b981';
-                        healthBadge.style.background = 'rgba(16, 185, 129, 0.15)';
-                    } else if (durMin <= 150) {
-                        healthCard.style.borderLeftColor = '#f59e0b';
-                        healthIcon.innerText = '⏳';
-                        healthTitle.innerText = '🟡 Интенсивный донабор холода (> 45 мин)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Норма при открывании дверей или малой загрузке (1.5–2.5 ч).`;
-                        healthBadge.innerText = 'Донабор холода / Загрузка';
-                        healthBadge.style.color = '#f59e0b';
-                        healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
-                    } else if (durMin <= 420) {
-                        healthCard.style.borderLeftColor = '#f97316';
-                        healthIcon.innerText = '📦';
-                        healthTitle.innerText = '🟠 Глубокая проморозка (загрузка / после блэкаута)';
-                        healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Штатно после отключения света или большой загрузки теплых продуктов (норма 3.5–5 ч, запас до 7 ч).`;
-                        healthBadge.innerText = 'Загрузка / после блэкаута';
-                        healthBadge.style.color = '#f97316';
-                        healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
-                    } else {
-                        healthCard.style.borderLeftColor = '#ef4444';
-                        healthIcon.innerText = '⚠️';
-                        healthTitle.innerText = '🔴 Внимание: Непрерывная работа компрессора (> 7 ч)';
-                        healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте дверь, уплотнители, термостат и уровень фреона.`;
-                        healthBadge.innerText = 'Тревога: Работа > 7ч';
-                        healthBadge.style.color = '#ef4444';
-                        healthBadge.style.background = 'rgba(239, 68, 68, 0.15)';
-                    }
-                } else {
-                    const restSec = data.rest_duration_sec || 0;
-                    const restMin = Math.floor(restSec / 60);
-                    if (restMin <= 60) {
-                        healthCard.style.borderLeftColor = '#06b6d4';
-                        healthIcon.innerText = '🧊';
-                        healthTitle.innerText = '⚪ Штатный отдых (Удержание холода)';
-                        healthSubtitle.innerText = `Компрессор отдыхает ${restMin} мин (норма: 35–55 мин). Термоизоляция и уплотнители отлично держат мороз.`;
-                        healthBadge.innerText = 'Отдых: Норма';
-                        healthBadge.style.color = '#06b6d4';
-                        healthBadge.style.background = 'rgba(6, 182, 212, 0.15)';
-                    } else if (restMin <= 95) {
-                        healthCard.style.borderLeftColor = '#3b82f6';
-                        healthIcon.innerText = '🕒';
-                        healthTitle.innerText = '🔵 Глубокий покой (> 1 ч отдыха)';
-                        healthSubtitle.innerText = `Холодильник отдыхает уже ${restMin} мин. Камера глубоко проморожена, дверь не открывали.`;
-                        healthBadge.innerText = 'Глубокий мороз';
-                        healthBadge.style.color = '#3b82f6';
-                        healthBadge.style.background = 'rgba(59, 130, 246, 0.15)';
-                    } else {
-                        healthCard.style.borderLeftColor = '#f59e0b';
-                        healthIcon.innerText = '⚠️';
-                        healthTitle.innerText = '🟡 Внимание: Длительный простой (> 1.5 ч)';
-                        healthSubtitle.innerText = `Холодильник не включается уже ${restMin} мин. Если в морозилке тепло, проверьте терморегулятор или таймер оттайки.`;
-                        healthBadge.innerText = 'Длительный простой';
-                        healthBadge.style.color = '#f59e0b';
-                        healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
-                    }
-                }
-                
-                // Add to chart
-                if (data.last_update) {
-                    liveChart.data.labels.push(data.last_update);
-                    liveChart.data.datasets[0].data.push(data.power);
-                    liveChart.data.datasets[1].data.push(data.voltage);
-                    liveChart.data.datasets[2].data.push(data.temp_freezer !== undefined ? data.temp_freezer : -18.0);
-                    if (liveChart.data.labels.length > 25) {
-                        liveChart.data.labels.shift();
-                        liveChart.data.datasets[0].data.shift();
-                        liveChart.data.datasets[1].data.shift();
-                        liveChart.data.datasets[2].data.shift();
-                    }
-                    liveChart.update();
-                }
-
-                if (prevRunningState !== null && prevRunningState !== data.is_running) {
-                    updateCyclesTable();
-                    historyTick = 0;
-                    if (prevRunningState === true && data.is_running === false) {
-                        playGentleChime();
-                    }
-                }
-                prevRunningState = data.is_running;
-
-                historyTick++;
-                if (historyTick === 1 || historyTick % 3 === 0) {
-                    updateCyclesTable();
-                }
             })
             .catch(err => {
                 console.error(err);
@@ -1435,6 +1123,302 @@
                 }
             });
     }
+
+    function handleStatusPayload(data) {
+        failedPolls = 0;
+        isAutoScanning = false;
+        
+        const cloudDot = document.getElementById('cloud-dot');
+        const cloudText = document.getElementById('cloud-text');
+        if (data.connected) {
+            cloudDot.className = 'dot dot-green';
+            if (data.connection_source === 'local_wifi') {
+                cloudText.innerText = 'Розетка по локальной сети (без облака)';
+            } else {
+                cloudText.innerText = 'Tuya Cloud API: запасной канал';
+            }
+            document.getElementById('last-sync').innerText = 'Обновлено: ' + (data.last_update || '--');
+        } else {
+            cloudDot.className = 'dot dot-red';
+            cloudText.innerText = data.error_message || 'Ожидание настройки API Tuya Cloud';
+        }
+
+        // Update Channel & Quota Card
+        const qCard = document.getElementById('channel-quota-card');
+        const qIcon = document.getElementById('channel-icon');
+        const qTitle = document.getElementById('channel-title');
+        const qSub = document.getElementById('channel-subtitle');
+        const qBadge = document.getElementById('quota-badge');
+        const cBadge = document.getElementById('channel-badge');
+
+        const quota = data.cloud_quota || {};
+        const rem = quota.remaining !== undefined ? quota.remaining : 50000;
+        const tot = quota.total_limit || 50000;
+        const todayUsed = quota.used_today || 0;
+        const isLan = (data.connection_source === 'local_wifi');
+
+        if (qCard && qTitle && qSub) {
+            if (isLan) {
+                qCard.style.borderLeftColor = '#10b981';
+                qIcon.innerText = '🏠';
+                qTitle.innerHTML = 'Канал связи: <strong>Прямой локальный Wi-Fi</strong> (без облака)';
+                qSub.innerHTML = `🛡️ Запросов в облако сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || '100% экономия: лимиты не тратятся')}`;
+                if (qBadge) {
+                    qBadge.innerText = `Квота: ${rem} / ${tot}`;
+                    qBadge.style.color = '#10b981';
+                    qBadge.style.background = 'rgba(16,185,129,0.15)';
+                }
+                if (cBadge) {
+                    cBadge.innerText = 'LAN: 0 запросов';
+                    cBadge.style.color = '#38bdf8';
+                    cBadge.style.background = 'rgba(56,189,248,0.15)';
+                }
+            } else {
+                qCard.style.borderLeftColor = '#f59e0b';
+                qIcon.innerText = '☁️';
+                qTitle.innerHTML = 'Канал связи: <strong>Tuya Cloud API (Эко-резерв)</strong>';
+                qSub.innerHTML = `⚠️ Запросов сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день')}`;
+                if (qBadge) {
+                    qBadge.innerText = `Остаток квоты: ${rem} / ${tot}`;
+                    qBadge.style.color = '#f59e0b';
+                    qBadge.style.background = 'rgba(245,158,11,0.15)';
+                }
+                if (cBadge) {
+                    cBadge.innerText = 'Облако: Эко 25/60с';
+                    cBadge.style.color = '#f59e0b';
+                    cBadge.style.background = 'rgba(245,158,11,0.15)';
+                }
+            }
+        }
+
+        const dSrv = document.getElementById('drawer-server-ip');
+        const dChan = document.getElementById('drawer-channel-info');
+        const dQuota = document.getElementById('drawer-quota-info');
+        if (dSrv) {
+            dSrv.innerText = (window.location.hostname || 'localhost') + (window.location.port ? ':' + window.location.port : '');
+        }
+        if (dChan) {
+            dChan.innerHTML = isLan ? 'Канал: <strong style="color:#10b981;">Прямой LAN Wi-Fi (0 обл.)</strong>' : 'Канал: <strong style="color:#f59e0b;">Tuya Cloud API</strong>';
+        }
+        if (dQuota) {
+            dQuota.innerHTML = `Квота: <strong style="color:#10b981;">${rem} / ${tot}</strong>`;
+        }
+
+        document.getElementById('live-power').innerHTML = `${data.power.toFixed(1)} <span class="unit">Вт</span>`;
+        document.getElementById('live-voltage').innerHTML = `${data.voltage.toFixed(1)} <span class="unit">В</span>`;
+        document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
+        
+        const freezerEst = (data.temp_freezer_estimated !== undefined)
+            ? data.temp_freezer_estimated
+            : ((data.temp_is_estimated !== undefined) ? data.temp_is_estimated : (!data.temp_sensor_connected));
+        const fridgeEst = (data.temp_fridge_estimated !== undefined) ? data.temp_fridge_estimated : true;
+        const fTag = document.getElementById('freezer-tag');
+        const rTag = document.getElementById('fridge-tag');
+        const fDesc = document.getElementById('freezer-desc');
+        const rDesc = document.getElementById('fridge-desc');
+        
+        if (fTag) {
+            if (freezerEst) {
+                fTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
+                fTag.style.color = '#38bdf8';
+                fTag.style.background = 'rgba(56,189,248,0.15)';
+                if (fDesc) fDesc.innerText = 'Теплофизическая модель (физический датчик не подключен)';
+            } else {
+                fTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
+                fTag.style.color = '#10b981';
+                fTag.style.background = 'rgba(16,185,129,0.15)';
+                if (fDesc) fDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
+            }
+        }
+        if (rTag) {
+            if (fridgeEst) {
+                rTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
+                rTag.style.color = '#10b981';
+                rTag.style.background = 'rgba(16,185,129,0.15)';
+                if (rDesc) rDesc.innerText = 'Теплофизическая модель (отдельный датчик камеры не подключен)';
+            } else {
+                rTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
+                rTag.style.color = '#10b981';
+                rTag.style.background = 'rgba(16,185,129,0.15)';
+                if (rDesc) rDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
+            }
+        }
+        
+        if (data.temp_freezer !== undefined) {
+            const fVal = document.getElementById('temp-freezer-val');
+            if (fVal) fVal.innerHTML = `${data.temp_freezer > 0 ? '+' : ''}${data.temp_freezer.toFixed(1)} <span class="unit">°C</span>`;
+        }
+        if (data.temp_fridge !== undefined) {
+            const rVal = document.getElementById('temp-fridge-val');
+            if (rVal) rVal.innerHTML = `${data.temp_fridge > 0 ? '+' : ''}${data.temp_fridge.toFixed(1)} <span class="unit">°C</span>`;
+        }
+
+        // Update Blackout Status Banner
+        if (data.last_blackout && data.last_blackout.detected) {
+            const bCard = document.getElementById('blackout-card');
+            const bTitle = document.getElementById('blackout-title');
+            const bSub = document.getElementById('blackout-subtitle');
+            const bBadge = document.getElementById('blackout-badge');
+            
+            bTitle.innerHTML = `⚡ Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
+            bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${escapeHTML(data.last_blackout.food_safety)}`;
+            bBadge.innerText = data.last_blackout.duration_str;
+            bBadge.style.color = '#f59e0b';
+        }
+
+        const desc = document.getElementById('live-state-desc');
+        const timerTitle = document.getElementById('timer-title');
+        const timerVal = document.getElementById('auto-timer');
+        const verdictEl = document.getElementById('cycle-verdict');
+        
+        lastStatus = data;
+        syncLiveTimer(data);
+        if (data.current_mode === 'defrost') {
+            desc.innerText = '🔥 Автооттайка No Frost (ТЭН)';
+            desc.style.color = '#f97316';
+            
+            timerTitle.innerText = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST (ТЭН)';
+            timerTitle.style.color = '#f97316';
+            timerVal.style.color = '#f97316';
+            verdictEl.innerHTML = '🔥 Компрессор отключен. Электронагреватель (ТЭН ~165 Вт) растапливает иней на испарителе. Норма: <strong>10–25 минут</strong>.';
+        } else if (data.is_running) {
+            desc.innerText = '🟢 Компрессор работает (Охлаждение)';
+            desc.style.color = '#10b981';
+            
+            timerTitle.innerText = '🟢 АКТИВНЫЙ РЕЖИМ: ОХЛАЖДЕНИЕ (КОМПРЕССОР)';
+            timerTitle.style.color = '#10b981';
+            timerVal.style.color = '#10b981';
+            verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты. Штатный цикл <strong>15–45 мин</strong>; при загрузке норма до <strong>3.5–5 ч</strong>.';
+        } else {
+            desc.innerText = '⚪ Компрессор выключен (Отдых)';
+            desc.style.color = '#94a3b8';
+            
+            const restSec = Number(data.rest_duration_sec) || 0;
+            const restMin = Math.floor(restSec / 60);
+            const estRemain = Math.max(0, 45 - restMin);
+            const lockout = data.protection_lockout_sec || 0;
+            
+            timerTitle.innerText = '⚪ АКТИВНЫЙ РЕЖИМ: ОТДЫХ КОМПРЕССОРА (СТОЯНКА)';
+            timerTitle.style.color = '#06b6d4';
+            timerVal.style.color = '#06b6d4';
+            let restHtml = `🧊 Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
+            if (data.protection_active && lockout > 0) {
+                restHtml += ` Пауза пуска: <strong>${lockout} с</strong>.`;
+            }
+            verdictEl.innerHTML = restHtml;
+        }
+
+        // Health & Anomaly Diagnostics Banner Update
+        const healthCard = document.getElementById('health-card');
+        const healthIcon = document.getElementById('health-icon');
+        const healthTitle = document.getElementById('health-title');
+        const healthSubtitle = document.getElementById('health-subtitle');
+        const healthBadge = document.getElementById('health-badge');
+
+        if (data.current_mode === 'defrost') {
+            const durMin = Math.floor(data.cycle_duration_sec / 60);
+            healthCard.style.borderLeftColor = '#f97316';
+            healthIcon.innerText = '🔥';
+            healthTitle.innerText = '🔥 Автооттайка испарителя No Frost (ТЭН)';
+            healthSubtitle.innerText = `Компрессор спит. Нагреватель растапливает иней уже ${durMin} мин (норма: 10–25 мин). Талая вода уходит в дренаж.`;
+            healthBadge.innerText = 'Оттайка: ТЭН 165W';
+            healthBadge.style.color = '#f97316';
+            healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
+        } else if (data.is_running) {
+            const durMin = Math.floor(data.cycle_duration_sec / 60);
+            if (durMin <= 45) {
+                healthCard.style.borderLeftColor = '#10b981';
+                healthIcon.innerText = '🟢';
+                healthTitle.innerText = '🟢 Штатная работа компрессора (15–45 мин)';
+                healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Система No Frost циркулирует холод штатно.`;
+                healthBadge.innerText = 'Режим: Штатный';
+                healthBadge.style.color = '#10b981';
+                healthBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+            } else if (durMin <= 150) {
+                healthCard.style.borderLeftColor = '#f59e0b';
+                healthIcon.innerText = '🟡';
+                healthTitle.innerText = '🟡 Повышенная нагрузка (донабор холода)';
+                healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Норма при открывании дверей или малой загрузке (1.5–2.5 ч).`;
+                healthBadge.innerText = 'Донабор холода / Загрузка';
+                healthBadge.style.color = '#f59e0b';
+                healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+            } else if (durMin <= 420) {
+                healthCard.style.borderLeftColor = '#f97316';
+                healthIcon.innerText = '📦';
+                healthTitle.innerText = '🟠 Глубокая проморозка (загрузка / после блэкаута)';
+                healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Штатно после отключения света или большой загрузки теплых продуктов (норма 3.5–5 ч, запас до 7 ч).`;
+                healthBadge.innerText = 'Загрузка / после блэкаута';
+                healthBadge.style.color = '#f97316';
+                healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
+            } else {
+                healthCard.style.borderLeftColor = '#ef4444';
+                healthIcon.innerText = '⚠️';
+                healthTitle.innerText = '🔴 Внимание: Непрерывная работа компрессора (> 7 ч)';
+                healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте дверь, уплотнители, термостат и уровень фреона.`;
+                healthBadge.innerText = 'Тревога: Работа > 7ч';
+                healthBadge.style.color = '#ef4444';
+                healthBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+            }
+        } else {
+            const restSec = data.rest_duration_sec || 0;
+            const restMin = Math.floor(restSec / 60);
+            if (restMin <= 60) {
+                healthCard.style.borderLeftColor = '#06b6d4';
+                healthIcon.innerText = '🧊';
+                healthTitle.innerText = '⚪ Штатный отдых (Удержание холода)';
+                healthSubtitle.innerText = `Компрессор отдыхает ${restMin} мин (норма: 35–55 мин). Термоизоляция и уплотнители отлично держат мороз.`;
+                healthBadge.innerText = 'Отдых: Норма';
+                healthBadge.style.color = '#06b6d4';
+                healthBadge.style.background = 'rgba(6, 182, 212, 0.15)';
+            } else if (restMin <= 95) {
+                healthCard.style.borderLeftColor = '#3b82f6';
+                healthIcon.innerText = '🕒';
+                healthTitle.innerText = '🔵 Глубокий покой (> 1 ч отдыха)';
+                healthSubtitle.innerText = `Холодильник отдыхает уже ${restMin} мин. Камера глубоко проморожена, дверь не открывали.`;
+                healthBadge.innerText = 'Глубокий мороз';
+                healthBadge.style.color = '#3b82f6';
+                healthBadge.style.background = 'rgba(59, 130, 246, 0.15)';
+            } else {
+                healthCard.style.borderLeftColor = '#f59e0b';
+                healthIcon.innerText = '⚠️';
+                healthTitle.innerText = '🟡 Внимание: Длительный простой (> 1.5 ч)';
+                healthSubtitle.innerText = `Холодильник не включается уже ${restMin} мин. Если в морозилке тепло, проверьте терморегулятор или таймер оттайки.`;
+                healthBadge.innerText = 'Длительный простой';
+                healthBadge.style.color = '#f59e0b';
+                healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+            }
+        }
+        
+        // Add to chart
+        if (data.last_update) {
+            liveChart.data.labels.push(data.last_update);
+            liveChart.data.datasets[0].data.push(data.power);
+            liveChart.data.datasets[1].data.push(data.voltage);
+            liveChart.data.datasets[2].data.push(data.temp_freezer !== undefined ? data.temp_freezer : -18.0);
+            if (liveChart.data.labels.length > 25) {
+                liveChart.data.labels.shift();
+                liveChart.data.datasets[0].data.shift();
+                liveChart.data.datasets[1].data.shift();
+                liveChart.data.datasets[2].data.shift();
+            }
+            liveChart.update();
+        }
+
+        if (prevRunningState !== null && prevRunningState !== data.is_running) {
+            updateCyclesTable();
+            historyTick = 0;
+            if (prevRunningState === true && data.is_running === false) {
+                playGentleChime();
+            }
+        }
+        prevRunningState = data.is_running;
+
+        historyTick++;
+        if (historyTick === 1 || historyTick % 3 === 0) {
+            updateCyclesTable();
+        }
+    }
+
 
     function escapeHTML(str) {
         if (!str) return '';
@@ -1595,6 +1579,7 @@
         });
     }
 
+    
     function updateCyclesTable() {
         if (isGhPages) {
             handleHistoryPayload(mockHistoryData);
@@ -1604,34 +1589,28 @@
             .then(r => r.json())
             .then(data => {
                 handleHistoryPayload(data);
-            });
+            })
+            .catch(console.error);
     }
 
     function handleHistoryPayload(data) {
-                handleStatusPayload(data);
-            });
-    }
+        allCyclesData = data.cycles || [];
+        allBlackoutsData = data.blackouts || [];
+        
+        if (data.summary && data.summary.overall_krv) {
+            const badge = document.getElementById('krv-badge');
+            if (badge) badge.innerText = `КРВ: ${escapeHTML(data.summary.overall_krv)} (${escapeHTML(data.summary.krv_status)})`;
+        }
 
-    function handleStatusPayload(data) {
-                allCyclesData = data.cycles || [];
-                allBlackoutsData = data.blackouts || [];
-                
-                if (data.summary && data.summary.overall_krv) {
-                    const badge = document.getElementById('krv-badge');
-                    if (badge) badge.innerText = `КРВ: ${escapeHTML(data.summary.overall_krv)} (${escapeHTML(data.summary.krv_status)})`;
-                }
-
-                const countEl = document.getElementById('total-cycles-btn');
-                if (countEl) countEl.innerText = allCyclesData.length;
-                
-                renderMainCyclesTable();
-                
-                const archModal = document.getElementById('archive-modal');
-                if (archModal && archModal.style.display === 'flex') {
-                    renderArchiveTable(currentArchiveFilter);
-                }
-            })
-            .catch(console.error);
+        const countEl = document.getElementById('total-cycles-btn');
+        if (countEl) countEl.innerText = allCyclesData.length;
+        
+        renderMainCyclesTable();
+        
+        const archModal = document.getElementById('archive-modal');
+        if (archModal && archModal.style.display === 'flex') {
+            renderArchiveTable(currentArchiveFilter);
+        }
     }
 
     setInterval(pollStatus, 3000);
