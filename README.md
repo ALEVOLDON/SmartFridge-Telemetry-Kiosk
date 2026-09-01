@@ -133,7 +133,7 @@ Samsung_RT34MB_Monitor/
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/SmartFridge-Telemetry-Kiosk.git
+git clone https://github.com/ALEVOLDON/SmartFridge-Telemetry-Kiosk.git
 cd SmartFridge-Telemetry-Kiosk
 
 # Install dependencies
@@ -175,7 +175,7 @@ pkg update && pkg install python git sqlite -y
 pip install flask tinytuya requests
 
 # Clone and launch daemon
-git clone https://github.com/YOUR_USERNAME/SmartFridge-Telemetry-Kiosk.git
+git clone https://github.com/ALEVOLDON/SmartFridge-Telemetry-Kiosk.git
 cd SmartFridge-Telemetry-Kiosk
 termux-wake-lock
 nohup python auto_monitor.py > /sdcard/monitor.log 2>&1 &
