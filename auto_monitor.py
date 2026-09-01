@@ -392,7 +392,7 @@ def fill_rest_after(dt_end, next_st, next_end_label, raw_blackouts, work_dur):
     if not dt_end or not next_st or next_st <= dt_end:
         return empty
     diff_sec = int((next_st - dt_end).total_seconds())
-    if diff_sec < 120:
+    if diff_sec < 45 and next_end_label != "сейчас":
         return empty
     is_blackout_cross = False
     for b_item in raw_blackouts:
@@ -416,7 +416,8 @@ def fill_rest_after(dt_end, next_st, next_end_label, raw_blackouts, work_dur):
     krv = "—"
     if work_dur:
         krv = f"{round(work_dur / (work_dur + diff_sec), 2):.2f}"
-    return (diff_sec, format_gap_str(diff_sec) or "—", rest_start, rest_end, krv)
+    display_gap = format_gap_str(diff_sec) or "0 мин"
+    return (diff_sec, display_gap, rest_start, rest_end, krv)
 
 def apply_idle_rest_clock():
     """Rest clock always follows the last saved cycle end, never a Tuya glitch."""
@@ -1116,10 +1117,10 @@ def tuya_poller():
 
         if state.get("connected"):
             if state.get("connection_source") == "local_wifi":
-                sleep_sec = 3 if state.get("is_running") else 5
+                sleep_sec = 3 if state.get("is_running") else 4
             else:
-                # Cloud Eco-Mode: 25s when running, 60s when resting (guarantees <= 1400/day -> 35+ days on 50k quota)
-                sleep_sec = 25 if state.get("is_running") else 60
+                # Cloud Eco-Mode: 12s when running, 15s when resting (fast cycle change detection)
+                sleep_sec = 12 if state.get("is_running") else 15
         time.sleep(max(2, int(sleep_sec)))
 
 t = threading.Thread(target=tuya_poller, daemon=True)

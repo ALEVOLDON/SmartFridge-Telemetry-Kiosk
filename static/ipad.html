@@ -658,12 +658,18 @@
                             }
                             if (prevRunningState !== null && prevRunningState !== data.is_running) {
                                 loadHistory();
+                                ipadHistoryTick = 0;
                                 if (prevRunningState === true && data.is_running === false) {
                                     playGentleChime();
                                 }
                             }
                             prevRunningState = data.is_running;
                             syncIpadTimer(data);
+
+                            ipadHistoryTick++;
+                            if (ipadHistoryTick === 1 || ipadHistoryTick % 3 === 0) {
+                                loadHistory();
+                            }
                         } catch(e) {}
                     } else {
                         failedPolls++;
