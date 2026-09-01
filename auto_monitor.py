@@ -1119,8 +1119,8 @@ def tuya_poller():
             if state.get("connection_source") == "local_wifi":
                 sleep_sec = 3 if state.get("is_running") else 4
             else:
-                # Cloud Eco-Mode: 12s when running, 15s when resting (fast cycle change detection)
-                sleep_sec = 12 if state.get("is_running") else 15
+                # Cloud Eco-Fallback: 25s when running, 45s when resting (guarantees safe quota consumption if LAN is down)
+                sleep_sec = 25 if state.get("is_running") else 45
         time.sleep(max(2, int(sleep_sec)))
 
 t = threading.Thread(target=tuya_poller, daemon=True)
