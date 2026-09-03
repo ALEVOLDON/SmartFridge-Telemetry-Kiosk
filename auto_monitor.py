@@ -272,32 +272,42 @@ def get_cloud_client(cfg):
 def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, voltage=None, current=None):
     """
     Classify cycle into 'defrost' (heating element) vs 'cooling' (compressor motor).
-    Uses electrical power factor cos(phi) = P / (U * I) when voltage and current are available:
-    - Pure resistive heating element (ТЭН): cos(phi) >= 0.92 (power is purely active)
-    - Inductive compressor motor: cos(phi) <= 0.85 (reactive inductive component)
+    Samsung RT34MB No Frost rules:
+    1. Defrost duration is strictly within [8 min .. 28 min] (480s .. 1680s).
+    2. Defrost requires cumulative compressor cooling before it can trigger (at least 4.5 hours = 16200s).
+    3. Physics Check: If real measured current is present:
+       - Pure resistive heater: cos(phi) >= 0.92
+       - Compressor induction motor: cos(phi) <= 0.85
     """
     p = float(avg_power or 0)
     dur = int(duration_sec or 0)
+    acc = int(cooling_since_sec or 0)
     
-    # 1. Physics Check: Power Factor cos(phi)
+    # Rule 1: Defrost on this fridge is strictly 8..28 min. Longer is ALWAYS cooling.
+    if dur < DEFROST_MIN_SEC or dur > DEFROST_MAX_SEC:
+        return "cooling"
+
+    # Rule 2: Defrost cannot trigger repeatedly without cumulative cooling (at least 4.5 h)
+    if acc < int(4.5 * 3600):
+        return "cooling"
+
+    # Rule 3: Physics Check - Power Factor cos(phi) using REAL measured current
     if voltage and current and float(voltage) > 150 and float(current) > 0.35 and p > 40:
         va = float(voltage) * float(current)
         if va > 0:
             cos_phi = p / va
+            if cos_phi <= 0.85:
+                return "cooling"
             if cos_phi >= 0.92:
                 return "defrost"
-            elif cos_phi <= 0.85:
-                return "cooling"
 
-    # 2. Voltage-normalized power check: P_nominal = P_actual * (220 / U)^2
+    # Rule 4: Voltage-normalized power check: P_nominal = P_actual * (220 / U)^2
     norm_p = p
     if voltage and float(voltage) > 150:
         norm_p = p * ((220.0 / float(voltage)) ** 2)
 
     in_heater_band = (DEFROST_POWER_MIN <= norm_p <= DEFROST_POWER_MAX) or (DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX)
-    in_defrost_window = DEFROST_MIN_SEC <= dur <= DEFROST_MAX_SEC
-    
-    if in_heater_band and in_defrost_window:
+    if in_heater_band:
         return "defrost"
     return "cooling"
 
@@ -915,6 +925,7 @@ def tuya_poller():
     global state
     cycle_powers = []
     cycle_voltages = []
+    cycle_currents = []
     warning_long_sent = False
     poll_count = 0
     active_streak = 0
@@ -1019,6 +1030,7 @@ def tuya_poller():
                     state["cycle_duration_sec"] = 0
                     cycle_powers = []
                     cycle_voltages = []
+                    cycle_currents = []
                     warning_long_sent = False
                     cfg_save = load_config()
                     cfg_save["current_start_time"] = state["cycle_start_time"]
@@ -1041,7 +1053,8 @@ def tuya_poller():
                     if duration >= 120:
                         avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else 131.0
                         avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
-                        c_type = classify_cycle(avg_p, duration, cooling_since_last_defrost_sec(), cycle_powers, voltage=avg_v, current=(avg_p / avg_v if avg_v else None))
+                        avg_i = sum(cycle_currents) / len(cycle_currents) if cycle_currents else None
+                        c_type = classify_cycle(avg_p, duration, cooling_since_last_defrost_sec(), cycle_powers, voltage=avg_v, current=avg_i)
                         conn = sqlite3.connect(DB_FILE)
                         cur = conn.cursor()
                         cur.execute('''
@@ -1060,6 +1073,7 @@ def tuya_poller():
                     idle_streak = 0
                     cycle_powers = []
                     cycle_voltages = []
+                    cycle_currents = []
                     
                 if state["is_running"]:
                     try:
@@ -1070,6 +1084,7 @@ def tuya_poller():
                         
                     cycle_powers.append(power)
                     cycle_voltages.append(voltage)
+                    cycle_currents.append(current)
                     state["rest_duration_sec"] = 0
                     update_restart_lockout(True)
                     
