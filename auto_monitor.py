@@ -269,23 +269,37 @@ def get_cloud_client(cfg):
         _cloud_client_cfg = key
     return _cloud_client
 
-def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None):
-    """Defrost only if heater-like watts, defrost-length, AND enough compressor hours since last defrost."""
+def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, voltage=None, current=None):
+    """
+    Classify cycle into 'defrost' (heating element) vs 'cooling' (compressor motor).
+    Uses electrical power factor cos(phi) = P / (U * I) when voltage and current are available:
+    - Pure resistive heating element (ТЭН): cos(phi) >= 0.92 (power is purely active)
+    - Inductive compressor motor: cos(phi) <= 0.85 (reactive inductive component)
+    """
     p = float(avg_power or 0)
     dur = int(duration_sec or 0)
-    acc = int(cooling_since_sec or 0)
-    in_heater_band = DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX
-    in_defrost_window = DEFROST_MIN_SEC <= dur <= DEFROST_MAX_SEC
-    enough_cooling = acc >= MIN_COOLING_BEFORE_DEFROST_SEC
-    if not (in_heater_band and in_defrost_window and enough_cooling):
-        return "cooling"
-    if powers and len(powers) >= 6:
-        mean = sum(powers) / len(powers)
-        if mean > 0:
-            var = sum((x - mean) ** 2 for x in powers) / len(powers)
-            if (var ** 0.5) / mean > 0.12:
+    
+    # 1. Physics Check: Power Factor cos(phi)
+    if voltage and current and float(voltage) > 150 and float(current) > 0.35 and p > 40:
+        va = float(voltage) * float(current)
+        if va > 0:
+            cos_phi = p / va
+            if cos_phi >= 0.92:
+                return "defrost"
+            elif cos_phi <= 0.85:
                 return "cooling"
-    return "defrost"
+
+    # 2. Voltage-normalized power check: P_nominal = P_actual * (220 / U)^2
+    norm_p = p
+    if voltage and float(voltage) > 150:
+        norm_p = p * ((220.0 / float(voltage)) ** 2)
+
+    in_heater_band = (DEFROST_POWER_MIN <= norm_p <= DEFROST_POWER_MAX) or (DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX)
+    in_defrost_window = DEFROST_MIN_SEC <= dur <= DEFROST_MAX_SEC
+    
+    if in_heater_band and in_defrost_window:
+        return "defrost"
+    return "cooling"
 
 def cooling_since_last_defrost_sec():
     try:
@@ -824,6 +838,10 @@ def _local_status(cfg):
         d.set_retry(False)
         _local_dev = d
         _local_ident = ident
+    try:
+        _local_dev.updatedps([18, 19, 20])
+    except Exception:
+        pass
     data = _local_dev.status()
     if not (isinstance(data, dict) and "dps" in data):
         return None
@@ -1026,7 +1044,7 @@ def tuya_poller():
                     if duration >= 120:
                         avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else 131.0
                         avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
-                        c_type = classify_cycle(avg_p, duration, cooling_since_last_defrost_sec(), cycle_powers)
+                        c_type = classify_cycle(avg_p, duration, cooling_since_last_defrost_sec(), cycle_powers, voltage=avg_v, current=(avg_p / avg_v if avg_v else None))
                         conn = sqlite3.connect(DB_FILE)
                         cur = conn.cursor()
                         cur.execute('''
@@ -1059,7 +1077,7 @@ def tuya_poller():
                     update_restart_lockout(True)
                     
                     live_avg_p = sum(cycle_powers) / len(cycle_powers) if cycle_powers else power
-                    c_type = classify_cycle(live_avg_p, state["cycle_duration_sec"], cooling_since_last_defrost_sec(), cycle_powers)
+                    c_type = classify_cycle(live_avg_p, state["cycle_duration_sec"], cooling_since_last_defrost_sec(), cycle_powers, voltage=voltage, current=current)
                     if c_type == "defrost":
                         state["current_mode"] = "defrost"
                         state["mode_title"] = "🔥 АВТООТТАЙКА NO FROST (ТЭН)"
