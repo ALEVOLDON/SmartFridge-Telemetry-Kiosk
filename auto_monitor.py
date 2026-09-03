@@ -838,12 +838,9 @@ def _local_status(cfg):
         d.set_retry(False)
         _local_dev = d
         _local_ident = ident
-    try:
-        _local_dev.updatedps([18, 19, 20])
-    except Exception:
-        pass
     data = _local_dev.status()
     if not (isinstance(data, dict) and "dps" in data):
+        _close_local()
         return None
     dps = data.get("dps") or {}
     _remember_plug(cfg, ip, ver)
