@@ -631,25 +631,65 @@ def sync_cloud_history():
 sync_cloud_history()
 reclassify_stored_cycles()
 
-def scan_and_record_blackouts():
-    """Scan measurements for offline gaps (>= 1800s) and record to blackouts table."""
+def check_cold_boot_blackout():
+    """Detect if the TV Box just rebooted after a power cut (cold boot gap >= 900s)."""
     try:
+        uptime_sec = 0.0
+        try:
+            with open("/proc/uptime", "r") as f:
+                uptime_sec = float(f.read().split()[0])
+        except Exception:
+            return
+        
+        # Only evaluate on recent system reboot (< 15 minutes since OS booted)
+        if uptime_sec > 900:
+            return
+            
+        now = datetime.now()
+        boot_time = now - timedelta(seconds=uptime_sec)
+        
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
-        cur.execute("""
-            SELECT m1.timestamp, m2.timestamp,
-                   (strftime('%s', m2.timestamp) - strftime('%s', m1.timestamp)) as gap_sec
-            FROM measurements m1
-            JOIN measurements m2 ON m2.id = m1.id + 1
-            WHERE (strftime('%s', m2.timestamp) - strftime('%s', m1.timestamp)) >= 1800
-        """)
-        for st, et, gap in cur.fetchall():
-            safety = food_safety_label(gap)
-            cur.execute("""
-                INSERT OR IGNORE INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
-                VALUES (?, ?, ?, ?)
-            """, (st, et, int(gap), safety))
-        conn.commit()
+        cur.execute("SELECT timestamp, power, voltage FROM measurements ORDER BY id DESC LIMIT 1")
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return
+            
+        last_ts_str = row[0]
+        last_dt = parse_iso(last_ts_str)
+        if not last_dt:
+            conn.close()
+            return
+            
+        gap_sec = (boot_time - last_dt).total_seconds()
+        # If the server host itself was unpowered for >= 15 minutes:
+        if gap_sec >= 900:
+            cur.execute("SELECT COUNT(*) FROM blackouts WHERE start_time = ?", (last_ts_str,))
+            if cur.fetchone()[0] == 0:
+                safety = food_safety_label(gap_sec)
+                end_iso = now.isoformat()
+                cur.execute("""
+                    INSERT INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
+                    VALUES (?, ?, ?, ?)
+                """, (last_ts_str, end_iso, int(gap_sec), safety))
+                
+                # Close pre-blackout cycle if dangling
+                cfg_c = load_config()
+                c_start = cfg_c.get("current_start_time")
+                if c_start and c_start < last_ts_str:
+                    c_st_dt = parse_iso(c_start)
+                    if c_st_dt:
+                        c_dur = int((last_dt - c_st_dt).total_seconds())
+                        if c_dur >= 60:
+                            cur.execute("""
+                                INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """, (c_start, last_ts_str, c_dur, float(row[1] or 135.0), float(row[2] or 210.0), "cooling"))
+                cfg_c["current_start_time"] = None
+                save_config(cfg_c)
+                conn.commit()
+                update_last_blackout_state()
         conn.close()
     except Exception:
         pass
@@ -963,7 +1003,7 @@ def tuya_poller():
     state["is_running"] = False
     state["cycle_start_time"] = None
     apply_idle_rest_clock()
-    scan_and_record_blackouts()
+    check_cold_boot_blackout()
     update_last_blackout_state()
     
     while True:
@@ -1164,7 +1204,14 @@ def tuya_poller():
                         curr_ts = parse_iso(now_iso)
                         if prev_ts and curr_ts:
                             gap_sec = (curr_ts - prev_ts).total_seconds()
-                            if gap_sec >= 1800:
+                            uptime_sec = 999999.0
+                            try:
+                                with open("/proc/uptime", "r") as f:
+                                    uptime_sec = float(f.read().split()[0])
+                            except Exception:
+                                pass
+                            is_cold_boot = (uptime_sec <= 900)
+                            if gap_sec >= 1800 and is_cold_boot:
                                 # 1. Close unclosed cycle prior to the blackout
                                 cfg_c = load_config()
                                 c_start = cfg_c.get("current_start_time")
