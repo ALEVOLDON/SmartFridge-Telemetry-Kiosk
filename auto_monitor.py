@@ -242,11 +242,11 @@ def save_config(cfg):
 # No Frost timer counts compressor ON time (~8–10 h), then a 10–25 min
 # sheath heater at ~160–175 W. SK170K cooling is 125–185 W, so a short
 # 158+ W compressor run is not a defrost unless enough cooling has elapsed.
-DEFROST_POWER_MIN = 158.0
-DEFROST_POWER_MAX = 185.0
+DEFROST_POWER_MIN = 153.0
+DEFROST_POWER_MAX = 188.0
 DEFROST_MIN_SEC = 480    # 8 min
 DEFROST_MAX_SEC = 1680   # 28 min
-MIN_COOLING_BEFORE_DEFROST_SEC = 7 * 3600
+MIN_COOLING_BEFORE_DEFROST_SEC = int(4.5 * 3600)
 COMPRESSOR_LOCKOUT_SEC = 180
 LONG_RUN_WARN_SEC = 25200  # 7 h — service guide fault threshold
 CLOUD_SYNC_EVERY_POLLS = 300  # ~20 min at 4 s interval
@@ -273,11 +273,11 @@ def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, vo
     """
     Classify cycle into 'defrost' (heating element) vs 'cooling' (compressor motor).
     Samsung RT34MB No Frost rules:
-    1. Defrost duration is strictly within [8 min .. 28 min] (480s .. 1680s).
+    1. Defrost duration is strictly within [8 min .. 28 min] (480s .. 1680s). Longer is ALWAYS cooling.
     2. Defrost requires cumulative compressor cooling before it can trigger (at least 4.5 hours = 16200s).
-    3. Physics Check: If real measured current is present:
-       - Pure resistive heater: cos(phi) >= 0.92
-       - Compressor induction motor: cos(phi) <= 0.85
+    3. Power curve stability: a pure heating element (ТЭН) has nearly flat power (delta <= 12W),
+       while a compressor has start-inrush and pressure drops (delta >= 15W).
+    4. Power range: Heater operates at 153W .. 188W (nominal ~160W at 220V).
     """
     p = float(avg_power or 0)
     dur = int(duration_sec or 0)
@@ -288,27 +288,32 @@ def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, vo
         return "cooling"
 
     # Rule 2: Defrost cannot trigger repeatedly without cumulative cooling (at least 4.5 h)
-    if acc < int(4.5 * 3600):
+    if acc < MIN_COOLING_BEFORE_DEFROST_SEC:
         return "cooling"
 
-    # Rule 3: Physics Check - Power Factor cos(phi) using REAL measured current
-    if voltage and current and float(voltage) > 150 and float(current) > 0.35 and p > 40:
-        va = float(voltage) * float(current)
-        if va > 0:
-            cos_phi = p / va
-            if cos_phi <= 0.85:
-                return "cooling"
-            if cos_phi >= 0.92:
-                return "defrost"
+    # Rule 3: Power stability check if multiple samples exist (heater is flat, compressor fluctuates)
+    if powers and len(powers) >= 5:
+        samples = powers[1:-1] if len(powers) > 3 else powers
+        delta = max(samples) - min(samples)
+        if delta > 12.0:
+            return "cooling"
 
-    # Rule 4: Voltage-normalized power check: P_nominal = P_actual * (220 / U)^2
-    norm_p = p
-    if voltage and float(voltage) > 150:
-        norm_p = p * ((220.0 / float(voltage)) ** 2)
-
-    in_heater_band = (DEFROST_POWER_MIN <= norm_p <= DEFROST_POWER_MAX) or (DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX)
-    if in_heater_band:
+    # Rule 4: Power threshold at line voltage >= 205V
+    v = float(voltage) if voltage and float(voltage) > 150 else 220.0
+    if p >= DEFROST_POWER_MIN and v >= 205.0:
         return "defrost"
+
+    # Rule 5: Normalized power check for low line voltage (< 205V)
+    norm_p = p * ((220.0 / v) ** 2) if v else p
+    if DEFROST_POWER_MIN <= norm_p <= DEFROST_POWER_MAX:
+        if powers and len(powers) >= 3:
+            samples = powers[1:-1] if len(powers) > 3 else powers
+            delta = max(samples) - min(samples)
+            if delta <= 8.0:
+                return "defrost"
+        else:
+            return "defrost"
+
     return "cooling"
 
 def cooling_since_last_defrost_sec():
