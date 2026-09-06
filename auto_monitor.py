@@ -298,21 +298,9 @@ def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, vo
         if delta > 12.0:
             return "cooling"
 
-    # Rule 4: Power threshold at line voltage >= 205V
-    v = float(voltage) if voltage and float(voltage) > 150 else 220.0
-    if p >= DEFROST_POWER_MIN and v >= 205.0:
+    # Rule 4: Power threshold (heater is strictly 153W .. 188W, compressor is 115W .. 145W)
+    if DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX:
         return "defrost"
-
-    # Rule 5: Normalized power check for low line voltage (< 205V)
-    norm_p = p * ((220.0 / v) ** 2) if v else p
-    if DEFROST_POWER_MIN <= norm_p <= DEFROST_POWER_MAX:
-        if powers and len(powers) >= 3:
-            samples = powers[1:-1] if len(powers) > 3 else powers
-            delta = max(samples) - min(samples)
-            if delta <= 8.0:
-                return "defrost"
-        else:
-            return "defrost"
 
     return "cooling"
 
@@ -643,8 +631,31 @@ def sync_cloud_history():
 sync_cloud_history()
 reclassify_stored_cycles()
 
+def scan_and_record_blackouts():
+    """Scan measurements for offline gaps (>= 1800s) and record to blackouts table."""
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT m1.timestamp, m2.timestamp,
+                   (strftime('%s', m2.timestamp) - strftime('%s', m1.timestamp)) as gap_sec
+            FROM measurements m1
+            JOIN measurements m2 ON m2.id = m1.id + 1
+            WHERE (strftime('%s', m2.timestamp) - strftime('%s', m1.timestamp)) >= 1800
+        """)
+        for st, et, gap in cur.fetchall():
+            safety = food_safety_label(gap)
+            cur.execute("""
+                INSERT OR IGNORE INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
+                VALUES (?, ?, ?, ?)
+            """, (st, et, int(gap), safety))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
 def find_open_cycle_start():
-    """First sustained compressor-on run after the last saved cycle end.
+    """First sustained compressor-on run after the last saved cycle end or blackout.
 
     Ignores 1-sample Tuya glitches and idle rows written during a process restart.
     """
@@ -652,6 +663,10 @@ def find_open_cycle_start():
     try:
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
+        cur.execute("SELECT MAX(end_time) FROM blackouts WHERE end_time > ?", (last_end,))
+        b_end = (cur.fetchone() or [None])[0]
+        if b_end and b_end > last_end:
+            last_end = b_end
         cur.execute(
             "SELECT timestamp, power FROM measurements WHERE timestamp > ? ORDER BY timestamp",
             (last_end,),
@@ -948,6 +963,7 @@ def tuya_poller():
     state["is_running"] = False
     state["cycle_start_time"] = None
     apply_idle_rest_clock()
+    scan_and_record_blackouts()
     update_last_blackout_state()
     
     while True:
@@ -1022,6 +1038,16 @@ def tuya_poller():
                     active_streak = 0
 
                 last_end = get_latest_end_time() or ""
+                try:
+                    conn_b = sqlite3.connect(DB_FILE)
+                    cur_b = conn_b.cursor()
+                    cur_b.execute("SELECT MAX(end_time) FROM blackouts WHERE end_time > ?", (last_end,))
+                    b_row = cur_b.fetchone()
+                    if b_row and b_row[0] and b_row[0] > last_end:
+                        last_end = b_row[0]
+                    conn_b.close()
+                except Exception:
+                    pass
                 restored = None
                 open_start = find_open_cycle_start()
                 cfg_start = cfg.get("current_start_time")
