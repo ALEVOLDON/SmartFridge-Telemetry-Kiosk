@@ -1155,6 +1155,40 @@ def tuya_poller():
                 try:
                     conn = sqlite3.connect(DB_FILE)
                     cur = conn.cursor()
+
+                    # Proactive cold-boot / blackout gap detection before saving new measurement
+                    cur.execute("SELECT timestamp, power, voltage FROM measurements ORDER BY id DESC LIMIT 1")
+                    last_m = cur.fetchone()
+                    if last_m and last_m[0]:
+                        prev_ts = parse_iso(last_m[0])
+                        curr_ts = parse_iso(now_iso)
+                        if prev_ts and curr_ts:
+                            gap_sec = (curr_ts - prev_ts).total_seconds()
+                            if gap_sec >= 1800:
+                                # 1. Close unclosed cycle prior to the blackout
+                                cfg_c = load_config()
+                                c_start = cfg_c.get("current_start_time")
+                                if c_start and c_start < last_m[0]:
+                                    c_st_dt = parse_iso(c_start)
+                                    if c_st_dt:
+                                        c_dur = int((prev_ts - c_st_dt).total_seconds())
+                                        if c_dur >= 60:
+                                            cur.execute("""
+                                                INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                                                VALUES (?, ?, ?, ?, ?, ?)
+                                            """, (c_start, last_m[0], c_dur, float(last_m[1] or 135.0), float(last_m[2] or 210.0), "cooling"))
+                                cfg_c["current_start_time"] = None
+                                save_config(cfg_c)
+
+                                # 2. Auto-record blackout into database
+                                safety = food_safety_label(gap_sec)
+                                cur.execute("""
+                                    INSERT OR IGNORE INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
+                                    VALUES (?, ?, ?, ?)
+                                """, (last_m[0], now_iso, int(gap_sec), safety))
+                                conn.commit()
+                                update_last_blackout_state()
+
                     cur.execute('''
                         INSERT INTO measurements (timestamp, power, voltage, current, is_running, mode, temp_freezer, temp_fridge)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
