@@ -1,5 +1,5 @@
-Flask==3.0.0
-tinytuya==1.13.1
-requests==2.31.0
-python-docx==1.1.0
-winotify==1.1.0; sys_platform == 'win32'
+Flask>=3.1.0
+tinytuya>=1.13.1
+requests>=2.32.3
+python-docx>=1.1.0
+winotify>=1.1.0; sys_platform == 'win32'
