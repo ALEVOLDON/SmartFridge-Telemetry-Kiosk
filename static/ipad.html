@@ -75,7 +75,10 @@
                 <h1>SAMSUNG RT34MB</h1>
                 <div class="sub" id="last-sync">Синхронизация с розеткой Tuya...</div>
             </div>
-            <div>
+            <div style="display:flex; align-items:center;">
+                <button onclick="openIpadAbout()" style="background: rgba(15,23,42,0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
+                    ℹ️ О программе
+                </button>
                 <button onclick="toggleIpadSound()" id="ipad-sound-btn" style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
                     🔔 Звук: ВКЛ
                 </button>
@@ -213,8 +216,184 @@
         </div>
     </div>
 
+    <!-- About & FAQ Modal for iPad -->
+    <div id="ipad-about-modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; right:0; bottom:0; width:100%; height:100%; background:rgba(11,17,32,0.94); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); justify-content:center; align-items:center; padding:12px; box-sizing:border-box;">
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; width:100%; max-width:760px; height:88vh; max-height:88vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.85);">
+            <!-- Modal Header -->
+            <div style="padding:12px 16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; background:#0f172a; flex-shrink:0;">
+                <div style="display:flex; align-items:center;">
+                    <span style="font-size:20px; margin-right:8px;">🧊</span>
+                    <div>
+                        <div style="font-weight:bold; font-size:15px; color:#f8fafc;">
+                            Samsung RT34MB Monitor <span style="font-size:10px; background:#0284c7; color:#fff; padding:1px 6px; border-radius:4px;">PRO v3.5.2</span>
+                        </div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Автономный диагностический комплекс No-Frost</div>
+                    </div>
+                </div>
+                <div>
+                    <button onclick="closeIpadAbout()" style="background:#ef4444; color:#fff; border:none; padding:7px 16px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">Закрыть ✕</button>
+                </div>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div style="display:flex; background:#0b1120; border-bottom:1px solid #334155; flex-shrink:0; overflow-x:auto;">
+                <button id="ipad-btn-about" onclick="switchIpadTab('about')" style="flex:1; padding:10px 8px; background:#1e293b; color:#38bdf8; border:none; border-bottom:2px solid #38bdf8; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">ℹ️ О программе</button>
+                <button id="ipad-btn-faq" onclick="switchIpadTab('faq')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">❓ База знаний (FAQ)</button>
+                <button id="ipad-btn-ver" onclick="switchIpadTab('ver')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">📜 История версий</button>
+                <button id="ipad-btn-specs" onclick="switchIpadTab('specs')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">🔬 Спецификации</button>
+            </div>
+
+            <!-- Tab Contents (Scrollable) -->
+            <div style="padding:14px; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; flex:1; font-size:13px; line-height:1.5; color:#cbd5e1;">
+                
+                <!-- Tab: About -->
+                <div id="ipad-tab-about">
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:12px;">
+                        <div style="font-weight:bold; font-size:14px; color:#38bdf8; margin-bottom:4px;">Samsung RT34MB Intelligent Energy Monitor PRO</div>
+                        <div>Профессиональная телеметрия для двухкамерных холодильников Samsung с сухой заморозкой No-Frost. Автоматический расчет КРВ (коэффициента рабочего времени), фиксация циклов оттайки, теплофизическая модель камер и защита при скачках напряжения 220В.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:12px;">
+                        <div style="font-weight:bold; color:#10b981; margin-bottom:6px;">🛡️ Локальная автономность (Zero-Cloud Mode)</div>
+                        <div>Система работает без посредников: ТВ-приставка опрашивает розетку напрямую через локальный Wi-Fi (порт 6668). Даже при отключении интернета монитор продолжает записывать каждый цикл и транслировать статус на планшет. Облачные квоты Tuya Cloud не расходуются (0 вызовов/день).</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155;">
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:6px;">💻 Системный стек</div>
+                        <div>• <strong>Сервер:</strong> Android TV Box H96 Max (Rockchip RK3318 Cortex-A53 ARM64)</div>
+                        <div>• <strong>Среда:</strong> Termux Linux + Python Flask Async + SQLite3</div>
+                        <div>• <strong>Сетевая изоляция:</strong> Linux Policy Routing Shield (eth0 priority)</div>
+                        <div>• <strong>Клиент:</strong> Легковесный Safari Kiosk интерфейс без внешних библиотек</div>
+                        <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI & DEV</div>
+                    </div>
+                </div>
+
+                <!-- Tab: FAQ -->
+                <div id="ipad-tab-faq" style="display:none;">
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Почему компрессор отдыхает 35–55 минут?</div>
+                        <div>Это норма! Исправный компрессор Samsung SK170H-L1U имеет КРВ в пределах 0.30–0.45. При цикле работы 20–25 минут нормальный отдых составляет 35–55 минут. Чем дольше отдых, тем лучше уплотнители держат холод.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Как определяется оттайка испарителя No-Frost?</div>
+                        <div>Включается нагреватель (ТЭН) испарителя мощностью 150–165 Вт активной нагрузки (без пускового броска тока компрессора). После нагрева следует пауза стекания конденсата 7–12 мин, затем компрессор снова включается.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Что происходит при отключении света (блэкауте)?</div>
+                        <div>Монитор определяет обрыв питания, засекает время блэкаута и рассчитывает безопасность продуктов по кривой теплоемкости морозильной камеры (до 8–10 часов холод удерживается безопасно).</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155;">
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Что такое «Пауза пуска» (Защита компрессора)?</div>
+                        <div>Защитная пауза минимум 5 минут после остановки компрессора или сбоя 220В. Необходима для выравнивания давления хладагента в контуре во избежание гидроудара и перегрузки пускового реле.</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Changelog -->
+                <div id="ipad-tab-ver" style="display:none;">
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #38bdf8; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#38bdf8;">v3.5.2 Pro (07.09.2026)</div>
+                        <div>• Изоляция локальной сети от VPN (Linux Policy Routing Shield на eth0).</div>
+                        <div>• 7-дневная автоочистка SQLite (хранилище стабилизировано на 11 МБ).</div>
+                        <div>• Встроенный справочный центр: FAQ, спецификации и история всех версий.</div>
+                        <div>• Принудительная привязка локального source IP 192.168.0.103.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #38bdf8; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#38bdf8;">v3.5.0 (06.09.2026)</div>
+                        <div>• Интеллектуальный детектор блэкаутов электросети 220В.</div>
+                        <div>• Расчет времени нагрева морозилки при отключениях питания.</div>
+                        <div>• Исключение ложных сверхдлинных циклов из статистики.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #38bdf8; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#38bdf8;">v3.4.0 (02.09.2026)</div>
+                        <div>• Локальный опрос розетки Tuya Direct Wi-Fi (порт 6668).</div>
+                        <div>• 100% экономия облачных вызовов Tuya Cloud (0/день).</div>
+                        <div>• Выделенный легкий режим /ipad для планшетов Apple.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #38bdf8; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#38bdf8;">v3.0.0 (29.08.2026)</div>
+                        <div>• Автономный микросервер на ТВ-приставке H96 Max (Termux Linux 24/7).</div>
+                        <div>• Фоновый автозапуск супервизора с потреблением всего ~3 Вт.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #38bdf8; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#38bdf8;">v2.0.0 (28.08.2026)</div>
+                        <div>• Переход на Web: сервер на Flask, REST API и база SQLite (fridge_data.db).</div>
+                        <div>• Интерактивные графики мощности, напряжения и тока в реальном времени.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #38bdf8;">
+                        <div style="font-weight:bold; color:#38bdf8;">v1.0.0 (27.08.2026)</div>
+                        <div>• Первый официальный релиз на GitHub (настольный Python-скрипт).</div>
+                        <div>• Облачный сбор данных Tuya Cloud API, мониторинг компрессора и расчет КРВ.</div>
+                    </div>
+                </div>
+
+                <!-- Tab: Specs -->
+                <div id="ipad-tab-specs" style="display:none;">
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#38bdf8; margin-bottom:6px;">Паспортные данные Samsung RT34MB:</div>
+                        <div>• <strong>Холодильник:</strong> Samsung RT34MB (RT34MBTS No-Frost)</div>
+                        <div>• <strong>Хладагент:</strong> R600a (Изобутан), заправка ~52–56 г</div>
+                        <div>• <strong>Компрессор:</strong> Samsung SK170H-L1U (Индукционный поршневой)</div>
+                        <div>• <strong>Питание:</strong> 220–240 В ~ 50 Гц</div>
+                        <div>• <strong>Рабочая мощность:</strong> 115–140 Вт (пусковой бросок ~1 кВт)</div>
+                        <div>• <strong>ТЭН оттайки:</strong> 150–165 Вт (активная нагрузка)</div>
+                        <div>• <strong>Нормативный КРВ:</strong> 0.30 – 0.45 (Эталон: ~0.38)</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155;">
+                        <div style="font-weight:bold; color:#10b981; margin-bottom:6px;">Пороги телеметрии:</div>
+                        <div>• Отдых (покой): &lt; 15 Вт</div>
+                        <div>• Заморозка: &gt; 50 Вт (номинал 110–135 Вт)</div>
+                        <div>• Оттайка: 140–180 Вт (без пускового скачка тока)</div>
+                        <div>• Опрос: Каждые 5 секунд (локальный сокет)</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- Pure ES5 Vanilla JavaScript (100% Compatible with Old Safari / iOS 8, 9, 10, 11, 12) -->
     <script>
+        function openIpadAbout() {
+            var modal = document.getElementById('ipad-about-modal');
+            if (modal) modal.style.display = 'flex';
+            switchIpadTab('about');
+        }
+
+        function closeIpadAbout() {
+            var modal = document.getElementById('ipad-about-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function switchIpadTab(tabKey) {
+            var tabs = ['about', 'faq', 'ver', 'specs'];
+            for (var i = 0; i < tabs.length; i++) {
+                var k = tabs[i];
+                var tabEl = document.getElementById('ipad-tab-' + k);
+                var btnEl = document.getElementById('ipad-btn-' + k);
+                if (tabEl) tabEl.style.display = (k === tabKey) ? 'block' : 'none';
+                if (btnEl) {
+                    if (k === tabKey) {
+                        btnEl.style.background = '#1e293b';
+                        btnEl.style.color = '#38bdf8';
+                        btnEl.style.borderBottom = '2px solid #38bdf8';
+                    } else {
+                        btnEl.style.background = 'transparent';
+                        btnEl.style.color = '#94a3b8';
+                        btnEl.style.borderBottom = '2px solid transparent';
+                    }
+                }
+            }
+        }
+
         function toggleIpadFS() {
             var doc = window.document;
             var docEl = doc.documentElement;

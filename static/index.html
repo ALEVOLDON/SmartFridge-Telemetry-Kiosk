@@ -377,6 +377,114 @@
                 page-break-inside: avoid;
             }
         }
+
+        /* About & FAQ Modal Styles */
+        .about-tab-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .about-tab-btn.active, .about-tab-btn:hover {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+        }
+        .faq-item {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        .faq-item:hover {
+            border-color: rgba(56, 189, 248, 0.35);
+        }
+        .faq-q {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .faq-a {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.55;
+        }
+        .changelog-card {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 4px solid #38bdf8;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+        .changelog-ver {
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #38bdf8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .changelog-date {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .changelog-point {
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.5;
+            margin-bottom: 5px;
+            padding-left: 14px;
+            position: relative;
+        }
+        .changelog-point::before {
+            content: "•";
+            color: #38bdf8;
+            position: absolute;
+            left: 2px;
+            font-weight: bold;
+        }
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+        }
+        .spec-box {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .spec-label {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .spec-val {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
     </style>
 </head>
 <body>
@@ -407,6 +515,10 @@
         <span>📜</span>
         <span>Полный архив циклов</span>
     </button>
+    <button class="drawer-item" onclick="closeMobileDrawer(); openAboutModal();">
+        <span>ℹ️</span>
+        <span>О программе, FAQ и версии</span>
+    </button>
     <a class="drawer-item" href="/ipad">
         <span>📟</span>
         <span>Режим Киоска iPad / Планшет</span>
@@ -425,6 +537,10 @@
     <button class="drawer-item" onclick="testNotification(); closeMobileDrawer();">
         <span>🔔</span>
         <span>Тест оповещения</span>
+    </button>
+    <button class="drawer-item" onclick="openAboutModal(); closeMobileDrawer();">
+        <span>ℹ️</span>
+        <span>Справка и база знаний</span>
     </button>
     <button class="drawer-item" onclick="openSettings(); closeMobileDrawer();">
         <span>⚙️</span>
@@ -456,6 +572,7 @@
             <button class="btn btn-secondary" onclick="togglePcSound()" id="pc-sound-btn" style="color:#10b981; border-color:rgba(16,185,129,0.4);">🔔 Звук: ВКЛ</button>
             <button class="btn btn-secondary" onclick="toggleFullScreen()" id="fs-btn">⛶ На весь экран</button>
             <button class="btn btn-secondary" onclick="testNotification()">🔔 Тест оповещения</button>
+            <button class="btn btn-secondary" onclick="openAboutModal()" style="color:#38bdf8; border-color:rgba(56,189,248,0.4);">ℹ️ О программе & FAQ</button>
             <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки API</button>
             <button class="btn btn-secondary" onclick="printReport()">🖨 Печать отчета</button>
         </div>
@@ -686,6 +803,289 @@
             <input type="text" id="cfg-temp-sensor" placeholder="Напр. ebf829a1... (оставьте пустым для автооценки)">
         </div>
         <button class="btn" style="width:100%;" onclick="saveSettings()">💾 Сохранить и подключиться</button>
+    </div>
+</div>
+
+<!-- About, FAQ & Changelog Modal -->
+<div class="modal" id="about-modal" onclick="if(event.target===this) closeAboutModal();" style="display:none; position:fixed; z-index:2500; left:0; top:0; width:100%; height:100%; background:rgba(15,23,42,0.88); backdrop-filter:blur(10px); justify-content:center; align-items:center; padding:12px;">
+    <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.15); border-radius:18px; width:100%; max-width:880px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.65); overflow:hidden;">
+        <!-- Header -->
+        <div style="padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(15,23,42,0.92); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, #0284c7, #06b6d4); display:flex; align-items:center; justify-content:center; font-size:22px; box-shadow:0 0 15px rgba(6,182,212,0.4);">
+                    🧊
+                </div>
+                <div>
+                    <div style="font-weight:800; font-size:16.5px; color:#f8fafc; letter-spacing:0.3px; display:flex; align-items:center; gap:8px;">
+                        Samsung RT34MB Monitor <span style="font-size:11px; font-weight:700; background:rgba(56,189,248,0.2); color:#38bdf8; padding:2px 8px; border-radius:6px; border:1px solid rgba(56,189,248,0.35);">PRO v3.5.2</span>
+                    </div>
+                    <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Автономная система энергомониторинга и предиктивной диагностики No-Frost</div>
+                </div>
+            </div>
+            <button onclick="closeAboutModal()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:34px; height:34px; border-radius:50%; font-size:18px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                ✕
+            </button>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <div style="display:flex; gap:4px; padding:6px 18px 0 18px; background:rgba(15,23,42,0.75); border-bottom:1px solid rgba(255,255,255,0.08); overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <button class="about-tab-btn active" id="tab-btn-about" onclick="switchAboutTab('tab-about', this)">ℹ️ О программе</button>
+            <button class="about-tab-btn" id="tab-btn-faq" onclick="switchAboutTab('tab-faq', this)">❓ База знаний & FAQ</button>
+            <button class="about-tab-btn" id="tab-btn-changelog" onclick="switchAboutTab('tab-changelog', this)">📜 История версий</button>
+            <button class="about-tab-btn" id="tab-btn-specs" onclick="switchAboutTab('tab-specs', this)">🔬 Характеристики & ТТХ</button>
+        </div>
+
+        <!-- Tab Body (Scrollable) -->
+        <div style="padding:20px 22px; overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch;">
+            
+            <!-- Tab 1: About -->
+            <div id="tab-about" style="display:block;">
+                <div style="background:linear-gradient(135deg, rgba(2,132,199,0.15), rgba(6,182,212,0.08)); border:1px solid rgba(56,189,248,0.25); border-radius:14px; padding:16px 20px; margin-bottom:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <div style="font-size:16px; font-weight:800; color:#f8fafc;">Samsung RT34MB Intelligent Energy Monitor</div>
+                            <div style="font-size:12.5px; color:#38bdf8; font-weight:600; margin-top:2px;">Pro Edition • Edge Autonomous Host</div>
+                        </div>
+                        <div style="font-size:11.5px; font-weight:700; background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;">
+                            <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981;"></span> 100% LAN Mode • Zero Cloud
+                        </div>
+                    </div>
+                    <p style="font-size:13.5px; color:#cbd5e1; line-height:1.6; margin-top:10px;">
+                        Автономный диагностический комплекс для непрерывного анализа энергопотребления, расчета КРВ (Duty Cycle), раннего выявления утечек хладагента R600a, обнаружения циклов No-Frost оттайки испарителя и защиты компрессора при сбоях в электросети 220В.
+                    </p>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:18px;">
+                    <div class="faq-item" style="margin-bottom:0;">
+                        <div class="faq-q"><span>⚡</span> Прямой локальный опрос</div>
+                        <div class="faq-a">Прямой TCP-сокет (порт 6668) с розеткой Tuya по домашней Wi-Fi сети с пингом ~10 мс. Нулевой расход квот Tuya Cloud.</div>
+                    </div>
+                    <div class="faq-item" style="margin-bottom:0;">
+                        <div class="faq-q"><span>🛡️</span> Защита Policy Routing</div>
+                        <div class="faq-a">Системные правила ядра Linux закрепляют домашнюю подсеть <code>192.168.0.0/24</code> за <code>eth0</code>, даже если на приставке включен VPN.</div>
+                    </div>
+                    <div class="faq-item" style="margin-bottom:0;">
+                        <div class="faq-q"><span>🧊</span> Теплофизическая модель</div>
+                        <div class="faq-a">Расчет текущей температуры морозильной и холодильной камер на базе динамики теплоемкости и теплопотерь.</div>
+                    </div>
+                    <div class="faq-item" style="margin-bottom:0;">
+                        <div class="faq-q"><span>⚡</span> Контроль блэкаутов</div>
+                        <div class="faq-a">Мониторинг аварийных отключений 220В, оценка безопасности заморозки продуктов и защита компрессора от повторного пуска.</div>
+                    </div>
+                </div>
+
+                <div class="faq-item" style="border-left:4px solid #10b981; margin-bottom:0;">
+                    <div class="faq-q" style="color:#10b981;"><span>💻</span> Среда выполнения и архитектура</div>
+                    <div style="font-size:13px; color:#94a3b8; line-height:1.6; margin-top:4px;">
+                        <div>• <strong>Хост-устройство:</strong> ТВ-приставка H96 Max (Rockchip RK3318 Cortex-A53 64-bit, Android OS)</div>
+                        <div>• <strong>Серверный стек:</strong> Termux Linux Environment + Python 3.12 (Flask Async Server + TinyTuya)</div>
+                        <div>• <strong>База данных:</strong> Локальная реляционная СУБД SQLite3 (свыше 140 000 записей телеметрии)</div>
+                        <div>• <strong>Клиентские интерфейсы:</strong> Главный Cyber-дашборд + Облегченный Kiosk Mode для iPad (iOS 9–12)</div>
+                        <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI & DEV</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: FAQ -->
+            <div id="tab-faq" style="display:none;">
+                <div class="faq-item">
+                    <div class="faq-q"><span>❓</span> Почему компрессор отдыхает 35–55 минут? Это нормально?</div>
+                    <div class="faq-a">
+                        <strong>Да, это идеальный показатель!</strong> У компрессора Samsung SK170H-L1U нормативный коэффициент рабочего времени (КРВ) составляет <strong>0.30–0.45</strong>. При стандартном рабочем цикле 20–25 минут нормальный отдых должен длиться от 35 до 55 минут. Длительный отдых означает, что уплотнители дверей герметичны, испаритель не забит льдом, а система эффективно держит набранный холод.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q"><span>❓</span> Как система понимает, что включилась оттайка (Defrost)?</div>
+                    <div class="faq-a">
+                        Система распознает оттайку по характерному профилю потребления: включается ТЭН оттайки испарителя мощностью <strong>150–165 Вт</strong> чисто активной нагрузки (cos φ ≈ 1.0) без пускового скачка компрессора. После нагрева следует «пауза каплепадения» (drip time) 7–12 минут при мощности 0 Вт, после чего компрессор возобновляет цикл заморозки.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q"><span>❓</span> Что происходит при отключении электричества (блэкауте)?</div>
+                    <div class="faq-a">
+                        Монитор засекает точный момент потери связи с розеткой и время возврата 220В. Продолжительность блэкаута рассчитывается отдельно, предотвращая появление ложного сверхдлинного «цикла отдыха». Программа сопоставляет длительность отключения с теплоемкостью морозилки и выводит оценку безопасности продуктов (до 8–10 часов мороз остается безопасным).
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q"><span>❓</span> Что такое «Пауза пуска» (Защита компрессора)?</div>
+                    <div class="faq-a">
+                        Если компрессор только что выключился или свет моргнул на пару секунд, в контуре хладагента сохраняется высокое давление конденсации. Повторный пуск под давлением перегружает пусковую обмотку и может сжечь позисторное реле. Система активирует блокировку пуска минимум на <strong>5 минут</strong> для полного выравнивания давления хладагента.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q"><span>❓</span> Тратятся ли облачные запросы Tuya Cloud?</div>
+                    <div class="faq-a">
+                        <strong>Нет, запросы равны 0!</strong> Монитор работает по прямому протоколу Local Wi-Fi (порт 6668), опрашивая розетку напрямую в домашней сети. Это экономит весь месячный лимит (50 000 вызовов Tuya Cloud), обеспечивая работу даже при полном отсутствии внешнего интернета.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q"><span>❓</span> Работает ли программа, если на приставке включен VPN?</div>
+                    <div class="faq-a">
+                        <strong>Да, полностью совместима!</strong> В системе настроена изоляция Policy Routing ядра Linux. Трафик домашней сети <code>192.168.0.0/24</code> и веб-сервера <code>8088</code> принудительно направляется через физический сетевой кабель <code>eth0</code>, поэтому любые включенные VPN-клиенты (RedLink/AWG) не блокируют доступ к розетке и веб-интерфейсу на iPad.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q"><span>❓</span> Как открыть режим для старых планшетов iPad?</div>
+                    <div class="faq-a">
+                        Откройте в браузере Safari адрес: <code>http://192.168.0.103:8088/ipad</code>. Этот экран оптимизирован специально под мобильные процессоры Apple и старые версии iOS (включая iOS 9–12), потребляет минимум памяти и работает без лишних скриптов.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Changelog -->
+            <div id="tab-changelog" style="display:none;">
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.5.2 Pro — Policy Routing Shield & 7-Day Storage Shield</span>
+                        <span class="changelog-date">07.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Изоляция локальной сети от VPN:</strong> интеграция системных правил Linux Policy Routing (<code>pref 9000/9001</code> на <code>eth0</code>) для одновременной работы сторонних VPN-клиентов и домашней телеметрии.</div>
+                    <div class="changelog-point"><strong>7-дневная автоочистка SQLite:</strong> автоматическая ротация сырых замеров (фиксация размера БД на уровне ~11 МБ) с бессрочным сохранением всех циклов и блэкаутов.</div>
+                    <div class="changelog-point"><strong>Интерактивный центр «О программе»:</strong> встроена база знаний (FAQ), диагностические подсказки, технические характеристики и полная история версий с первого релиза.</div>
+                    <div class="changelog-point"><strong>Оптимизация сетевых сокетов:</strong> принудительная привязка source IP 192.168.0.103 для исключения коллизий маршрутизации.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.5.0 — Blackout Recovery Intelligence</span>
+                        <span class="changelog-date">06.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Детектор отключений 220В:</strong> автоматическая фиксация аварийных отключений электроэнергии с точностью до секунды.</div>
+                    <div class="changelog-point"><strong>Оценка безопасности заморозки:</strong> расчет нагрева морозильной камеры при длительном блэкауте по теплофизической кривой.</div>
+                    <div class="changelog-point"><strong>Фильтрация ложных циклов:</strong> исключение аварийных пауз из расчета статистики нормального отдыха компрессора.</div>
+                    <div class="changelog-point"><strong>Двойной таймер:</strong> вывод продолжительности как текущего цикла работы, так и активного отдыха компрессора.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.4.0 — Zero-Cloud Direct Wi-Fi</span>
+                        <span class="changelog-date">02.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Локальный протокол Tuya:</strong> переход на прямое TCP-взаимодействие с розеткой (порт 6668) без расхода месячной квоты Tuya Cloud.</div>
+                    <div class="changelog-point"><strong>100% экономия вызовов:</strong> предотвращение блокировки аккаунта разработчика Tuya при 5-секундном интервале опроса.</div>
+                    <div class="changelog-point"><strong>iPad Kiosk Mode:</strong> запуск облегченного веб-интерфейса <code>/ipad</code> для старых планшетов.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.2.0 — Thermal Modeling & Audio Engine</span>
+                        <span class="changelog-date">31.08.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Теплофизическая модель:</strong> программная оценка температур в морозилке (-18°C) и холодильнике (+4°C) без монтажа физических термопар.</div>
+                    <div class="changelog-point"><strong>Звуковой синтезатор:</strong> воспроизведение звукового сигнала (Chime) при переходах между рабочими режимами.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.0.0 — Autonomous Edge Host Release</span>
+                        <span class="changelog-date">29.08.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Перенос на H96 Max:</strong> автономная круглосуточная работа на ТВ-приставке в Termux Linux 24/7/365 с минимальным энергопотреблением (~3 Вт).</div>
+                    <div class="changelog-point"><strong>Супервизор автозапуска:</strong> непрерывный фоновый мониторинг процесса и автоматический перезапуск при сбоях.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v2.0.0 — Web Dashboard & SQLite Architecture</span>
+                        <span class="changelog-date">28.08.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Переход на Web и Flask:</strong> встроенный HTTP веб-сервер, REST API (<code>/api/status</code>, <code>/api/history</code>) и современный дашборд.</div>
+                    <div class="changelog-point"><strong>Реляционная база SQLite:</strong> структурированное хранение замеров и циклов в <code>fridge_data.db</code> вместо временных файлов.</div>
+                    <div class="changelog-point"><strong>Живые графики:</strong> динамическое построение кривых мощности, напряжения и тока в реальном времени.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v1.0.0 — Genesis Initial Release (GitHub)</span>
+                        <span class="changelog-date">27.08.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Первый официальный релиз на GitHub:</strong> базовый скрипт мониторинга холодильника Samsung RT34MB для ПК.</div>
+                    <div class="changelog-point"><strong>Tuya Cloud Integration:</strong> опрос умной розетки через облачный OpenAPI Tuya.</div>
+                    <div class="changelog-point"><strong>Анализ компрессора:</strong> базовый расчёт коэффициента рабочего времени (КРВ / Duty Cycle) и журнал нагрузок.</div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Specs -->
+            <div id="tab-specs" style="display:none;">
+                <div style="font-size:14px; font-weight:700; color:#38bdf8; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                    <span>🧊</span> Паспортные данные холодильника Samsung RT34MB
+                </div>
+                <div class="spec-grid" style="margin-bottom:18px;">
+                    <div class="spec-box">
+                        <div class="spec-label">Модель агрегата</div>
+                        <div class="spec-val">Samsung RT34MB (RT34MBTS)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Система охлаждения</div>
+                        <div class="spec-val">CoolTech Dynamic No-Frost</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Хладагент (Фреон)</div>
+                        <div class="spec-val">R600a (Изобутан), норма ~52–56 г</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Модель компрессора</div>
+                        <div class="spec-val">Samsung SK170H-L1U (Индукционный)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Питание компрессора</div>
+                        <div class="spec-val">220–240 В ~ 50 Гц (1 фаза)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Рабочая мощность компрессора</div>
+                        <div class="spec-val">115 – 140 Вт (пусковой бросок до 1.2 кВт)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">ТЭН оттайки испарителя</div>
+                        <div class="spec-val">150 – 165 Вт (активная нагрузка)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Нормативный КРВ (Duty Cycle)</div>
+                        <div class="spec-val">0.30 – 0.45 (Идеально: 0.38)</div>
+                    </div>
+                </div>
+
+                <div style="font-size:14px; font-weight:700; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                    <span>📊</span> Пороги программной детекции телеметрии
+                </div>
+                <div class="spec-grid">
+                    <div class="spec-box">
+                        <div class="spec-label">Порог фазы покоя (Отдых)</div>
+                        <div class="spec-val">&lt; 15 Вт (ток 0.00 А)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Порог фазы охлаждения</div>
+                        <div class="spec-val">&gt; 50 Вт (номинал 110–135 Вт)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Порог детекции оттайки</div>
+                        <div class="spec-val">140 – 180 Вт (без броска пускового тока)</div>
+                    </div>
+                    <div class="spec-box">
+                        <div class="spec-label">Интервал опроса телеметрии</div>
+                        <div class="spec-val">Каждые 5 секунд (Local Wi-Fi)</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:12px 22px; background:rgba(15,23,42,0.85); border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px; color:#64748b;">
+            <div>
+                © 2026 ALEVOLDON LABS // Проект домашней телеметрии Samsung RT34MB
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="color:#10b981; display:flex; align-items:center; gap:5px; font-weight:600;">● <span>Служба активна</span></span>
+                <button onclick="closeAboutModal()" class="btn btn-secondary" style="padding:5px 14px; font-size:12px; border-radius:6px;">Закрыть</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1612,6 +2012,44 @@
             renderArchiveTable(currentArchiveFilter);
         }
     }
+
+    function openAboutModal() {
+        const modal = document.getElementById('about-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            // Default to about tab
+            const firstTabBtn = document.getElementById('tab-btn-about');
+            if (firstTabBtn) switchAboutTab('tab-about', firstTabBtn);
+        }
+    }
+
+    function closeAboutModal() {
+        const modal = document.getElementById('about-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function switchAboutTab(tabId, btn) {
+        const tabs = ['tab-about', 'tab-faq', 'tab-changelog', 'tab-specs'];
+        tabs.forEach(function(t) {
+            const el = document.getElementById(t);
+            if (el) el.style.display = (t === tabId) ? 'block' : 'none';
+        });
+        const buttons = document.querySelectorAll('.about-tab-btn');
+        buttons.forEach(function(b) {
+            b.classList.remove('active');
+        });
+        if (btn) btn.classList.add('active');
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAboutModal();
+            closeArchiveModal();
+            closeSettings();
+            closeMobileDrawer();
+        }
+    });
 
     setInterval(pollStatus, 3000);
     setInterval(tickLiveTimer, 1000);

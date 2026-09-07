@@ -969,17 +969,20 @@ def fetch_device_telemetry(cfg):
         "msg": _cloud_error_text(res),
     }
 
-def prune_old_measurements():
-    """Prunes raw 4-second telemetry older than 7 days to keep SQLite light on TV Box"""
+def prune_old_measurements(retention_days=7):
+    """Prunes raw 4-second telemetry older than retention_days to keep SQLite light on TV Box"""
     try:
-        cutoff = (datetime.now() - timedelta(days=7)).isoformat()
+        cutoff = (datetime.now() - timedelta(days=retention_days)).isoformat()
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
         cur.execute("DELETE FROM measurements WHERE timestamp < ?", (cutoff,))
+        deleted = cur.rowcount
         conn.commit()
         conn.close()
-    except Exception:
-        pass
+        if deleted > 0:
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Auto-pruned {deleted} old raw measurements (older than {retention_days} days).")
+    except Exception as e:
+        print(f"Prune error: {e}")
 
 def tuya_poller():
     global state
@@ -1005,6 +1008,7 @@ def tuya_poller():
     apply_idle_rest_clock()
     check_cold_boot_blackout()
     update_last_blackout_state()
+    prune_old_measurements(7)
     
     while True:
         cfg = load_config()
@@ -1019,7 +1023,7 @@ def tuya_poller():
             if sync_cloud_history():
                 cloud_ok = True
         if poll_count % PRUNE_EVERY_POLLS == 0:
-            prune_old_measurements()
+            prune_old_measurements(7)
             
         sleep_sec = 16
         try:

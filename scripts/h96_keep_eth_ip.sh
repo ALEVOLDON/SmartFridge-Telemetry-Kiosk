@@ -8,11 +8,16 @@ DNS2=8.8.8.8
 
 ip link set eth0 up 2>/dev/null
 
-# byedpi tun0 steals 192.168.0.0/24 (ip route get plug -> tun0). LAN must stay on eth0.
+# Keep LAN 192.168.0.0/24 strictly on eth0 regardless of any VPN tun0
+ip route replace 192.168.0.0/24 dev eth0 proto static scope link src ${WANT_IP} table eth0 2>/dev/null
 ip rule del pref 9000 2>/dev/null
-ip rule add to 192.168.0.0/24 lookup main pref 9000 2>/dev/null
+ip rule add to 192.168.0.0/24 lookup eth0 pref 9000 2>/dev/null
 ip rule del pref 9001 2>/dev/null
-ip rule add from 192.168.0.0/24 lookup main pref 9001 2>/dev/null
+ip rule add from 192.168.0.0/24 lookup eth0 pref 9001 2>/dev/null
+
+# Ensure port 8088 web UI is always allowed in iptables
+iptables -C INPUT -p tcp --dport 8088 -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport 8088 -j ACCEPT
+iptables -C OUTPUT -p tcp --sport 8088 -j ACCEPT 2>/dev/null || iptables -I OUTPUT 1 -p tcp --sport 8088 -j ACCEPT
 
 CUR=$(ip -4 -o addr show eth0 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -n 1)
 if [ "$CUR" = "$WANT_IP" ]; then
