@@ -63,7 +63,43 @@
         .badge-green { background: rgba(16,185,129,0.2); color: #10b981; }
         .badge-blue { background: rgba(56,189,248,0.2); color: #38bdf8; }
         .badge-orange { background: rgba(249,115,22,0.2); color: #f97316; }
-        .color-orange { color: #f97316; }
+        /* Custom Modern Dark/Cyber Scrollbar Styles for iPad/WebKit */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+            border-radius: 6px;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+
+        .ipad-archive-scroll {
+            padding: 10px;
+            overflow-y: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1;
+        }
+        #ipad-archive-body tr {
+            transition: background 0.15s ease;
+        }
+        #ipad-archive-body tr:hover {
+            background: rgba(56, 189, 248, 0.12) !important;
+        }
+        #history-body tr {
+            transition: background 0.15s ease;
+        }
+        #history-body tr:hover {
+            background: rgba(56, 189, 248, 0.08) !important;
+        }
     </style>
 </head>
 <body>
@@ -199,7 +235,7 @@
                     <button onclick="closeIpadArchive()" style="background:#ef4444; color:#fff; border:none; padding:7px 16px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">Закрыть ✕</button>
                 </div>
             </div>
-            <div style="padding:10px; overflow-y:auto; overflow-x:auto; -webkit-overflow-scrolling:touch; flex:1;">
+            <div class="ipad-archive-scroll">
                 <table style="width:100%;">
                     <thead>
                         <tr style="position:sticky; top:0; background:#1e293b; z-index:10;">

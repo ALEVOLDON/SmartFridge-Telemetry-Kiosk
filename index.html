@@ -78,6 +78,115 @@
         .form-group input, .form-group select { width: 100%; background: #0f172a; border: 1px solid var(--border-color); color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
         .form-group input:focus { outline: none; border-color: var(--accent-blue); }
 
+        /* Custom Modern Dark/Cyber Scrollbar Styles */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(56, 189, 248, 0.4) rgba(15, 23, 42, 0.6);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(56, 189, 248, 0.45), rgba(6, 182, 212, 0.35));
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #38bdf8, #06b6d4);
+            border-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:active {
+            background: #38bdf8;
+            box-shadow: 0 0 14px rgba(56, 189, 248, 0.8);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: transparent;
+        }
+
+        /* Dedicated Archive / Report Modal Scrollbar & Table Polish */
+        .archive-scroll-container {
+            padding: 0 16px 14px 16px;
+            overflow-y: auto;
+            overflow-x: auto;
+            flex: 1;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        .archive-scroll-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .archive-scroll-container::-webkit-scrollbar-track {
+            background: rgba(11, 17, 32, 0.85);
+            border-radius: 8px;
+            margin: 4px;
+        }
+
+        .archive-scroll-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .archive-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #60a5fa, #38bdf8);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
+        }
+
+        #archive-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            min-width: 720px;
+        }
+
+        #archive-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: #0f172a;
+            border-bottom: 2px solid rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+            padding: 13px 12px;
+        }
+
+        #archive-table td {
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+            padding: 11px 12px;
+        }
+
+        #archive-body tr {
+            transition: background 0.15s ease;
+        }
+
+        #archive-body tr:hover {
+            background: rgba(56, 189, 248, 0.12) !important;
+        }
+
+        #cycles-body tr {
+            transition: background 0.15s ease;
+        }
+
+        #cycles-body tr:hover {
+            background: rgba(56, 189, 248, 0.08) !important;
+        }
+
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; }
         th { background: #0f172a; color: var(--text-muted); padding: 12px 14px; font-weight: 600; border-bottom: 1px solid var(--border-color); }
         td { padding: 12px 14px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); color: #e2e8f0; }
@@ -644,7 +753,7 @@
             </div>
         </div>
         <!-- Scrollable Body Table with horizontal touch scroll -->
-        <div style="padding:12px 16px; overflow-y:auto; overflow-x:auto; flex:1; -webkit-overflow-scrolling:touch;">
+        <div class="archive-scroll-container">
             <table id="archive-table" style="min-width:700px;">
                 <thead id="archive-thead">
                     <tr><th>Дата</th><th>Начало работы</th><th>Конец работы</th><th>Работа</th><th>Начало отдыха</th><th>Конец отдыха</th><th>Отдых</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>
