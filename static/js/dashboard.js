@@ -26,7 +26,7 @@ function toggleFullScreen() {
             datasets: [
                 { label: 'Мощность (Вт)', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', yAxisID: 'yP', fill: true, tension: 0.2 },
                 { label: 'Напряжение (В)', data: [], borderColor: '#06b6d4', borderDash: [5, 5], yAxisID: 'yV', tension: 0.2 },
-                { label: 'Морозилка (°C)', data: [], borderColor: '#38bdf8', borderDash: [2, 2], pointRadius: 0, yAxisID: 'yT', tension: 0.3 }
+                { label: 'Морозилка °C (модель)', data: [], borderColor: '#38bdf8', borderDash: [2, 2], pointRadius: 0, yAxisID: 'yT', tension: 0.3 }
             ]
         },
         options: {
@@ -556,13 +556,21 @@ function toggleFullScreen() {
             }
         }
         
+        function formatTempHtml(val, estimated) {
+            if (val === undefined || val === null || val === '') return '—';
+            const n = Number(val);
+            if (!isFinite(n)) return '—';
+            const sign = n > 0 ? '+' : '';
+            const prefix = estimated ? '≈ ' : '';
+            return `${prefix}${sign}${n.toFixed(1)} <span class="unit">°C</span>`;
+        }
         if (data.temp_freezer !== undefined) {
             const fVal = document.getElementById('temp-freezer-val');
-            if (fVal) fVal.innerHTML = `${data.temp_freezer > 0 ? '+' : ''}${data.temp_freezer.toFixed(1)} <span class="unit">°C</span>`;
+            if (fVal) fVal.innerHTML = formatTempHtml(data.temp_freezer, freezerEst);
         }
         if (data.temp_fridge !== undefined) {
             const rVal = document.getElementById('temp-fridge-val');
-            if (rVal) rVal.innerHTML = `${data.temp_fridge > 0 ? '+' : ''}${data.temp_fridge.toFixed(1)} <span class="unit">°C</span>`;
+            if (rVal) rVal.innerHTML = formatTempHtml(data.temp_fridge, fridgeEst);
         }
 
         // Update Blackout Status Banner
@@ -706,7 +714,8 @@ function toggleFullScreen() {
             liveChart.data.labels.push(data.last_update);
             liveChart.data.datasets[0].data.push(data.power);
             liveChart.data.datasets[1].data.push(data.voltage);
-            liveChart.data.datasets[2].data.push(data.temp_freezer !== undefined ? data.temp_freezer : -18.0);
+            liveChart.data.datasets[2].label = freezerEst ? 'Морозилка °C (модель)' : 'Морозилка °C';
+            liveChart.data.datasets[2].data.push(data.temp_freezer != null ? data.temp_freezer : null);
             if (liveChart.data.labels.length > 25) {
                 liveChart.data.labels.shift();
                 liveChart.data.datasets[0].data.shift();

@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+import copy
 import socket
 import sqlite3
 import argparse
@@ -11,6 +12,25 @@ import subprocess
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, send_from_directory
 import tinytuya
+from fridge_logic import (
+    DEFROST_MAX_SEC,
+    DEFROST_MIN_SEC,
+    DEFROST_POWER_MAX,
+    DEFROST_POWER_MIN,
+    MIN_COOLING_BEFORE_DEFROST_SEC,
+    classify_cycle,
+    duty_cycle,
+    estimated_chamber_temps,
+    fill_rest_after,
+    food_safety_label,
+    format_gap_str,
+    is_loopback_ip,
+    is_private_ip,
+    merge_micro_cycles,
+    parse_iso,
+    parse_lan_network,
+    tuya_scan_hosts,
+)
 
 try:
     from winotify import Notification, audio
@@ -25,8 +45,31 @@ STATIC_DIR = os.path.join(APP_DIR, "static")
 
 app = Flask(__name__, static_folder=STATIC_DIR)
 
+class LockedState:
+    """Thread-safe telemetry bag: poller writes, Flask reads a deep snapshot."""
+
+    def __init__(self, data):
+        self._data = dict(data)
+        self._lock = threading.RLock()
+
+    def __getitem__(self, key):
+        with self._lock:
+            return self._data[key]
+
+    def __setitem__(self, key, value):
+        with self._lock:
+            self._data[key] = value
+
+    def get(self, key, default=None):
+        with self._lock:
+            return self._data.get(key, default)
+
+    def snapshot(self):
+        with self._lock:
+            return copy.deepcopy(self._data)
+
 # Global Telemetry State with Temperature and Blackout Tracking
-state = {
+state = LockedState({
     "connected": False,
     "power": 0.0,
     "voltage": 0.0,
@@ -62,12 +105,19 @@ state = {
         "date": "—",
         "food_safety": "🟢 Электросеть стабильна"
     }
-}
+})
+
+_poller_thread = None
+_schema_ready = False
+_schema_lock = threading.Lock()
 
 def is_localhost_request():
-    """Checks if request originated from local machine"""
-    remote = request.remote_addr
-    return remote in ["127.0.0.1", "localhost", "::1", "::ffff:127.0.0.1"]
+    """Checks if request originated from the server host itself."""
+    return is_loopback_ip(request.remote_addr)
+
+def is_lan_request():
+    """Loopback or RFC1918 / link-local / CGNAT (Tailscale)."""
+    return is_private_ip(request.remote_addr)
 
 def send_pc_toast(title, message, is_warning=False):
     """Sends native Windows Desktop notification in bottom-right corner"""
@@ -88,8 +138,25 @@ def send_pc_toast(title, message, is_warning=False):
     except Exception as e:
         print("Toast error:", e)
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
+def db_connect():
+    """SQLite connection with WAL and busy timeout so poller and Flask don't lock up."""
+    global _schema_ready
+    conn = sqlite3.connect(DB_FILE, timeout=10.0)
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+    except sqlite3.Error:
+        pass
+    if not _schema_ready:
+        with _schema_lock:
+            if not _schema_ready:
+                _ensure_schema(conn)
+                conn.commit()
+                _schema_ready = True
+    return conn
+
+def _ensure_schema(conn):
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS measurements (
@@ -145,15 +212,15 @@ def init_db():
         c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_cycles_start_end ON cycles(start_time, end_time)")
     except Exception:
         pass
-    conn.commit()
-    conn.close()
 
-init_db()
+def init_db():
+    conn = db_connect()
+    conn.close()
 
 def record_cloud_call(n=1):
     try:
         today = datetime.now().strftime("%Y-%m-%d")
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute('''
             INSERT INTO cloud_usage (day_date, calls_count)
@@ -169,7 +236,7 @@ def get_cloud_quota_stats():
     try:
         today = datetime.now().strftime("%Y-%m-%d")
         month_start = datetime.now().strftime("%Y-%m-01")
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT calls_count FROM cloud_usage WHERE day_date = ?", (today,))
         row_today = cur.fetchone()
@@ -215,13 +282,7 @@ def get_cloud_quota_stats():
         }
 
 def load_config():
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {
+    cfg = {
         "api_region": "eu",
         "api_key": "",
         "api_secret": "",
@@ -231,9 +292,19 @@ def load_config():
         "device_ip": "",
         "device_mac": "",
         "local_version": 3.5,
+        "lan_subnet": "192.168.0.0/24",
         "last_stop_time": None,
         "current_start_time": None
     }
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                cfg.update(loaded)
+        except Exception:
+            pass
+    return cfg
 
 def save_config(cfg):
     tmp_file = CONFIG_FILE + ".tmp"
@@ -247,16 +318,10 @@ def save_config(cfg):
 
 # No Frost timer counts compressor ON time (~8–10 h), then a 10–25 min
 # sheath heater at ~150–175 W. SK170K cooling is 115–142 W steady.
-DEFROST_POWER_MIN = 149.0
-DEFROST_POWER_MAX = 188.0
-DEFROST_MIN_SEC = 480    # 8 min
-DEFROST_MAX_SEC = 1860   # 31 min
-MIN_COOLING_BEFORE_DEFROST_SEC = int(5.0 * 3600)  # 5 hours compressor time
 COMPRESSOR_LOCKOUT_SEC = 180
 LONG_RUN_WARN_SEC = 25200  # 7 h — service guide fault threshold
 CLOUD_SYNC_EVERY_POLLS = 300  # ~20 min at 4 s interval
 PRUNE_EVERY_POLLS = 720
-MAX_REAL_REST_SEC = 5400  # > 90 min is missing telemetry, not compressor rest
 
 _cloud_client = None
 _cloud_client_cfg = None
@@ -274,47 +339,9 @@ def get_cloud_client(cfg):
         _cloud_client_cfg = key
     return _cloud_client
 
-def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, voltage=None, current=None):
-    """
-    Classify cycle into 'defrost' (heating element) vs 'cooling' (compressor motor).
-    Samsung RT34MB No Frost rules:
-    1. Defrost duration is strictly within [8 min .. 31 min] (480s .. 1860s). Longer is ALWAYS cooling.
-    2. Defrost requires cumulative compressor cooling before it can trigger (at least 5.0 hours = 18000s).
-    3. Power curve stability: a pure heating element (ТЭН) has nearly flat power (core delta <= 16W),
-       while a compressor has start-inrush and pressure drops (delta >= 25W).
-    4. Power range: Heater operates at 149W .. 188W (nominal ~160W at 220V, down to ~150W at 214V).
-    """
-    p = float(avg_power or 0)
-    dur = int(duration_sec or 0)
-    acc = int(cooling_since_sec or 0)
-    
-    # Rule 1: Defrost on this fridge is strictly 8..31 min. Longer is ALWAYS cooling.
-    if dur < DEFROST_MIN_SEC or dur > DEFROST_MAX_SEC:
-        return "cooling"
-
-    # Rule 2: Defrost cannot trigger repeatedly without cumulative cooling (at least 5 h)
-    if acc < MIN_COOLING_BEFORE_DEFROST_SEC:
-        return "cooling"
-
-    # Rule 3: Power stability check if multiple samples exist (heater is flat, compressor fluctuates).
-    # Ignore shutdown drop tail values (power <= 50W) and trim edge samples to isolate steady run.
-    if powers and len(powers) >= 6:
-        active = [x for x in powers if x > 50.0]
-        if len(active) >= 4:
-            core = active[2:-2] if len(active) > 6 else active
-            delta = max(core) - min(core)
-            if delta > 16.0:
-                return "cooling"
-
-    # Rule 4: Power threshold (heater is strictly 149W .. 188W, compressor is 115W .. 142W)
-    if DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX:
-        return "defrost"
-
-    return "cooling"
-
 def cooling_since_last_defrost_sec():
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT MAX(end_time) FROM cycles WHERE cycle_type = 'defrost'")
         last_d = (cur.fetchone() or [None])[0]
@@ -334,7 +361,7 @@ def cooling_since_last_defrost_sec():
 def reclassify_stored_cycles():
     """Walk cycles in time and rewrite cycle_type with the compressor-hour rule."""
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute(
             "SELECT id, start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type FROM cycles ORDER BY start_time ASC, id ASC"
@@ -365,13 +392,6 @@ def reclassify_stored_cycles():
     except Exception:
         pass
 
-def food_safety_label(gap_sec):
-    if gap_sec <= 14400:
-        return "🟢 Оценка без датчика: за ≤4 ч камера обычно теряет около 1°C"
-    if gap_sec <= 28800:
-        return "🟡 Оценка без датчика: 4–8 ч, морозилка может подняться примерно до −10°C"
-    return "🔴 Длительное отключение: проверьте продукты (оценка без датчика)"
-
 def update_restart_lockout(is_active):
     if is_active:
         state["protection_active"] = False
@@ -388,7 +408,7 @@ def update_restart_lockout(is_active):
 
 def get_latest_end_time():
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT MAX(end_time) FROM cycles")
         row = cur.fetchone()
@@ -398,62 +418,6 @@ def get_latest_end_time():
     except Exception:
         pass
     return None
-
-def parse_iso(value):
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(value)
-    except Exception:
-        return None
-
-def format_gap_str(sec):
-    """Journal durations as hours and minutes (no seconds)."""
-    if sec is None or sec < 0:
-        return None
-    total_min = (int(sec) + 30) // 60
-    if total_min < 1:
-        return "1 мин" if sec > 0 else "0 мин"
-    h = total_min // 60
-    m = total_min % 60
-    if h > 0 and m > 0:
-        return f"{h} ч {m} мин"
-    if h > 0:
-        return f"{h} ч"
-    return f"{m} мин"
-
-def fill_rest_after(dt_end, next_st, next_end_label, raw_blackouts, work_dur):
-    """Rest that follows a work cycle: stop -> next start (left-to-right in the journal)."""
-    empty = (0, "—", "—", "—", "—")
-    if not dt_end or not next_st or next_st <= dt_end:
-        return empty
-    diff_sec = int((next_st - dt_end).total_seconds())
-    if diff_sec < 45 and next_end_label != "сейчас":
-        return empty
-    is_blackout_cross = False
-    for b_item in raw_blackouts:
-        b1dt = parse_iso(b_item[0])
-        b2dt = parse_iso(b_item[1])
-        if not b1dt or not b2dt:
-            continue
-        t_a = dt_end.timestamp()
-        t_b = next_st.timestamp()
-        b1 = b1dt.timestamp()
-        b2 = b2dt.timestamp()
-        if (t_a <= b1 and t_b >= b2) or (b1 <= t_b <= b2) or (b1 <= t_a <= b2):
-            is_blackout_cross = True
-            break
-    if is_blackout_cross:
-        return (0, "затем отключение", "—", "—", "—")
-    if diff_sec > MAX_REAL_REST_SEC:
-        return (0, "нет записи", "—", "—", "—")
-    rest_start = dt_end.strftime("%H:%M")
-    rest_end = next_end_label or next_st.strftime("%H:%M")
-    krv = "—"
-    if work_dur:
-        krv = f"{round(work_dur / (work_dur + diff_sec), 2):.2f}"
-    display_gap = format_gap_str(diff_sec) or "0 мин"
-    return (diff_sec, display_gap, rest_start, rest_end, krv)
 
 def apply_idle_rest_clock():
     """Rest clock always follows the last saved cycle end, never a Tuya glitch."""
@@ -470,7 +434,7 @@ def apply_idle_rest_clock():
 def update_last_blackout_state():
     global state
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY start_time DESC LIMIT 1")
         row = cur.fetchone()
@@ -502,7 +466,7 @@ def sync_cloud_history():
     if not (cfg.get("api_key") and cfg.get("device_id") and cfg.get("api_secret")):
         return False
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT count(*) FROM cycles")
         c_count = cur.fetchone()[0]
@@ -542,7 +506,7 @@ def sync_cloud_history():
         
         all_pings = sorted(list(set(all_pings)))
         
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         
         # 1. Detect True Blackouts (offline gap >= 1 hour OR >= 30 min with confirmed hardware reboot)
@@ -647,9 +611,6 @@ def sync_cloud_history():
         print("Cloud sync notice:", e)
         return False
 
-sync_cloud_history()
-reclassify_stored_cycles()
-
 def check_cold_boot_blackout():
     """Detect if the TV Box just rebooted after a power cut (cold boot gap >= 900s)."""
     try:
@@ -667,7 +628,7 @@ def check_cold_boot_blackout():
         now = datetime.now()
         boot_time = now - timedelta(seconds=uptime_sec)
         
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT timestamp, power, voltage FROM measurements ORDER BY id DESC LIMIT 1")
         row = cur.fetchone()
@@ -720,7 +681,7 @@ def find_open_cycle_start():
     """
     last_end = get_latest_end_time() or "1970-01-01T00:00:00"
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT MAX(end_time) FROM blackouts WHERE end_time > ?", (last_end,))
         b_end = (cur.fetchone() or [None])[0]
@@ -774,18 +735,23 @@ _local_fail_until = 0.0
 _last_ip_scan = 0.0
 _last_lan_rule = 0.0
 
+def _lan_cidr(cfg=None):
+    cfg = cfg or load_config()
+    return str(parse_lan_network(cfg.get("lan_subnet") or os.environ.get("FRIDGE_LAN_SUBNET")))
+
 def _ensure_lan_route():
-    """Keep 192.168.0.0/24 on eth0; byedpi tun0 otherwise swallows the plug."""
+    """Keep the configured LAN subnet on eth0; byedpi tun0 otherwise swallows the plug."""
     global _last_lan_rule
     now = time.time()
     if now - _last_lan_rule < 30:
         return
     _last_lan_rule = now
+    cidr = _lan_cidr()
     try:
         subprocess.run(["ip", "rule", "del", "pref", "9000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
-        subprocess.run(["ip", "rule", "add", "to", "192.168.0.0/24", "lookup", "main", "pref", "9000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
+        subprocess.run(["ip", "rule", "add", "to", cidr, "lookup", "main", "pref", "9000"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
         subprocess.run(["ip", "rule", "del", "pref", "9001"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
-        subprocess.run(["ip", "rule", "add", "from", "192.168.0.0/24", "lookup", "main", "pref", "9001"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
+        subprocess.run(["ip", "rule", "add", "from", cidr, "lookup", "main", "pref", "9001"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
     except Exception:
         pass
 
@@ -827,20 +793,22 @@ def _arp_pairs():
                 pairs.append((ip, mac))
     return pairs
 
-def _scan_tuya_port(subnet="192.168.0."):
+def _scan_tuya_port(cfg=None):
     try:
         from concurrent.futures import ThreadPoolExecutor
     except Exception:
         return []
+    hosts = tuya_scan_hosts(parse_lan_network((cfg or load_config()).get("lan_subnet") or os.environ.get("FRIDGE_LAN_SUBNET")))
+    if not hosts:
+        return []
     found = []
 
-    def check(i):
-        ip = subnet + str(i)
+    def check(ip):
         return ip if _tcp_open(ip, 6668, 0.4) else None
 
     try:
         with ThreadPoolExecutor(max_workers=32) as pool:
-            for ip in pool.map(check, range(2, 255)):
+            for ip in pool.map(check, hosts):
                 if ip:
                     found.append(ip)
     except Exception:
@@ -861,7 +829,7 @@ def discover_plug_ip(cfg):
     if now - _last_ip_scan < 45:
         return saved
     _last_ip_scan = now
-    hits = _scan_tuya_port()
+    hits = _scan_tuya_port(cfg)
     if mac:
         arp = dict(_arp_pairs())
         for ip in hits:
@@ -992,7 +960,7 @@ def prune_old_measurements(retention_days=7):
     """Prunes raw 4-second telemetry older than retention_days to keep SQLite light on TV Box"""
     try:
         cutoff = (datetime.now() - timedelta(days=retention_days)).isoformat()
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("DELETE FROM measurements WHERE timestamp < ?", (cutoff,))
         deleted = cur.rowcount
@@ -1102,7 +1070,7 @@ def tuya_poller():
 
                 last_end = get_latest_end_time() or ""
                 try:
-                    conn_b = sqlite3.connect(DB_FILE)
+                    conn_b = db_connect()
                     cur_b = conn_b.cursor()
                     cur_b.execute("SELECT MAX(end_time) FROM blackouts WHERE end_time > ?", (last_end,))
                     b_row = cur_b.fetchone()
@@ -1149,7 +1117,7 @@ def tuya_poller():
                         avg_v = sum(cycle_voltages) / len(cycle_voltages) if cycle_voltages else 226.0
                         avg_i = sum(cycle_currents) / len(cycle_currents) if cycle_currents else None
                         c_type = classify_cycle(avg_p, duration, cooling_since_last_defrost_sec(), cycle_powers, voltage=avg_v, current=avg_i)
-                        conn = sqlite3.connect(DB_FILE)
+                        conn = db_connect()
                         cur = conn.cursor()
                         cur.execute('''
                             INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
@@ -1192,11 +1160,11 @@ def tuya_poller():
                         state["current_mode"] = "cooling"
                         state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
                     
-                    c_prog = min(1.0, state["cycle_duration_sec"] / 3600.0)
+                    ez, er = estimated_chamber_temps(True, state["cycle_duration_sec"])
                     if state.get("temp_freezer_estimated", True):
-                        state["temp_freezer"] = round(-16.0 - (5.0 * c_prog), 1)
+                        state["temp_freezer"] = ez
                     if state.get("temp_fridge_estimated", True):
-                        state["temp_fridge"] = round(5.2 - (2.2 * c_prog), 1)
+                        state["temp_fridge"] = er
                         
                     if state["cycle_duration_sec"] > LONG_RUN_WARN_SEC and not warning_long_sent:
                         warning_long_sent = True
@@ -1210,14 +1178,14 @@ def tuya_poller():
                     state["mode_title"] = "⚪ ПОЛНЫЙ ПОКОЙ (ОТДЫХ)"
                     apply_idle_rest_clock()
                     update_restart_lockout(False)
-                    r_prog = min(1.0, state["rest_duration_sec"] / 3000.0)
+                    ez, er = estimated_chamber_temps(False, state["rest_duration_sec"])
                     if state.get("temp_freezer_estimated", True):
-                        state["temp_freezer"] = round(-19.5 + (3.0 * r_prog), 1)
+                        state["temp_freezer"] = ez
                     if state.get("temp_fridge_estimated", True):
-                        state["temp_fridge"] = round(3.6 + (1.4 * r_prog), 1)
+                        state["temp_fridge"] = er
                 
                 try:
-                    conn = sqlite3.connect(DB_FILE)
+                    conn = db_connect()
                     cur = conn.cursor()
 
                     # Proactive cold-boot / blackout gap detection before saving new measurement
@@ -1260,10 +1228,12 @@ def tuya_poller():
                                 conn.commit()
                                 update_last_blackout_state()
 
+                    tf = None if state.get("temp_freezer_estimated", True) else state.get("temp_freezer")
+                    tr = None if state.get("temp_fridge_estimated", True) else state.get("temp_fridge")
                     cur.execute('''
                         INSERT INTO measurements (timestamp, power, voltage, current, is_running, mode, temp_freezer, temp_fridge)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (now_iso, state["power"], state["voltage"], state["current"], 1 if state["is_running"] else 0, state["current_mode"], state["temp_freezer"], state["temp_fridge"]))
+                    ''', (now_iso, state["power"], state["voltage"], state["current"], 1 if state["is_running"] else 0, state["current_mode"], tf, tr))
                     conn.commit()
                     conn.close()
                 except Exception:
@@ -1289,8 +1259,16 @@ def tuya_poller():
                 sleep_sec = 25 if state.get("is_running") else 45
         time.sleep(max(2, int(sleep_sec)))
 
-t = threading.Thread(target=tuya_poller, daemon=True)
-t.start()
+@app.before_request
+def _lan_only():
+    if not is_lan_request():
+        return jsonify({"error": "Forbidden: LAN-only service"}), 403
+    if request.method == "OPTIONS":
+        res = app.make_default_options_response()
+        res.headers["Access-Control-Allow-Origin"] = "*"
+        res.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        res.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        return res
 
 @app.after_request
 def add_cache_and_cors_headers(response):
@@ -1327,7 +1305,7 @@ def get_status():
                 state["rest_duration_sec"] = max(0, int((now - st_dt).total_seconds()))
         except Exception:
             pass
-    res_state = dict(state)
+    res_state = state.snapshot()
     res_state["cloud_quota"] = get_cloud_quota_stats()
     return jsonify(res_state)
 
@@ -1364,6 +1342,8 @@ def config_api():
             cfg["device_id"] = data["device_id"].strip()
         if "temp_sensor_id" in data:
             cfg["temp_sensor_id"] = data["temp_sensor_id"].strip()
+        if data.get("lan_subnet"):
+            cfg["lan_subnet"] = str(parse_lan_network(data["lan_subnet"]))
         save_config(cfg)
         return jsonify({"status": "saved"})
     
@@ -1380,7 +1360,8 @@ def config_api():
         "api_key": safe_key,
         "api_secret": "********" if cfg.get("api_secret") else "",
         "device_id": safe_dev,
-        "temp_sensor_id": cfg.get("temp_sensor_id", "")
+        "temp_sensor_id": cfg.get("temp_sensor_id", ""),
+        "lan_subnet": cfg.get("lan_subnet", "192.168.0.0/24")
     }
     return jsonify(safe_cfg)
 
@@ -1433,7 +1414,7 @@ def invalidate_history_cache():
     _analytics_cache["last_built"] = 0.0
 
 def build_completed_history_cache():
-    conn = sqlite3.connect(DB_FILE)
+    conn = db_connect()
     cur = conn.cursor()
     
     # One row per cycles record
@@ -1449,25 +1430,7 @@ def build_completed_history_cache():
         WHERE duration_sec >= 120
         ORDER BY start_time ASC, id ASC
     """)
-    raw_cycles = cur.fetchall()
-    
-    # Merge micro-split cycles (where rest between fragments is <= 90 seconds)
-    merged_raw_cycles = []
-    for c in raw_cycles:
-        if not merged_raw_cycles:
-            merged_raw_cycles.append(list(c))
-            continue
-        prev = merged_raw_cycles[-1]
-        prev_end = parse_iso(prev[1])
-        cur_st = parse_iso(c[0])
-        if prev_end and cur_st and 0 <= (cur_st - prev_end).total_seconds() <= 90 and prev[5] == c[5]:
-            prev[1] = c[1]
-            prev[2] = prev[2] + c[2] + int((cur_st - prev_end).total_seconds())
-            prev[3] = round((prev[3] + c[3]) / 2.0, 1)
-            prev[4] = round((prev[4] + c[4]) / 2.0, 1)
-        else:
-            merged_raw_cycles.append(list(c))
-    raw_cycles = merged_raw_cycles
+    raw_cycles = merge_micro_cycles(cur.fetchall())
     
     # Blackouts
     cur.execute("SELECT start_time, end_time, duration_sec, food_safety_status FROM blackouts ORDER BY start_time DESC LIMIT 20")
@@ -1596,7 +1559,7 @@ def build_completed_history_cache():
     # Sort all events chronologically (newest first)
     enhanced_cycles.sort(key=lambda x: str(x.get("full_end", "")), reverse=True)
 
-    overall_krv = round(total_work_sec / (total_work_sec + total_rest_sec), 2) if (total_work_sec + total_rest_sec) > 0 else 0.38
+    overall_krv = duty_cycle(total_work_sec, total_rest_sec) or 0.38
 
     _history_cache["cycles"] = enhanced_cycles
     _history_cache["blackouts"] = formatted_blackouts
@@ -1640,7 +1603,7 @@ def get_history():
     summary_out["returned_cycles"] = len(cycles_slice)
     
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
         cur.execute("SELECT timestamp, power, voltage, current, is_running, temp_freezer, temp_fridge FROM measurements ORDER BY id DESC LIMIT 50")
         m_rows = cur.fetchall()
@@ -1656,8 +1619,8 @@ def get_history():
                 "voltage": r[2], 
                 "current": r[3], 
                 "is_running": bool(r[4]),
-                "temp_freezer": r[5] if len(r)>5 and r[5] is not None else -18.2,
-                "temp_fridge": r[6] if len(r)>6 and r[6] is not None else 4.1
+                "temp_freezer": r[5] if len(r) > 5 else None,
+                "temp_fridge": r[6] if len(r) > 6 else None,
             }
             for r in reversed(m_rows)
         ],
@@ -1681,7 +1644,7 @@ def build_analytics_cache(tariff=None, currency=None):
         current_currency = "₽"
 
     try:
-        conn = sqlite3.connect(DB_FILE)
+        conn = db_connect()
         cur = conn.cursor()
 
         # 1. Daily timeline from cycles (up to last 30 days)
@@ -1904,6 +1867,8 @@ def get_analytics():
 def tariff_api():
     cfg = load_config()
     if request.method == "POST":
+        if not is_lan_request():
+            return jsonify({"error": "Forbidden: LAN access only"}), 403
         data = request.json or {}
         if "tariff" in data:
             try:
@@ -1921,6 +1886,22 @@ def tariff_api():
         return jsonify({"status": "saved", "tariff": cfg.get("electricity_tariff", 5.0), "currency": cfg.get("currency", "₽")})
     return jsonify({"tariff": cfg.get("electricity_tariff", 5.0), "currency": cfg.get("currency", "₽")})
 
+def start_background_services():
+    """DB, optional cloud backfill, and Tuya poller. Not run on import (keeps tests clean)."""
+    global _poller_thread
+    init_db()
+    try:
+        sync_cloud_history()
+    except Exception:
+        pass
+    try:
+        reclassify_stored_cycles()
+    except Exception:
+        pass
+    if _poller_thread is None or not _poller_thread.is_alive():
+        _poller_thread = threading.Thread(target=tuya_poller, daemon=True)
+        _poller_thread.start()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SmartFridge Telemetry Kiosk Server")
     parser.add_argument("--host", default="0.0.0.0", help="Host address to bind (default: 0.0.0.0 for LAN)")
@@ -1932,5 +1913,6 @@ if __name__ == "__main__":
     except Exception:
         pass
     os.makedirs(STATIC_DIR, exist_ok=True)
+    start_background_services()
     print(f"SmartFridge Server running at http://{args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False)

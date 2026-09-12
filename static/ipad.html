@@ -180,14 +180,14 @@
         <div class="dial-cell" style="width: 50%;">
             <div class="dial-card" style="border-top: 3px solid #38bdf8;">
                 <div class="dial-label" style="color: #38bdf8;">❄️ Морозилка</div>
-                <div class="dial-val color-blue" id="ipad-temp-freezer">-18.2 <span class="dial-unit">°C</span></div>
+                <div class="dial-val color-blue" id="ipad-temp-freezer">≈ -18.2 <span class="dial-unit">°C</span></div>
                 <div class="dial-status" id="ipad-freezer-status" style="color: #38bdf8;">📊 Модель (оценка)</div>
             </div>
         </div>
         <div class="dial-cell" style="width: 50%;">
             <div class="dial-card" style="border-top: 3px solid #10b981;">
                 <div class="dial-label" style="color: #10b981;">🥗 Холодильник</div>
-                <div class="dial-val color-green" id="ipad-temp-fridge">+4.1 <span class="dial-unit">°C</span></div>
+                <div class="dial-val color-green" id="ipad-temp-fridge">≈ +4.1 <span class="dial-unit">°C</span></div>
                 <div class="dial-status" id="ipad-fridge-status" style="color: #10b981;">📊 Модель (оценка)</div>
             </div>
         </div>
@@ -418,7 +418,7 @@
                 <div id="ipad-tab-faq" style="display:none;">
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
                         <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Почему компрессор отдыхает 35–55 минут?</div>
-                        <div>Это норма! Исправный компрессор Samsung SK170H-L1U имеет КРВ в пределах 0.30–0.45. При цикле работы 20–25 минут нормальный отдых составляет 35–55 минут. Чем дольше отдых, тем лучше уплотнители держат холод.</div>
+                        <div>Это норма! Исправный компрессор Samsung SK170K-T1U имеет КРВ в пределах 0.30–0.45. При цикле работы 20–25 минут нормальный отдых составляет 35–55 минут. Чем дольше отдых, тем лучше уплотнители держат холод.</div>
                     </div>
 
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
@@ -494,9 +494,9 @@
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
                         <div style="font-weight:bold; color:#38bdf8; margin-bottom:6px;">Паспортные данные Samsung RT34MB:</div>
                         <div>• <strong>Холодильник:</strong> Samsung RT34MB (RT34MBTS No-Frost)</div>
-                        <div>• <strong>Хладагент:</strong> R600a (Изобутан), заправка ~52–56 г</div>
-                        <div>• <strong>Компрессор:</strong> Samsung SK170H-L1U (Индукционный поршневой)</div>
-                        <div>• <strong>Питание:</strong> 220–240 В ~ 50 Гц</div>
+                        <div>• <strong>Хладагент:</strong> R-134a, норма 160 г</div>
+                        <div>• <strong>Компрессор:</strong> Samsung SK170K-T1U TS1</div>
+                        <div>• <strong>Питание:</strong> 200–220 В ~ 50 Гц</div>
                         <div>• <strong>Рабочая мощность:</strong> 115–140 Вт (пусковой бросок ~1 кВт)</div>
                         <div>• <strong>ТЭН оттайки:</strong> 150–165 Вт (активная нагрузка)</div>
                         <div>• <strong>Нормативный КРВ:</strong> 0.30 – 0.45 (Эталон: ~0.38)</div>
@@ -893,12 +893,14 @@
                             if (data.temp_freezer !== undefined) {
                                 var fEl = document.getElementById('ipad-temp-freezer');
                                 var fSign = data.temp_freezer > 0 ? '+' : '';
-                                if (fEl) fEl.innerHTML = fSign + data.temp_freezer.toFixed(1) + ' <span class="dial-unit">°C</span>';
+                                var fPrefix = freezerEst ? '≈ ' : '';
+                                if (fEl) fEl.innerHTML = fPrefix + fSign + data.temp_freezer.toFixed(1) + ' <span class="dial-unit">°C</span>';
                             }
                             if (data.temp_fridge !== undefined) {
                                 var rEl = document.getElementById('ipad-temp-fridge');
                                 var rSign = data.temp_fridge > 0 ? '+' : '';
-                                if (rEl) rEl.innerHTML = rSign + data.temp_fridge.toFixed(1) + ' <span class="dial-unit">°C</span>';
+                                var rPrefix = fridgeEst ? '≈ ' : '';
+                                if (rEl) rEl.innerHTML = rPrefix + rSign + data.temp_fridge.toFixed(1) + ' <span class="dial-unit">°C</span>';
                             }
 
                             // Channel & Quota Card for iPad

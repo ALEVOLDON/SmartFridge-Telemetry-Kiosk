@@ -5,8 +5,15 @@ export HOME=/data/data/com.termux/files/home
 export PATH=$PREFIX/bin:$PATH
 DIR=$HOME/Samsung_RT34MB_Monitor
 PY=$PREFIX/bin/python3
-FIX=$DIR/h96_keep_eth_ip.sh
-GW=192.168.0.1
+export FRIDGE_DIR="$DIR"
+if [ -f "$DIR/lan.env" ]; then
+    . "$DIR/lan.env"
+fi
+FIX="$DIR/scripts/h96_keep_eth_ip.sh"
+if [ ! -f "$FIX" ]; then
+    FIX="$DIR/h96_keep_eth_ip.sh"
+fi
+GW=${GATEWAY:-192.168.0.1}
 
 termux-wake-lock >/dev/null 2>&1
 

@@ -89,6 +89,8 @@ $$\text{Duty Cycle (КРВ)} = \frac{T_{\text{cooling}}}{T_{\text{cooling}} + T_
 Samsung_RT34MB_Monitor/
 │
 ├── 🚀 auto_monitor.py          # Core 24/7 background telemetry server
+├── 🧮 fridge_logic.py          # Pure classifier / KRV / LAN helpers (unit-tested)
+├── 🧪 tests/                   # unittest suite (no live Tuya required)
 ├── ⚙️ config.json              # Active configuration & API credentials
 ├── ⚙️ config.example.json      # Template configuration file
 ├── 🗄️ fridge_data.db           # SQLite telemetry & duty cycle database
@@ -155,9 +157,13 @@ Edit `config.json` with your Tuya credentials:
     "api_region": "eu",
     "api_key": "YOUR_TUYA_API_KEY",
     "api_secret": "YOUR_TUYA_API_SECRET",
-    "device_id": "YOUR_SMART_PLUG_DEVICE_ID"
+    "device_id": "YOUR_SMART_PLUG_DEVICE_ID",
+    "local_key": "YOUR_TUYA_LOCAL_KEY",
+    "lan_subnet": "192.168.0.0/24"
 }
 ```
+
+On an Android TV box, copy `lan.env.example` to `lan.env` if the Ethernet address or subnet is not `192.168.0.103 / 192.168.0.0/24`. Run tests with `python -m unittest discover -s tests -v`.
 
 ### 3. Running the Server
 

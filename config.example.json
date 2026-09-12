@@ -3,6 +3,11 @@
     "api_key": "YOUR_TUYA_OPENAPI_KEY",
     "api_secret": "YOUR_TUYA_OPENAPI_SECRET",
     "device_id": "YOUR_TUYA_SMART_PLUG_DEVICE_ID",
+    "local_key": "YOUR_TUYA_LOCAL_KEY",
+    "device_ip": "",
+    "device_mac": "",
+    "local_version": 3.5,
+    "lan_subnet": "192.168.0.0/24",
     "last_stop_time": null,
     "current_start_time": null
 }

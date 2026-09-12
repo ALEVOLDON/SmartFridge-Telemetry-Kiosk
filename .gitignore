@@ -1,6 +1,7 @@
 # Credentials & Secrets (CRITICAL)
 config.json
 .env
+lan.env
 last_server_ip.txt
 ipconfig.txt
 
