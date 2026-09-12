@@ -236,8 +236,14 @@ def load_config():
     }
 
 def save_config(cfg):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, indent=4, ensure_ascii=False)
+    tmp_file = CONFIG_FILE + ".tmp"
+    try:
+        with open(tmp_file, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4, ensure_ascii=False)
+        os.replace(tmp_file, CONFIG_FILE)
+    except Exception:
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=4, ensure_ascii=False)
 
 # No Frost timer counts compressor ON time (~8–10 h), then a 10–25 min
 # sheath heater at ~150–175 W. SK170K cooling is 115–142 W steady.
@@ -1662,8 +1668,17 @@ def get_history():
 
 def build_analytics_cache(tariff=None, currency=None):
     cfg = load_config()
-    current_tariff = float(tariff) if tariff is not None else float(cfg.get("electricity_tariff", 5.0))
-    current_currency = str(currency) if currency is not None else str(cfg.get("currency", "₽"))
+    default_tariff = float(cfg.get("electricity_tariff", 5.0))
+    try:
+        current_tariff = float(tariff) if tariff is not None else default_tariff
+        if current_tariff < 0 or current_tariff > 1000.0 or str(current_tariff) in ("nan", "inf", "-inf"):
+            current_tariff = default_tariff
+    except (ValueError, TypeError):
+        current_tariff = default_tariff
+
+    current_currency = str(currency).strip()[:8] if currency is not None else str(cfg.get("currency", "₽")).strip()[:8]
+    if not current_currency:
+        current_currency = "₽"
 
     try:
         conn = sqlite3.connect(DB_FILE)
@@ -1892,11 +1907,15 @@ def tariff_api():
         data = request.json or {}
         if "tariff" in data:
             try:
-                cfg["electricity_tariff"] = float(data["tariff"])
+                val = float(data["tariff"])
+                if 0.0 <= val <= 1000.0 and str(val) not in ("nan", "inf", "-inf"):
+                    cfg["electricity_tariff"] = round(val, 2)
             except (ValueError, TypeError):
                 pass
         if "currency" in data and data["currency"]:
-            cfg["currency"] = str(data["currency"]).strip()
+            curr_val = str(data["currency"]).strip()[:8]
+            if curr_val:
+                cfg["currency"] = curr_val
         save_config(cfg)
         _analytics_cache["last_built"] = 0.0 # invalidate cache
         return jsonify({"status": "saved", "tariff": cfg.get("electricity_tariff", 5.0), "currency": cfg.get("currency", "₽")})
