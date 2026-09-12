@@ -96,12 +96,17 @@ Samsung_RT34MB_Monitor/
 ├── 📖 README.md, LICENSE       # Project documentation & MIT license
 │
 ├── 📁 static/                  # Web dashboard assets
-│   ├── index.html              # Responsive Dashboard (Mobile / Tablet / PC)
+│   ├── 📁 css/
+│   │   └── dashboard.css       # Full responsive styles, dark theme & animations
+│   ├── 📁 js/
+│   │   ├── dashboard.js        # Core telemetry, polling, sound & archive controller
+│   │   └── analytics.js        # Energy accounting, charts & health diagnostics
+│   ├── index.html              # Responsive Dashboard (Clean HTML markup)
 │   ├── ipad.html               # Vintage iPad Kiosk UI (Pure ES5 / CSS3)
 │   ├── chime.wav               # Gentle musical audio chime asset
 │   ├── chart.umd.min.js        # Local Chart.js library
 │   ├── manifest.json           # PWA standalone web app manifest
-│   └── *.png, *.ico            # App icons and responsive UI backgrounds
+│   └── *.png, *.ico, *.jpg     # App icons and responsive UI backgrounds
 │
 ├── 📁 scripts/                 # Automation & utility scripts
 │   ├── find_fridge.py          # Auto-discovery tool for smart plugs on LAN
