@@ -1242,7 +1242,7 @@
                 </div>
                 <div>
                     <div class="about-title-row">
-                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.5.2</span>
+                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.6.0</span>
                     </div>
                     <div class="about-subtitle">Автономная система энергомониторинга и предиктивной диагностики No-Frost</div>
                 </div>
@@ -1371,6 +1371,19 @@
 
             <!-- Tab 3: Changelog -->
             <div id="tab-changelog" style="display:none;">
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.6.0 Pro — Energy & Health Analytics Intelligence</span>
+                        <span class="changelog-date">12.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Аналитический модуль и энергоучёт:</strong> честный интегральный расчёт расхода электроэнергии (кВт·ч) раздельно для компрессора и ТЭНа No Frost, среднесуточный расход и прогноз на месяц.</div>
+                    <div class="changelog-point"><strong>Динамический калькулятор тарифа:</strong> интерактивный пересчёт затрат с сохранением тарифа и поддержкой региональных валют (₽, ₴, $, €, ₸) через эндпоинты <code>/api/analytics</code> и <code>/api/tariff</code>.</div>
+                    <div class="changelog-point"><strong>Индекс здоровья холодильника:</strong> комплексный Health Score (88/100), диагностика циклов оттайки испарителя (длительность ~25 мин, мощность 155 Вт) и выявление просадок электросети ниже 190 В.</div>
+                    <div class="changelog-point"><strong>Интерактивные графики Chart.js:</strong> 14-дневная гистограмма расхода кВт·ч с наложением кривой КРВ и 24-часовой суточный профиль активности компрессора с кривой напряжения сети.</div>
+                    <div class="changelog-point"><strong>Серверный RAM-кэш и пагинация:</strong> ускорение отдачи API с 998 мс до 11 мс (кэш TTL 10 мин), постраничная загрузка архива по 30 циклов и отдельное модальное окно полного журнала.</div>
+                    <div class="changelog-point"><strong>Стилизованные cyber-dark скроллбары:</strong> неоновый скроллбар с эффектом подсветки и фиксированные заголовки таблиц (<code>position: sticky</code>).</div>
+                </div>
+
                 <div class="changelog-card">
                     <div class="changelog-ver">
                         <span>v3.5.2 Pro — Policy Routing Shield & 7-Day Storage Shield</span>
