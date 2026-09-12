@@ -240,13 +240,12 @@ def save_config(cfg):
         json.dump(cfg, f, indent=4, ensure_ascii=False)
 
 # No Frost timer counts compressor ON time (~8–10 h), then a 10–25 min
-# sheath heater at ~160–175 W. SK170K cooling is 125–185 W, so a short
-# 158+ W compressor run is not a defrost unless enough cooling has elapsed.
-DEFROST_POWER_MIN = 153.0
+# sheath heater at ~150–175 W. SK170K cooling is 115–142 W steady.
+DEFROST_POWER_MIN = 149.0
 DEFROST_POWER_MAX = 188.0
 DEFROST_MIN_SEC = 480    # 8 min
-DEFROST_MAX_SEC = 1680   # 28 min
-MIN_COOLING_BEFORE_DEFROST_SEC = int(4.5 * 3600)
+DEFROST_MAX_SEC = 1860   # 31 min
+MIN_COOLING_BEFORE_DEFROST_SEC = int(5.0 * 3600)  # 5 hours compressor time
 COMPRESSOR_LOCKOUT_SEC = 180
 LONG_RUN_WARN_SEC = 25200  # 7 h — service guide fault threshold
 CLOUD_SYNC_EVERY_POLLS = 300  # ~20 min at 4 s interval
@@ -273,32 +272,35 @@ def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, vo
     """
     Classify cycle into 'defrost' (heating element) vs 'cooling' (compressor motor).
     Samsung RT34MB No Frost rules:
-    1. Defrost duration is strictly within [8 min .. 28 min] (480s .. 1680s). Longer is ALWAYS cooling.
-    2. Defrost requires cumulative compressor cooling before it can trigger (at least 4.5 hours = 16200s).
-    3. Power curve stability: a pure heating element (ТЭН) has nearly flat power (delta <= 12W),
-       while a compressor has start-inrush and pressure drops (delta >= 15W).
-    4. Power range: Heater operates at 153W .. 188W (nominal ~160W at 220V).
+    1. Defrost duration is strictly within [8 min .. 31 min] (480s .. 1860s). Longer is ALWAYS cooling.
+    2. Defrost requires cumulative compressor cooling before it can trigger (at least 5.0 hours = 18000s).
+    3. Power curve stability: a pure heating element (ТЭН) has nearly flat power (core delta <= 16W),
+       while a compressor has start-inrush and pressure drops (delta >= 25W).
+    4. Power range: Heater operates at 149W .. 188W (nominal ~160W at 220V, down to ~150W at 214V).
     """
     p = float(avg_power or 0)
     dur = int(duration_sec or 0)
     acc = int(cooling_since_sec or 0)
     
-    # Rule 1: Defrost on this fridge is strictly 8..28 min. Longer is ALWAYS cooling.
+    # Rule 1: Defrost on this fridge is strictly 8..31 min. Longer is ALWAYS cooling.
     if dur < DEFROST_MIN_SEC or dur > DEFROST_MAX_SEC:
         return "cooling"
 
-    # Rule 2: Defrost cannot trigger repeatedly without cumulative cooling (at least 4.5 h)
+    # Rule 2: Defrost cannot trigger repeatedly without cumulative cooling (at least 5 h)
     if acc < MIN_COOLING_BEFORE_DEFROST_SEC:
         return "cooling"
 
-    # Rule 3: Power stability check if multiple samples exist (heater is flat, compressor fluctuates)
-    if powers and len(powers) >= 5:
-        samples = powers[1:-1] if len(powers) > 3 else powers
-        delta = max(samples) - min(samples)
-        if delta > 12.0:
-            return "cooling"
+    # Rule 3: Power stability check if multiple samples exist (heater is flat, compressor fluctuates).
+    # Ignore shutdown drop tail values (power <= 50W) and trim edge samples to isolate steady run.
+    if powers and len(powers) >= 6:
+        active = [x for x in powers if x > 50.0]
+        if len(active) >= 4:
+            core = active[2:-2] if len(active) > 6 else active
+            delta = max(core) - min(core)
+            if delta > 16.0:
+                return "cooling"
 
-    # Rule 4: Power threshold (heater is strictly 153W .. 188W, compressor is 115W .. 145W)
+    # Rule 4: Power threshold (heater is strictly 149W .. 188W, compressor is 115W .. 142W)
     if DEFROST_POWER_MIN <= p <= DEFROST_POWER_MAX:
         return "defrost"
 
@@ -329,12 +331,23 @@ def reclassify_stored_cycles():
         conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, duration_sec, avg_power, cycle_type FROM cycles ORDER BY start_time ASC, id ASC"
+            "SELECT id, start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type FROM cycles ORDER BY start_time ASC, id ASC"
         )
         rows = cur.fetchall()
         cooling_acc = 0
-        for cid, dur, avg_p, old_type in rows:
-            new_type = classify_cycle(avg_p, dur, cooling_acc)
+        for cid, st, et, dur, avg_p, avg_v, old_type in rows:
+            dur = int(dur or 0)
+            avg_p = float(avg_p or 0)
+            powers = None
+            if DEFROST_MIN_SEC <= dur <= DEFROST_MAX_SEC and cooling_acc >= MIN_COOLING_BEFORE_DEFROST_SEC and DEFROST_POWER_MIN <= avg_p <= DEFROST_POWER_MAX:
+                try:
+                    cur.execute("SELECT power FROM measurements WHERE timestamp >= ? AND timestamp <= ? AND power > 50.0", (st, et))
+                    p_list = [r[0] for r in cur.fetchall()]
+                    if len(p_list) >= 6:
+                        powers = p_list
+                except Exception:
+                    pass
+            new_type = classify_cycle(avg_p, dur, cooling_acc, powers=powers, voltage=avg_v)
             if new_type != old_type:
                 cur.execute("UPDATE cycles SET cycle_type = ? WHERE id = ?", (new_type, cid))
             if new_type == "cooling":
@@ -1138,6 +1151,7 @@ def tuya_poller():
                         ''', (state["cycle_start_time"], end_iso, duration, round(avg_p, 1), round(avg_v, 1), c_type))
                         conn.commit()
                         conn.close()
+                        invalidate_history_cache()
                     
                     state["is_running"] = False
                     state["cycle_start_time"] = None
@@ -1393,15 +1407,22 @@ def build_live_journal_row():
         }
     return None
 
-@app.route("/api/history")
-def get_history():
+_history_cache = {
+    "cycles": [],
+    "blackouts": [],
+    "summary": {},
+    "last_built": 0.0,
+    "version": 0
+}
+
+def invalidate_history_cache():
+    _history_cache["last_built"] = 0.0
+
+def build_completed_history_cache():
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    cur.execute("SELECT timestamp, power, voltage, current, is_running, temp_freezer, temp_fridge FROM measurements ORDER BY id DESC LIMIT 50")
-    rows = cur.fetchall()
     
-    # One row per cycles record. GROUP BY end-minute mixed avg_power/cycle_type
-    # from an arbitrary SQLite row when two cycles ended in the same minute.
+    # One row per cycles record
     cur.execute("""
         SELECT
             start_time,
@@ -1537,7 +1558,6 @@ def get_history():
             }
             formatted_blackouts.append(b_item)
             
-            # Also insert directly into main events stream for main table
             enhanced_cycles.append({
                 "full_end": end_iso,
                 "date": dt_st.strftime("%d.%m.%Y"),
@@ -1562,12 +1582,58 @@ def get_history():
     # Sort all events chronologically (newest first)
     enhanced_cycles.sort(key=lambda x: str(x.get("full_end", "")), reverse=True)
 
+    overall_krv = round(total_work_sec / (total_work_sec + total_rest_sec), 2) if (total_work_sec + total_rest_sec) > 0 else 0.38
+
+    _history_cache["cycles"] = enhanced_cycles
+    _history_cache["blackouts"] = formatted_blackouts
+    _history_cache["summary"] = {
+        "overall_krv": overall_krv,
+        "total_cycles": len(enhanced_cycles),
+        "krv_status": "🟢 Отличный (энергоэффективный)" if overall_krv <= 0.50 else "🟡 Повышенный"
+    }
+    _history_cache["last_built"] = time.time()
+
+@app.route("/api/history")
+def get_history():
+    now = time.time()
+    if not _history_cache["cycles"] or (now - _history_cache["last_built"]) > 45.0:
+        build_completed_history_cache()
+        
+    limit_param = request.args.get("limit", "30").strip().lower()
+    
+    cached_cycles = _history_cache["cycles"]
+    cached_blackouts = _history_cache["blackouts"]
+    cached_summary = _history_cache["summary"]
+    
+    total_count = len(cached_cycles)
+    
+    if limit_param in ("all", "0", "max"):
+        cycles_slice = list(cached_cycles)
+    else:
+        try:
+            lim = int(limit_param)
+            cycles_slice = list(cached_cycles[:lim]) if lim > 0 else list(cached_cycles)
+        except ValueError:
+            cycles_slice = list(cached_cycles[:30])
+            
+    # Prepend dynamic live journal row if active
     live_row = build_live_journal_row()
     if live_row:
-        enhanced_cycles.insert(0, live_row)
-
-    overall_krv = round(total_work_sec / (total_work_sec + total_rest_sec), 2) if (total_work_sec + total_rest_sec) > 0 else 0.38
+        cycles_slice.insert(0, live_row)
+        
+    summary_out = dict(cached_summary)
+    summary_out["total_cycles"] = total_count + (1 if live_row else 0)
+    summary_out["returned_cycles"] = len(cycles_slice)
     
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("SELECT timestamp, power, voltage, current, is_running, temp_freezer, temp_fridge FROM measurements ORDER BY id DESC LIMIT 50")
+        m_rows = cur.fetchall()
+        conn.close()
+    except Exception:
+        m_rows = []
+        
     return jsonify({
         "measurements": [
             {
@@ -1579,15 +1645,11 @@ def get_history():
                 "temp_freezer": r[5] if len(r)>5 and r[5] is not None else -18.2,
                 "temp_fridge": r[6] if len(r)>6 and r[6] is not None else 4.1
             }
-            for r in reversed(rows)
+            for r in reversed(m_rows)
         ],
-        "cycles": enhanced_cycles,
-        "blackouts": formatted_blackouts,
-        "summary": {
-            "overall_krv": overall_krv,
-            "total_cycles": len(enhanced_cycles),
-            "krv_status": "🟢 Отличный (энергоэффективный)" if overall_krv <= 0.50 else "🟡 Повышенный"
-        }
+        "cycles": cycles_slice,
+        "blackouts": cached_blackouts,
+        "summary": summary_out
     })
 
 if __name__ == "__main__":

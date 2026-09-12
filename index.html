@@ -802,22 +802,26 @@
         closeMobileDrawer();
         closeArchiveModal();
         
-        // Render ALL cycles into the printable table so the PDF report contains the complete history
-        const prevLimit = (typeof currentCyclesLimit !== 'undefined') ? currentCyclesLimit : 10;
-        if (typeof currentCyclesLimit !== 'undefined') {
+        const executePrint = () => {
+            const prevLimit = (typeof currentCyclesLimit !== 'undefined') ? currentCyclesLimit : 10;
             currentCyclesLimit = 'all';
-            if (typeof renderMainCyclesTable === 'function') renderMainCyclesTable();
-        }
-        
-        setTimeout(() => {
-            window.print();
+            if (typeof renderMainCyclesTable === 'function') {
+                renderMainCyclesTable(typeof fullArchiveCyclesData !== 'undefined' && fullArchiveCyclesData ? fullArchiveCyclesData : allCyclesData);
+            }
             setTimeout(() => {
-                if (typeof currentCyclesLimit !== 'undefined') {
+                window.print();
+                setTimeout(() => {
                     currentCyclesLimit = prevLimit;
                     if (typeof renderMainCyclesTable === 'function') renderMainCyclesTable();
-                }
-            }, 1000);
-        }, 200);
+                }, 1000);
+            }, 200);
+        };
+
+        if (typeof fullArchiveCyclesData !== 'undefined' && !fullArchiveCyclesData && !isGhPages && typeof loadFullArchive === 'function') {
+            loadFullArchive(executePrint);
+        } else {
+            executePrint();
+        }
     }
 
     function formatHm(sec) {
@@ -1428,11 +1432,50 @@
     }
 
     let allCyclesData = [];
+    let fullArchiveCyclesData = null;
+    let isArchiveLoading = false;
     let currentArchiveFilter = 'all';
+
+    function loadFullArchive(callback) {
+        if (fullArchiveCyclesData) {
+            if (callback) callback();
+            return;
+        }
+        if (isArchiveLoading) return;
+        isArchiveLoading = true;
+
+        const tbody = document.getElementById('archive-body');
+        if (tbody && document.getElementById('archive-modal').style.display === 'flex') {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#38bdf8;">⏳ Загрузка полного архива измерений...</td></tr>';
+        }
+
+        fetch('/api/history?limit=all')
+            .then(r => r.json())
+            .then(data => {
+                isArchiveLoading = false;
+                fullArchiveCyclesData = data.cycles || [];
+                allBlackoutsData = data.blackouts || [];
+                if (callback) {
+                    callback();
+                } else if (document.getElementById('archive-modal').style.display === 'flex') {
+                    renderArchiveTable(currentArchiveFilter);
+                }
+            })
+            .catch(err => {
+                console.error("Ошибка загрузки архива:", err);
+                isArchiveLoading = false;
+                if (callback) callback();
+            });
+    }
 
     function openArchiveModal() {
         document.getElementById('archive-modal').style.display = 'flex';
-        renderArchiveTable(currentArchiveFilter);
+        if (!fullArchiveCyclesData && !isGhPages) {
+            renderArchiveTable(currentArchiveFilter);
+            loadFullArchive();
+        } else {
+            renderArchiveTable(currentArchiveFilter);
+        }
     }
 
     function closeArchiveModal() {
@@ -1542,15 +1585,20 @@
         // Standard Cycles
         thead.innerHTML = '<tr><th>Дата</th><th>Начало работы</th><th>Конец работы</th><th>Работа</th><th>Начало отдыха</th><th>Конец отдыха</th><th>Отдых</th><th>КРВ</th><th>Ср. мощность</th><th>Режим</th></tr>';
         
-        let filtered = allCyclesData;
+        const sourceList = fullArchiveCyclesData || allCyclesData;
+        let filtered = sourceList;
         if (filterType === 'cooling') {
-            filtered = allCyclesData.filter(c => c.cycle_type === 'cooling');
+            filtered = sourceList.filter(c => c.cycle_type === 'cooling');
         } else if (filterType === 'defrost') {
-            filtered = allCyclesData.filter(c => c.cycle_type === 'defrost');
+            filtered = sourceList.filter(c => c.cycle_type === 'defrost');
         }
 
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#94a3b8; padding:30px;">В этой категории пока нет записей.</td></tr>';
+            if (isArchiveLoading) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#38bdf8; padding:30px;">⏳ Загрузка полного архива измерений...</td></tr>';
+            } else {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#94a3b8; padding:30px;">В этой категории пока нет записей.</td></tr>';
+            }
             return;
         }
 
@@ -1566,14 +1614,22 @@
         document.querySelectorAll('[id^="limit-"]').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById('limit-' + limit);
         if (btn) btn.classList.add('active');
-        renderMainCyclesTable();
+        
+        if ((limit === 'all' || Number(limit) > 30) && !fullArchiveCyclesData && !isGhPages) {
+            loadFullArchive(() => {
+                renderMainCyclesTable();
+            });
+        } else {
+            renderMainCyclesTable();
+        }
     }
 
-    function renderMainCyclesTable() {
+    function renderMainCyclesTable(overrideList) {
         const tbody = document.getElementById('cycles-body');
-        if (!tbody || allCyclesData.length === 0) return;
+        const source = overrideList || (fullArchiveCyclesData || allCyclesData);
+        if (!tbody || source.length === 0) return;
         tbody.innerHTML = '';
-        const list = (currentCyclesLimit === 'all') ? allCyclesData : allCyclesData.slice(0, Number(currentCyclesLimit) || 10);
+        const list = (currentCyclesLimit === 'all') ? source : source.slice(0, Number(currentCyclesLimit) || 10);
         list.forEach(c => {
             tbody.appendChild(createCycleRow(c));
         });
@@ -1585,7 +1641,7 @@
             handleHistoryPayload(mockHistoryData);
             return;
         }
-        fetch('/api/history')
+        fetch('/api/history?limit=30')
             .then(r => r.json())
             .then(data => {
                 handleHistoryPayload(data);
@@ -1603,8 +1659,22 @@
         }
 
         const countEl = document.getElementById('total-cycles-btn');
-        if (countEl) countEl.innerText = allCyclesData.length;
-        
+        if (countEl) {
+            const totalCount = (data.summary && data.summary.total_cycles !== undefined) ? data.summary.total_cycles : (fullArchiveCyclesData ? fullArchiveCyclesData.length : allCyclesData.length);
+            countEl.innerText = totalCount;
+        }
+
+        // Prepend latest live cycle to fullArchiveCyclesData if loaded
+        if (fullArchiveCyclesData && allCyclesData.length > 0) {
+            if (allCyclesData[0] && allCyclesData[0].live) {
+                if (fullArchiveCyclesData[0] && fullArchiveCyclesData[0].live) {
+                    fullArchiveCyclesData[0] = allCyclesData[0];
+                } else {
+                    fullArchiveCyclesData.unshift(allCyclesData[0]);
+                }
+            }
+        }
+
         renderMainCyclesTable();
         
         const archModal = document.getElementById('archive-modal');

@@ -28,7 +28,7 @@ def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
         tcMar.append(node)
     tcPr.append(tcMar)
 
-def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Report.docx"):
+def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Report.docx", limit=100, api_url=None):
     if not HAS_DOCX:
         print("Error: python-docx is required. Run 'pip install python-docx'.")
         return
@@ -61,12 +61,39 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
 
     doc.add_paragraph()
 
-    # Query Cycles from SQLite
+    # Query Cycles from API or SQLite
     cycles = []
-    if os.path.exists(db_path):
+    
+    # Try fetching from API if requested or if DB is missing
+    fetched_from_api = False
+    if api_url:
+        try:
+            import urllib.request
+            import json
+            req = urllib.request.urlopen(f"{api_url.rstrip('/')}/api/history", timeout=4)
+            data = json.loads(req.read().decode('utf-8'))
+            api_cycles = [c for c in data.get('cycles', []) if not c.get('live') and c.get('cycle_type') != 'blackout']
+            if limit and limit > 0:
+                api_cycles = api_cycles[:limit]
+            for c in api_cycles:
+                date_s = c.get('date', '—')
+                start_s = c.get('start', '--:--')
+                end_s = c.get('end', '--:--')
+                dur_s = c.get('duration_str', '—')
+                c_type = c.get('cycle_type', 'cooling')
+                verdict = "🔥 No Frost Defrost" if c_type == "defrost" else "🟢 Cooling (Compressor)"
+                pwr_s = f"{c.get('avg_power', '—')} W"
+                volt_s = f"{c.get('avg_voltage', '—')} V"
+                cycles.append((date_s, start_s, end_s, dur_s, pwr_s, volt_s, verdict))
+            fetched_from_api = True
+        except Exception as e:
+            print(f"Notice: Could not fetch from API ({e}), falling back to SQLite.")
+
+    if not fetched_from_api and os.path.exists(db_path):
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
-        cur.execute("""
+        limit_clause = f"LIMIT {int(limit)}" if (limit and limit > 0) else ""
+        cur.execute(f"""
             SELECT
                 start_time,
                 end_time,
@@ -77,7 +104,7 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
             FROM cycles
             WHERE duration_sec >= 120
             ORDER BY start_time DESC, id DESC
-            LIMIT 50
+            {limit_clause}
         """)
         for r in cur.fetchall():
             st_iso, end_iso, dur_sec, avg_power, avg_voltage, cycle_type = r
@@ -130,11 +157,13 @@ def generate_report(db_path="fridge_data.db", output_docx="Fridge_Diagnostic_Rep
             set_cell_margins(c, 80, 80, 80, 80)
 
     doc.save(output_docx)
-    print(f"Report successfully saved to {output_docx}")
+    print(f"Report successfully saved to {output_docx} ({len(cycles)} cycles included)")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Export Refrigerator Telemetry to Word Document (.docx)")
     parser.add_argument("--db", default="fridge_data.db", help="Path to SQLite database")
     parser.add_argument("--out", default="Fridge_Diagnostic_Report.docx", help="Output .docx file path")
+    parser.add_argument("--limit", type=int, default=100, help="Number of cycles to export (default: 100, 0 for all)")
+    parser.add_argument("--api", default="http://192.168.0.103:8088", help="Optional live API URL to query fresh telemetry directly")
     args = parser.parse_args()
-    generate_report(args.db, args.out)
+    generate_report(args.db, args.out, limit=args.limit, api_url=args.api)

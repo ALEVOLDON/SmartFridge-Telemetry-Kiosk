@@ -876,11 +876,49 @@
         }
 
         var ipadAllCycles = [];
+        var ipadFullArchive = null;
+        var isIpadArchiveLoading = false;
+
+        function loadIpadFullArchive(callback) {
+            if (ipadFullArchive) {
+                if (callback) callback();
+                return;
+            }
+            if (isIpadArchiveLoading) return;
+            isIpadArchiveLoading = true;
+
+            var tbody = document.getElementById('ipad-archive-body');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#38bdf8; padding:25px;">⏳ Загрузка полного архива...</td></tr>';
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/history?limit=all', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    isIpadArchiveLoading = false;
+                    if (xhr.status === 200) {
+                        try {
+                            var res = JSON.parse(xhr.responseText);
+                            ipadFullArchive = res.cycles || [];
+                            if (callback) callback();
+                            else renderIpadArchiveTable();
+                        } catch(e) {}
+                    }
+                }
+            };
+            xhr.send();
+        }
 
         function openIpadArchive() {
             var modal = document.getElementById('ipad-archive-modal');
             modal.style.display = 'flex';
-            renderIpadArchiveTable();
+            if (!ipadFullArchive) {
+                renderIpadArchiveTable();
+                loadIpadFullArchive();
+            } else {
+                renderIpadArchiveTable();
+            }
         }
 
         function closeIpadArchive() {
@@ -941,20 +979,25 @@
         function renderIpadArchiveTable() {
             var tbody = document.getElementById('ipad-archive-body');
             tbody.innerHTML = '';
-            if (ipadAllCycles.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">Архив пуст.</td></tr>';
+            var source = ipadFullArchive || ipadAllCycles;
+            if (source.length === 0) {
+                if (isIpadArchiveLoading) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#38bdf8; padding:25px;">⏳ Загрузка полного архива...</td></tr>';
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">Архив пуст.</td></tr>';
+                }
                 return;
             }
             var html = '';
-            for (var i = 0; i < ipadAllCycles.length; i++) {
-                html += getIpadRowHtml(ipadAllCycles[i]);
+            for (var i = 0; i < source.length; i++) {
+                html += getIpadRowHtml(source[i]);
             }
             tbody.innerHTML = html;
         }
 
         function loadHistory() {
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/history', true);
+            xhr.open('GET', '/api/history?limit=20', true);
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     try {
@@ -963,8 +1006,19 @@
                         var tbody = document.getElementById('history-body');
                         
                         var countEl = document.getElementById('ipad-total-count');
-                        if (countEl) countEl.innerText = ipadAllCycles.length;
+                        if (countEl) {
+                            var totalCount = (res.summary && res.summary.total_cycles !== undefined) ? res.summary.total_cycles : (ipadFullArchive ? ipadFullArchive.length : ipadAllCycles.length);
+                            countEl.innerText = totalCount;
+                        }
                         
+                        if (ipadFullArchive && ipadAllCycles.length > 0 && ipadAllCycles[0].live) {
+                            if (ipadFullArchive[0] && ipadFullArchive[0].live) {
+                                ipadFullArchive[0] = ipadAllCycles[0];
+                            } else {
+                                ipadFullArchive.unshift(ipadAllCycles[0]);
+                            }
+                        }
+
                         if (ipadAllCycles.length > 0) {
                             var html = '';
                             var displayCount = Math.min(5, ipadAllCycles.length);
@@ -972,6 +1026,11 @@
                                 html += getIpadRowHtml(ipadAllCycles[i]);
                             }
                             tbody.innerHTML = html;
+                        }
+                        
+                        var archModal = document.getElementById('ipad-archive-modal');
+                        if (archModal && archModal.style.display === 'flex' && !isIpadArchiveLoading) {
+                            renderIpadArchiveTable();
                         }
                     } catch(e) {}
                 }
