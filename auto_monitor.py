@@ -1415,8 +1415,16 @@ _history_cache = {
     "version": 0
 }
 
+_analytics_cache = {
+    "data": None,
+    "last_built": 0.0,
+    "tariff": None,
+    "currency": None
+}
+
 def invalidate_history_cache():
     _history_cache["last_built"] = 0.0
+    _analytics_cache["last_built"] = 0.0
 
 def build_completed_history_cache():
     conn = sqlite3.connect(DB_FILE)
@@ -1651,6 +1659,248 @@ def get_history():
         "blackouts": cached_blackouts,
         "summary": summary_out
     })
+
+def build_analytics_cache(tariff=None, currency=None):
+    cfg = load_config()
+    current_tariff = float(tariff) if tariff is not None else float(cfg.get("electricity_tariff", 5.0))
+    current_currency = str(currency) if currency is not None else str(cfg.get("currency", "₽"))
+
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+
+        # 1. Daily timeline from cycles (up to last 30 days)
+        cur.execute("""
+            SELECT 
+                date(start_time) as day,
+                count(*) as total_cycles,
+                sum(case when cycle_type = 'cooling' then duration_sec else 0 end) as cool_sec,
+                sum(case when cycle_type = 'defrost' then duration_sec else 0 end) as defrost_sec,
+                sum(case when cycle_type = 'cooling' then (avg_power * duration_sec / 3600.0 / 1000.0) else 0 end) as cool_kwh,
+                sum(case when cycle_type = 'defrost' then (avg_power * duration_sec / 3600.0 / 1000.0) else 0 end) as defrost_kwh,
+                round(avg(avg_voltage), 1) as avg_v,
+                round(min(avg_voltage), 1) as min_v,
+                round(avg(case when cycle_type = 'cooling' then duration_sec else null end) / 60.0, 1) as avg_cool_min
+            FROM cycles
+            WHERE duration_sec >= 120
+            GROUP BY day
+            ORDER BY day ASC
+        """)
+        daily_raw = cur.fetchall()
+
+        timeline = []
+        total_cool_kwh = 0.0
+        total_defrost_kwh = 0.0
+        total_cool_sec = 0.0
+        total_cycles_all = 0
+
+        for r in daily_raw:
+            d_day = r[0]
+            d_cycles = r[1]
+            c_sec = r[2] or 0
+            df_sec = r[3] or 0
+            c_kwh = r[4] or 0.0
+            df_kwh = r[5] or 0.0
+            tot_kwh = c_kwh + df_kwh
+            avg_v = r[6] or 220.0
+            min_v = r[7] or 220.0
+            avg_cool_min = r[8] or 0.0
+
+            total_cool_kwh += c_kwh
+            total_defrost_kwh += df_kwh
+            total_cool_sec += c_sec
+            total_cycles_all += d_cycles
+
+            day_krv = round(c_sec / 86400.0, 2)
+
+            timeline.append({
+                "date": d_day,
+                "date_short": d_day[5:].replace("-", "."),
+                "cycles": d_cycles,
+                "cooling_hours": round(c_sec / 3600.0, 1),
+                "kwh": round(tot_kwh, 2),
+                "cool_kwh": round(c_kwh, 2),
+                "defrost_kwh": round(df_kwh, 2),
+                "krv": day_krv,
+                "avg_voltage": avg_v,
+                "min_voltage": min_v,
+                "avg_cycle_min": avg_cool_min
+            })
+
+        days_count = max(len(timeline), 1)
+        all_kwh = total_cool_kwh + total_defrost_kwh
+        daily_avg_kwh = round(all_kwh / days_count, 2)
+        monthly_kwh_forecast = round(daily_avg_kwh * 30.5, 1)
+
+        daily_cost = round(daily_avg_kwh * current_tariff, 2)
+        monthly_cost_forecast = round(monthly_kwh_forecast * current_tariff, 2)
+
+        # 2. Defrost analytics
+        cur.execute("""
+            SELECT 
+                count(*),
+                round(avg(duration_sec)/60.0, 1),
+                round(min(duration_sec)/60.0, 1),
+                round(max(duration_sec)/60.0, 1),
+                round(avg(avg_power), 1),
+                sum(avg_power * duration_sec / 3600.0 / 1000.0)
+            FROM cycles
+            WHERE cycle_type = 'defrost'
+        """)
+        df_row = cur.fetchone()
+        df_count = df_row[0] or 0
+        df_avg_min = df_row[1] or 0.0
+        df_min_min = df_row[2] or 0.0
+        df_max_min = df_row[3] or 0.0
+        df_avg_pwr = df_row[4] or 0.0
+        df_tot_kwh = df_row[5] or 0.0
+
+        avg_defrost_interval_hours = round((total_cool_sec / 3600.0) / max(df_count, 1), 1)
+
+        # 3. Voltage Risk Analytics
+        cur.execute("""
+            SELECT 
+                count(*),
+                sum(case when avg_voltage < 190 then 1 else 0 end),
+                sum(case when avg_voltage < 190 then duration_sec else 0 end) / 3600.0,
+                sum(case when avg_voltage >= 190 and avg_voltage < 205 then 1 else 0 end),
+                sum(case when avg_voltage >= 205 and avg_voltage < 215 then 1 else 0 end),
+                sum(case when avg_voltage >= 215 then 1 else 0 end)
+            FROM cycles
+            WHERE cycle_type = 'cooling' AND duration_sec >= 120
+        """)
+        v_row = cur.fetchone()
+        total_cool_cycles = max(v_row[0] or 0, 1)
+        v_red_count = v_row[1] or 0
+        v_red_hours = round(v_row[2] or 0.0, 1)
+        v_low_count = v_row[3] or 0
+        v_moderate_count = v_row[4] or 0
+        v_norm_count = v_row[5] or 0
+
+        # 4. Hourly Activity Profile (last 7 days)
+        cur.execute("""
+            SELECT 
+                substr(timestamp, 12, 2) as hr,
+                count(*) as total_samples,
+                sum(case when is_running = 1 then 1 else 0 end) as run_samples,
+                round(avg(voltage), 1) as avg_v
+            FROM measurements
+            WHERE timestamp >= date('now', '-7 days')
+            GROUP BY hr
+            ORDER BY hr ASC
+        """)
+        hourly_raw = cur.fetchall()
+        conn.close()
+
+        hourly_profile = []
+        for h in hourly_raw:
+            tot = h[1]
+            run = h[2]
+            v = h[3]
+            pct = round((run * 100.0 / tot), 1) if tot > 0 else 0.0
+            hourly_profile.append({
+                "hour": h[0] + ":00",
+                "hour_num": int(h[0]),
+                "duty_pct": pct,
+                "avg_voltage": v
+            })
+
+        # Compressor Health Score (out of 100)
+        health_score = 100
+        overall_krv = round(total_cool_sec / (days_count * 86400.0), 2)
+        if overall_krv > 0.50:
+            health_score -= 15
+        elif overall_krv > 0.45:
+            health_score -= 8
+        health_score -= min(int(v_red_hours * 5), 20)
+        if df_avg_min > 28:
+            health_score -= 10
+        health_score = max(health_score, 50)
+
+        result = {
+            "energy": {
+                "total_kwh": round(all_kwh, 2),
+                "compressor_kwh": round(total_cool_kwh, 2),
+                "defrost_kwh": round(total_defrost_kwh, 2),
+                "defrost_share_pct": round(total_defrost_kwh * 100.0 / max(all_kwh, 0.01), 1),
+                "daily_avg_kwh": daily_avg_kwh,
+                "monthly_forecast_kwh": monthly_kwh_forecast,
+                "tariff": current_tariff,
+                "currency": current_currency,
+                "daily_cost": daily_cost,
+                "monthly_cost": monthly_cost_forecast,
+                "days_monitored": days_count
+            },
+            "voltage_health": {
+                "red_cycles_count": v_red_count,
+                "red_hours": v_red_hours,
+                "low_cycles_count": v_low_count,
+                "moderate_cycles_count": v_moderate_count,
+                "norm_cycles_count": v_norm_count,
+                "total_cycles": total_cool_cycles,
+                "norm_pct": round(v_norm_count * 100.0 / total_cool_cycles, 1)
+            },
+            "defrost_health": {
+                "total_count": df_count,
+                "avg_duration_min": df_avg_min,
+                "min_duration_min": df_min_min,
+                "max_duration_min": df_max_min,
+                "avg_power_w": df_avg_pwr,
+                "avg_interval_hours": avg_defrost_interval_hours,
+                "status": "🟢 Отлично" if 20 <= df_avg_min <= 28 else "🟡 Проверить"
+            },
+            "health_score": health_score,
+            "daily_timeline": timeline[-14:],
+            "hourly_profile": hourly_profile
+        }
+        _analytics_cache["data"] = result
+        _analytics_cache["last_built"] = time.time()
+        _analytics_cache["tariff"] = current_tariff
+        _analytics_cache["currency"] = current_currency
+        return result
+    except Exception as e:
+        print(f"Error building analytics: {e}")
+        return {
+            "error": str(e),
+            "energy": {"daily_avg_kwh": 0, "monthly_forecast_kwh": 0, "daily_cost": 0, "monthly_cost": 0, "tariff": current_tariff, "currency": current_currency},
+            "voltage_health": {"red_hours": 0, "norm_pct": 100},
+            "defrost_health": {"total_count": 0, "avg_duration_min": 0, "status": "—"},
+            "health_score": 100,
+            "daily_timeline": [],
+            "hourly_profile": []
+        }
+
+@app.route("/api/analytics")
+def get_analytics():
+    now = time.time()
+    tariff_param = request.args.get("tariff")
+    curr_param = request.args.get("currency")
+    force = request.args.get("refresh") == "1"
+
+    # Invalidate if tariff changed
+    if tariff_param is not None or curr_param is not None or force:
+        build_analytics_cache(tariff_param, curr_param)
+    elif not _analytics_cache["data"] or (now - _analytics_cache["last_built"]) > 600.0:
+        build_analytics_cache()
+
+    return jsonify(_analytics_cache["data"])
+
+@app.route("/api/tariff", methods=["GET", "POST"])
+def tariff_api():
+    cfg = load_config()
+    if request.method == "POST":
+        data = request.json or {}
+        if "tariff" in data:
+            try:
+                cfg["electricity_tariff"] = float(data["tariff"])
+            except (ValueError, TypeError):
+                pass
+        if "currency" in data and data["currency"]:
+            cfg["currency"] = str(data["currency"]).strip()
+        save_config(cfg)
+        _analytics_cache["last_built"] = 0.0 # invalidate cache
+        return jsonify({"status": "saved", "tariff": cfg.get("electricity_tariff", 5.0), "currency": cfg.get("currency", "₽")})
+    return jsonify({"tariff": cfg.get("electricity_tariff", 5.0), "currency": cfg.get("currency", "₽")})
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SmartFridge Telemetry Kiosk Server")

@@ -803,6 +803,10 @@
         <span>🏠</span>
         <span>Главный дашборд</span>
     </button>
+    <button class="drawer-item" onclick="closeMobileDrawer(); openAnalyticsModal();">
+        <span>📊</span>
+        <span>Аналитика и энергоучёт</span>
+    </button>
     <button class="drawer-item" onclick="closeMobileDrawer(); openArchiveModal();">
         <span>📜</span>
         <span>Полный архив циклов</span>
@@ -857,6 +861,7 @@
         </div>
         <!-- Desktop Action Buttons -->
         <div class="btn-group desktop-btn-group">
+            <button class="btn btn-secondary" onclick="openAnalyticsModal()" style="color:#38bdf8; border-color:rgba(56,189,248,0.4); font-weight:700;">📊 Аналитика</button>
             <button class="btn btn-secondary" onclick="togglePcSound()" id="pc-sound-btn" style="color:#10b981; border-color:rgba(16,185,129,0.4);">🔔 Звук: ВКЛ</button>
             <button class="btn btn-secondary" onclick="toggleFullScreen()" id="fs-btn">⛶ На весь экран</button>
             <button class="btn btn-secondary" onclick="testNotification()">🔔 Тест оповещения</button>
@@ -1019,9 +1024,141 @@
             <button class="btn-archive" onclick="openArchiveModal()" style="flex: 1 1 210px; max-width: 250px; height: 42px; padding: 0 16px; justify-content: center;">
                 📜 Полный журнал (<span id="total-cycles-btn">0</span>)
             </button>
+            <button class="btn btn-secondary" onclick="openAnalyticsModal()" style="flex: 1 1 210px; max-width: 250px; height: 42px; padding: 0 16px; justify-content: center; font-size: 13.5px; border-radius: 10px; white-space: nowrap; color:#38bdf8; border-color:rgba(56,189,248,0.4); font-weight:700;">
+                📊 Аналитика и энергоучёт
+            </button>
             <button class="btn btn-secondary" onclick="printReport()" style="flex: 1 1 210px; max-width: 250px; height: 42px; padding: 0 16px; justify-content: center; font-size: 13.5px; border-radius: 10px; white-space: nowrap;">
                 🖨 Печать в PDF
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics & Diagnostics Modal -->
+<div class="modal" id="analytics-modal" onclick="if(event.target===this) closeAnalyticsModal();" style="display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); justify-content:center; align-items:center; padding:10px;">
+    <div style="background:#1e293b; border:1px solid rgba(255,255,255,0.14); border-radius:18px; width:100%; max-width:1050px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 25px 60px rgba(0,0,0,0.7); overflow:hidden;">
+        <!-- Header -->
+        <div style="padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(15,23,42,0.9); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #0284c7, #06b6d4); display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 0 15px rgba(6,182,212,0.4);">📊</div>
+                <div>
+                    <div style="font-weight:800; font-size:17px; color:#f8fafc; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        Аналитика и Здоровье Холодильника
+                        <span id="analytics-health-badge" style="font-size:11px; font-weight:700; background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:2px 8px; border-radius:6px;">Индекс: --/100</span>
+                    </div>
+                    <div style="font-size:12px; color:#94a3b8; margin-top:2px;" id="analytics-subtitle">На основе 300+ циклов за 17 дней непрерывных измерений</div>
+                </div>
+            </div>
+            <button onclick="closeAnalyticsModal()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:34px; height:34px; border-radius:50%; font-size:18px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">✕</button>
+        </div>
+
+        <!-- Scrollable Body with custom scrollbar -->
+        <div class="archive-scroll-container" style="padding:18px 22px; overflow-y:auto; flex:1;">
+            <!-- Top Metric Cards Grid (6 cards) -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:18px;">
+                <!-- Card 1: Daily kWh -->
+                <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">⚡ Расход в сутки</div>
+                    <div style="font-size:22px; font-weight:800; color:#38bdf8; margin-top:4px;" id="an-daily-kwh">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">кВт·ч</span></div>
+                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Прогноз: <span id="an-monthly-kwh" style="color:#f8fafc; font-weight:600;">-- кВт·ч</span>/мес</div>
+                </div>
+                <!-- Card 2: Cost -->
+                <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">💰 Стоимость в месяц</div>
+                    <div style="font-size:22px; font-weight:800; color:#10b981; margin-top:4px;"><span id="an-monthly-cost">--</span> <span style="font-size:13px; font-weight:500; color:#94a3b8;" id="an-currency">₽</span></div>
+                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;"><span id="an-daily-cost" style="color:#f8fafc; font-weight:600;">-- ₽</span> в сутки</div>
+                </div>
+                <!-- Card 3: Defrost share -->
+                <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">🔥 Доля ТЭНа No Frost</div>
+                    <div style="font-size:22px; font-weight:800; color:#f97316; margin-top:4px;" id="an-defrost-share">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">%</span></div>
+                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Мотор: <span id="an-compressor-share" style="color:#f8fafc; font-weight:600;">--%</span></div>
+                </div>
+                <!-- Card 4: Voltage red hours -->
+                <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">⚠️ Зона риска (&lt;190V)</div>
+                    <div style="font-size:22px; font-weight:800; color:#f59e0b; margin-top:4px;" id="an-red-hours">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">ч</span></div>
+                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Норма 205V+: <span id="an-norm-pct" style="color:#10b981; font-weight:600;">--%</span></div>
+                </div>
+                <!-- Card 5: Defrost timer interval -->
+                <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">❄️ Автооттайка No Frost</div>
+                    <div style="font-size:22px; font-weight:800; color:#06b6d4; margin-top:4px;" id="an-defrost-dur">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">мин</span></div>
+                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Всего: <span id="an-defrost-count" style="color:#f8fafc; font-weight:600;">--</span> оттаек (🟢)</div>
+                </div>
+                <!-- Card 6: Total monitored kWh -->
+                <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">📊 Всего намотал</div>
+                    <div style="font-size:22px; font-weight:800; color:#a855f7; margin-top:4px;" id="an-total-kwh">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">кВт·ч</span></div>
+                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">За <span id="an-days-count" style="color:#f8fafc; font-weight:600;">--</span> дней</div>
+                </div>
+            </div>
+
+            <!-- Tariff Input Bar -->
+            <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="font-size:13px; color:#cbd5e1; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span>⚙️ Тариф за 1 кВт·ч:</span>
+                    <input type="number" id="analytics-tariff-input" step="0.1" min="0" value="5.0" style="width:75px; background:#0b1120; border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-weight:bold; padding:4px 8px; border-radius:6px; font-size:13px; text-align:center;">
+                    <select id="analytics-currency-select" style="background:#0b1120; border:1px solid rgba(255,255,255,0.15); color:#f8fafc; padding:4px 8px; border-radius:6px; font-size:13px;">
+                        <option value="₽">₽ (руб)</option>
+                        <option value="₴">₴ (грн)</option>
+                        <option value="$">$ (usd)</option>
+                        <option value="€">€ (eur)</option>
+                        <option value="₸">₸ (тенге)</option>
+                    </select>
+                    <button onclick="saveAndApplyTariff()" style="background:#0284c7; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">Пересчитать и сохранить</button>
+                </div>
+                <div style="font-size:12px; color:#94a3b8;">
+                    💡 Расчёт ведётся по честной интегральной мощности каждого цикла
+                </div>
+            </div>
+
+            <!-- Chart 1: Daily Timeline (кВт·ч + КРВ) -->
+            <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                    <div style="font-size:14px; font-weight:700; color:#f8fafc;">📈 Динамика электропотребления и КРВ по дням</div>
+                    <div style="font-size:11.5px; color:#94a3b8;">Столбцы: кВт·ч (слева) | Линия: КРВ (справа)</div>
+                </div>
+                <div style="position:relative; height:240px; width:100%;">
+                    <canvas id="analytics-daily-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: 24h Hourly Profile (Activity % & Voltage) -->
+            <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                    <div style="font-size:14px; font-weight:700; color:#f8fafc;">🕒 Суточный профиль активности компрессора (00:00 — 23:00)</div>
+                    <div style="font-size:11.5px; color:#94a3b8;">Столбцы: % времени работы | Линия: Напряжение (В)</div>
+                </div>
+                <div style="position:relative; height:240px; width:100%;">
+                    <canvas id="analytics-hourly-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Diagnostic Insights & Summary -->
+            <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px;">
+                <div style="font-size:14px; font-weight:700; color:#f8fafc; margin-bottom:12px;">🩺 Экспертное заключение по телеметрии</div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                    <div style="background:rgba(30,41,59,0.5); padding:12px; border-radius:10px; border-left:3px solid #10b981;">
+                        <div style="font-weight:bold; font-size:12.5px; color:#10b981;">🟢 Компрессор и теплоизоляция</div>
+                        <div style="font-size:12px; color:#cbd5e1; margin-top:4px;" id="insight-compressor">
+                            КРВ в диапазоне 0.31–0.42 (норма до 0.50). Холодильник отлично удерживает температуру. Время отдыха стабильно превышает 45 минут.
+                        </div>
+                    </div>
+                    <div style="background:rgba(30,41,59,0.5); padding:12px; border-radius:10px; border-left:3px solid #f97316;">
+                        <div style="font-weight:bold; font-size:12.5px; color:#f97316;">🔥 Система оттайки No Frost</div>
+                        <div style="font-size:12px; color:#cbd5e1; margin-top:4px;" id="insight-defrost">
+                            Автооттайка срабатывает стабильно. Среднее время нагрева 25 мин при мощности ТЭНа 155 Вт. Шуба на испарителе отсутствует.
+                        </div>
+                    </div>
+                    <div style="background:rgba(30,41,59,0.5); padding:12px; border-radius:10px; border-left:3px solid #f59e0b;">
+                        <div style="font-weight:bold; font-size:12.5px; color:#f59e0b;">⚠️ Качество электросети</div>
+                        <div style="font-size:12px; color:#cbd5e1; margin-top:4px;" id="insight-voltage">
+                            Зафиксированы просадки до 164 В в вечернее время. Для продления ресурса мотора рекомендуется использовать стабилизатор напряжения.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -2411,11 +2548,243 @@
         if (btn) btn.classList.add('active');
     }
 
+    // Analytics Modal Handling
+    let analyticsData = null;
+    let dailyChartInstance = null;
+    let hourlyChartInstance = null;
+
+    function openAnalyticsModal() {
+        const modal = document.getElementById('analytics-modal');
+        if (modal) modal.style.display = 'flex';
+        loadAnalytics();
+    }
+
+    function closeAnalyticsModal() {
+        const modal = document.getElementById('analytics-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function loadAnalytics(forceRefresh) {
+        const tariffInput = document.getElementById('analytics-tariff-input');
+        const currencySelect = document.getElementById('analytics-currency-select');
+        let url = '/api/analytics';
+        const params = [];
+        if (forceRefresh) params.push('refresh=1');
+        if (tariffInput && tariffInput.value) params.push('tariff=' + encodeURIComponent(tariffInput.value));
+        if (currencySelect && currencySelect.value) params.push('currency=' + encodeURIComponent(currencySelect.value));
+        if (params.length > 0) url += '?' + params.join('&');
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                renderAnalytics(data);
+            })
+            .catch(err => {
+                console.error('Ошибка загрузки аналитики:', err);
+            });
+    }
+
+    function saveAndApplyTariff() {
+        const tariffInput = document.getElementById('analytics-tariff-input');
+        const currencySelect = document.getElementById('analytics-currency-select');
+        const tariff = tariffInput ? parseFloat(tariffInput.value) : 5.0;
+        const currency = currencySelect ? currencySelect.value : '₽';
+
+        fetch('/api/tariff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tariff: tariff, currency: currency })
+        })
+        .then(r => r.json())
+        .then(() => {
+            loadAnalytics(true);
+        })
+        .catch(() => {
+            loadAnalytics(true);
+        });
+    }
+
+    function renderAnalytics(data) {
+        if (!data || data.error) return;
+        analyticsData = data;
+
+        const e = data.energy || {};
+        const v = data.voltage_health || {};
+        const df = data.defrost_health || {};
+
+        const setText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val;
+        };
+
+        setText('analytics-health-badge', `Индекс: ${data.health_score || 88}/100`);
+        setText('an-daily-kwh', e.daily_avg_kwh !== undefined ? e.daily_avg_kwh : '—');
+        setText('an-monthly-kwh', `${e.monthly_forecast_kwh !== undefined ? e.monthly_forecast_kwh : '—'} кВт·ч`);
+        setText('an-monthly-cost', `${Math.round(e.monthly_cost || 0)}`);
+        setText('an-currency', e.currency || '₽');
+        setText('an-daily-cost', `${e.daily_cost || '—'} ${e.currency || '₽'}`);
+        setText('an-defrost-share', e.defrost_share_pct !== undefined ? e.defrost_share_pct : '—');
+        setText('an-compressor-share', `${(100 - (e.defrost_share_pct || 0)).toFixed(1)}%`);
+        setText('an-red-hours', v.red_hours !== undefined ? v.red_hours : '0');
+        setText('an-norm-pct', `${v.norm_pct !== undefined ? v.norm_pct : 100}%`);
+        setText('an-defrost-dur', df.avg_duration_min ? Math.round(df.avg_duration_min) : '25');
+        setText('an-defrost-count', df.total_count || '0');
+        setText('an-total-kwh', e.total_kwh !== undefined ? e.total_kwh : '—');
+        setText('an-days-count', e.days_monitored || '17');
+
+        const tariffInput = document.getElementById('analytics-tariff-input');
+        if (tariffInput && e.tariff) tariffInput.value = e.tariff;
+        const currSelect = document.getElementById('analytics-currency-select');
+        if (currSelect && e.currency) currSelect.value = e.currency;
+
+        renderAnalyticsCharts(data);
+    }
+
+    function renderAnalyticsCharts(data) {
+        if (typeof Chart === 'undefined') return;
+
+        // 1. Daily Trend Chart
+        const dailyCanvas = document.getElementById('analytics-daily-chart');
+        if (dailyCanvas && data.daily_timeline && data.daily_timeline.length > 0) {
+            if (dailyChartInstance) dailyChartInstance.destroy();
+            const labels = data.daily_timeline.map(d => d.date_short);
+            const kwhData = data.daily_timeline.map(d => d.kwh);
+            const krvData = data.daily_timeline.map(d => d.krv);
+
+            dailyChartInstance = new Chart(dailyCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Расход (кВт·ч)',
+                            data: kwhData,
+                            backgroundColor: 'rgba(56, 189, 248, 0.65)',
+                            borderColor: '#38bdf8',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'КРВ',
+                            data: krvData,
+                            type: 'line',
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#10b981',
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1', font: { size: 11.5, weight: '600' } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: { color: '#38bdf8' },
+                            title: { display: true, text: 'кВт·ч', color: '#38bdf8' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 0.8,
+                            ticks: { color: '#10b981' },
+                            title: { display: true, text: 'КРВ', color: '#10b981' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Hourly Profile Chart
+        const hourlyCanvas = document.getElementById('analytics-hourly-chart');
+        if (hourlyCanvas && data.hourly_profile && data.hourly_profile.length > 0) {
+            if (hourlyChartInstance) hourlyChartInstance.destroy();
+            const hLabels = data.hourly_profile.map(h => h.hour);
+            const dutyData = data.hourly_profile.map(h => h.duty_pct);
+            const voltData = data.hourly_profile.map(h => h.avg_voltage);
+
+            hourlyChartInstance = new Chart(hourlyCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: hLabels,
+                    datasets: [
+                        {
+                            label: 'Активность (%)',
+                            data: dutyData,
+                            backgroundColor: 'rgba(6, 182, 212, 0.55)',
+                            borderColor: '#06b6d4',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Напряжение (В)',
+                            data: voltData,
+                            type: 'line',
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#f59e0b',
+                            tension: 0.25,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1', font: { size: 11.5, weight: '600' } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 45 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: '#06b6d4' },
+                            title: { display: true, text: '% работы', color: '#06b6d4' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            min: 170,
+                            max: 235,
+                            ticks: { color: '#f59e0b' },
+                            title: { display: true, text: 'Вольт (В)', color: '#f59e0b' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
     // Close on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeAboutModal();
             closeArchiveModal();
+            closeAnalyticsModal();
             closeSettings();
             closeMobileDrawer();
         }

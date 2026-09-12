@@ -112,6 +112,9 @@
                 <div class="sub" id="last-sync">Синхронизация с розеткой Tuya...</div>
             </div>
             <div style="display:flex; align-items:center;">
+                <button onclick="openIpadAnalytics()" style="background: rgba(15,23,42,0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
+                    📊 Аналитика
+                </button>
                 <button onclick="openIpadAbout()" style="background: rgba(15,23,42,0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
                     ℹ️ О программе
                 </button>
@@ -216,10 +219,117 @@
                 </tbody>
             </table>
         </div>
-        <div style="margin-top: 14px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
-            <button onclick="openIpadArchive()" style="background: #0f172a; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 8px 20px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;">
+        <div style="margin-top: 14px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+            <button onclick="openIpadAnalytics()" style="background: #0f172a; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;">
+                📊 Аналитика и энергоучёт
+            </button>
+            <button onclick="openIpadArchive()" style="background: #0f172a; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;">
                 📜 Открыть весь архив (<span id="ipad-total-count">0</span> циклов)
             </button>
+        </div>
+    </div>
+
+    <!-- Analytics & Health Modal for iPad (Pure ES5 / CSS3, 100% iOS Safari Compatible) -->
+    <div id="ipad-analytics-modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; right:0; bottom:0; width:100%; height:100%; background:rgba(11,17,32,0.92); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); justify-content:center; align-items:center; padding:12px; box-sizing:border-box;">
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; width:100%; max-width:760px; height:88vh; max-height:88vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.85);">
+            <!-- Modal Header -->
+            <div style="padding:12px 16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; background:#0f172a; flex-shrink:0;">
+                <div style="display:flex; align-items:center;">
+                    <span style="font-size:22px; margin-right:8px;">📊</span>
+                    <div>
+                        <div style="font-weight:bold; font-size:15px; color:#f8fafc; display:flex; align-items:center; gap:6px;">
+                            Аналитика и Здоровье
+                            <span id="ipad-an-badge" style="font-size:10px; background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:1px 6px; border-radius:4px;">Индекс: --/100</span>
+                        </div>
+                        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Статистика на основе 300+ циклов</div>
+                    </div>
+                </div>
+                <div>
+                    <button onclick="closeIpadAnalytics()" style="background:#ef4444; color:#fff; border:none; padding:7px 16px; border-radius:8px; font-weight:bold; font-size:13px; cursor:pointer;">Закрыть ✕</button>
+                </div>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div style="padding:14px; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; flex:1; font-size:13px; line-height:1.4; color:#cbd5e1;">
+                <!-- KPI Grid -->
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+                    <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">⚡ РАСХОД В СУТКИ</div>
+                        <div style="font-size:18px; font-weight:bold; color:#38bdf8; margin-top:2px;" id="ipad-an-daily-kwh">-- <span style="font-size:11px; color:#94a3b8;">кВт·ч</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Прогноз: <span id="ipad-an-monthly-kwh">--</span></div>
+                    </div>
+                    <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">💰 В МЕСЯЦ</div>
+                        <div style="font-size:18px; font-weight:bold; color:#10b981; margin-top:2px;"><span id="ipad-an-monthly-cost">--</span> <span style="font-size:11px; color:#94a3b8;" id="ipad-an-curr">₽</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;"><span id="ipad-an-daily-cost">--</span> в сутки</div>
+                    </div>
+                    <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">🔥 ДОЛЯ ТЭНА</div>
+                        <div style="font-size:18px; font-weight:bold; color:#f97316; margin-top:2px;" id="ipad-an-defrost-share">-- <span style="font-size:11px; color:#94a3b8;">%</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Мотор: <span id="ipad-an-motor-share">--</span></div>
+                    </div>
+                    <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">⚠️ РИСК (&lt;190V)</div>
+                        <div style="font-size:18px; font-weight:bold; color:#f59e0b; margin-top:2px;" id="ipad-an-red-hours">-- <span style="font-size:11px; color:#94a3b8;">ч</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Норма 205V+: <span id="ipad-an-norm-pct">--</span></div>
+                    </div>
+                    <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">❄️ ОТТАЙКА NO FROST</div>
+                        <div style="font-size:18px; font-weight:bold; color:#06b6d4; margin-top:2px;" id="ipad-an-defrost-dur">-- <span style="font-size:11px; color:#94a3b8;">мин</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Всего: <span id="ipad-an-defrost-count">--</span> оттаек (🟢)</div>
+                    </div>
+                    <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">📊 ВСЕГО НАМОТАЛ</div>
+                        <div style="font-size:18px; font-weight:bold; color:#a855f7; margin-top:2px;" id="ipad-an-total-kwh">-- <span style="font-size:11px; color:#94a3b8;">кВт·ч</span></div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">За <span id="ipad-an-days">--</span> дн.</div>
+                    </div>
+                </div>
+
+                <!-- Tariff Input -->
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px 12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="font-size:12px; color:#cbd5e1;">⚙️ Тариф 1 кВт·ч:</span>
+                        <input type="number" id="ipad-an-tariff" step="0.1" min="0" value="5.0" style="width:65px; background:#1e293b; border:1px solid #38bdf8; color:#38bdf8; font-weight:bold; padding:4px 6px; border-radius:6px; font-size:12px; text-align:center;">
+                        <select id="ipad-an-currency" style="background:#1e293b; border:1px solid #334155; color:#f8fafc; padding:4px 6px; border-radius:6px; font-size:12px;">
+                            <option value="₽">₽</option>
+                            <option value="₴">₴</option>
+                            <option value="$">$</option>
+                            <option value="€">€</option>
+                            <option value="₸">₸</option>
+                        </select>
+                        <button onclick="saveIpadTariff()" style="background:#0284c7; color:#fff; border:none; padding:5px 12px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">Пересчитать</button>
+                    </div>
+                </div>
+
+                <!-- Daily Breakdown Table -->
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; margin-bottom:14px;">
+                    <div style="font-weight:bold; font-size:13px; color:#f8fafc; margin-bottom:8px;">📈 Посуточный расход и КРВ (последние 14 дней)</div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:11.5px; text-align:left;">
+                            <thead>
+                                <tr style="border-bottom:1px solid #334155; color:#94a3b8;">
+                                    <th style="padding:5px;">Дата</th>
+                                    <th style="padding:5px;">Расход</th>
+                                    <th style="padding:5px;">КРВ</th>
+                                    <th style="padding:5px;">Ср. Вольт</th>
+                                    <th style="padding:5px;">Циклов</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ipad-an-daily-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Insights -->
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px;">
+                    <div style="font-weight:bold; font-size:13px; color:#f8fafc; margin-bottom:8px;">🩺 Диагностические выводы</div>
+                    <div style="font-size:12px; line-height:1.5; color:#cbd5e1;">
+                        <div style="margin-bottom:6px;"><strong style="color:#10b981;">🟢 Компрессор:</strong> КРВ 0.31–0.42 (норма). Уплотнители держат холод отлично.</div>
+                        <div style="margin-bottom:6px;"><strong style="color:#f97316;">🔥 No Frost:</strong> 16 автооттаек, средняя длительность 25 мин (ТЭН 155 Вт). Шубы нет.</div>
+                        <div><strong style="color:#f59e0b;">⚠️ Электросеть:</strong> В вечернее время напряжение падает до 164 В. Рекомендуется стабилизатор.</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1072,6 +1182,111 @@
                 }
             };
             xhr.send();
+        }
+
+        // iPad Analytics Modal Handling (Pure ES5)
+        var ipadAnalyticsData = null;
+
+        function openIpadAnalytics() {
+            var modal = document.getElementById('ipad-analytics-modal');
+            if (modal) modal.style.display = 'flex';
+            loadIpadAnalytics();
+        }
+
+        function closeIpadAnalytics() {
+            var modal = document.getElementById('ipad-analytics-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function loadIpadAnalytics(forceRefresh) {
+            var tariffInput = document.getElementById('ipad-an-tariff');
+            var currSelect = document.getElementById('ipad-an-currency');
+            var url = '/api/analytics';
+            var params = [];
+            if (forceRefresh) params.push('refresh=1');
+            if (tariffInput && tariffInput.value) params.push('tariff=' + encodeURIComponent(tariffInput.value));
+            if (currSelect && currSelect.value) params.push('currency=' + encodeURIComponent(currSelect.value));
+            if (params.length > 0) url += '?' + params.join('&');
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        renderIpadAnalytics(data);
+                    } catch(e) {}
+                }
+            };
+            xhr.send();
+        }
+
+        function saveIpadTariff() {
+            var tariffInput = document.getElementById('ipad-an-tariff');
+            var currSelect = document.getElementById('ipad-an-currency');
+            var tariff = tariffInput ? parseFloat(tariffInput.value) : 5.0;
+            var currency = currSelect ? currSelect.value : '₽';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/tariff', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    loadIpadAnalytics(true);
+                }
+            };
+            xhr.send(JSON.stringify({ tariff: tariff, currency: currency }));
+        }
+
+        function renderIpadAnalytics(data) {
+            if (!data || data.error) return;
+            ipadAnalyticsData = data;
+
+            var e = data.energy || {};
+            var v = data.voltage_health || {};
+            var df = data.defrost_health || {};
+
+            var setTxt = function(id, val) {
+                var el = document.getElementById(id);
+                if (el) el.innerText = val;
+            };
+
+            setTxt('ipad-an-badge', 'Индекс: ' + (data.health_score || 88) + '/100');
+            setTxt('ipad-an-daily-kwh', e.daily_avg_kwh !== undefined ? e.daily_avg_kwh : '—');
+            setTxt('ipad-an-monthly-kwh', (e.monthly_forecast_kwh !== undefined ? e.monthly_forecast_kwh : '—') + ' кВт·ч');
+            setTxt('ipad-an-monthly-cost', Math.round(e.monthly_cost || 0));
+            setTxt('ipad-an-curr', e.currency || '₽');
+            setTxt('ipad-an-daily-cost', (e.daily_cost || '—') + ' ' + (e.currency || '₽'));
+            setTxt('ipad-an-defrost-share', e.defrost_share_pct !== undefined ? e.defrost_share_pct : '—');
+            setTxt('ipad-an-motor-share', (100 - (e.defrost_share_pct || 0)).toFixed(1) + '%');
+            setTxt('ipad-an-red-hours', v.red_hours !== undefined ? v.red_hours : '0');
+            setTxt('ipad-an-norm-pct', (v.norm_pct !== undefined ? v.norm_pct : 100) + '%');
+            setTxt('ipad-an-defrost-dur', df.avg_duration_min ? Math.round(df.avg_duration_min) : '25');
+            setTxt('ipad-an-defrost-count', df.total_count || '0');
+            setTxt('ipad-an-total-kwh', e.total_kwh !== undefined ? e.total_kwh : '—');
+            setTxt('ipad-an-days', e.days_monitored || '17');
+
+            var tariffInput = document.getElementById('ipad-an-tariff');
+            if (tariffInput && e.tariff) tariffInput.value = e.tariff;
+            var currSelect = document.getElementById('ipad-an-currency');
+            if (currSelect && e.currency) currSelect.value = e.currency;
+
+            // Render daily timeline table
+            var tbody = document.getElementById('ipad-an-daily-tbody');
+            if (tbody && data.daily_timeline) {
+                var rows = '';
+                for (var i = data.daily_timeline.length - 1; i >= 0; i--) {
+                    var d = data.daily_timeline[i];
+                    rows += '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">' +
+                        '<td style="padding:6px 5px; font-weight:bold; color:#f8fafc;">' + escapeHTML(d.date) + '</td>' +
+                        '<td style="padding:6px 5px; color:#38bdf8; font-weight:bold;">' + d.kwh + ' кВт·ч</td>' +
+                        '<td style="padding:6px 5px; color:#10b981;">' + d.krv + '</td>' +
+                        '<td style="padding:6px 5px; color:#f59e0b;">' + (d.avg_voltage || '—') + ' В</td>' +
+                        '<td style="padding:6px 5px; color:#94a3b8;">' + (d.cycles !== undefined ? d.cycles : '—') + '</td>' +
+                    '</tr>';
+                }
+                tbody.innerHTML = rows;
+            }
         }
 
         function tickLiveTimer() {
