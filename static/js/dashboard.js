@@ -415,6 +415,8 @@ function toggleFullScreen() {
                 "food_safety": "🟢 Оценка без датчика: за ≤4 ч камера обычно теряет около 1°C"
             }
         };
+    }
+
     let statusAbortCtrl = null;
 
     function pollStatus() {
