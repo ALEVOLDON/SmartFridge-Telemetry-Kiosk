@@ -104,7 +104,8 @@ state = LockedState({
         "duration_sec": 0,
         "date": "—",
         "food_safety": "🟢 Электросеть стабильна"
-    }
+    },
+    "last_energy_reconciliation": None
 })
 
 _poller_thread = None
@@ -197,6 +198,19 @@ def _ensure_schema(conn):
         CREATE TABLE IF NOT EXISTS cloud_usage (
             day_date TEXT PRIMARY KEY,
             calls_count INTEGER DEFAULT 0
+        )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS energy_reconciliations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date_str TEXT UNIQUE,
+            local_kwh REAL,
+            cloud_kwh REAL,
+            delta_kwh REAL,
+            accuracy_pct REAL,
+            cloud_reports_count INTEGER,
+            reconciled_at TEXT,
+            status TEXT
         )
     ''')
     for col in ["mode TEXT", "temp_freezer REAL", "temp_fridge REAL"]:
@@ -338,6 +352,145 @@ def get_cloud_client(cfg):
         )
         _cloud_client_cfg = key
     return _cloud_client
+
+_last_reconcile_time = 0.0
+_last_hourly_reconcile_hour = -1
+_reconcile_lock = threading.Lock()
+
+def get_latest_reconciliation():
+    try:
+        conn = db_connect()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT date_str, local_kwh, cloud_kwh, delta_kwh, accuracy_pct, cloud_reports_count, reconciled_at, status
+            FROM energy_reconciliations
+            ORDER BY date_str DESC, id DESC LIMIT 1
+        ''')
+        row = cur.fetchone()
+        conn.close()
+        if row:
+            return {
+                "date": row[0],
+                "local_kwh": row[1],
+                "cloud_kwh": row[2],
+                "delta_kwh": row[3],
+                "accuracy_pct": row[4],
+                "reports_count": row[5],
+                "reconciled_at": row[6],
+                "status": row[7]
+            }
+    except Exception:
+        pass
+    return None
+
+def reconcile_energy_with_cloud(target_date_str=None, force=False):
+    """
+    Hourly/daily energy reconciliation between local SQLite cycles integration
+    and the smart plug's hardware metering chip (add_ele DP log in Tuya Cloud).
+    Consumes exactly 1-2 cloud API requests per reconciliation.
+    """
+    global _last_reconcile_time
+    now = datetime.now()
+    if not target_date_str:
+        target_date_str = now.strftime("%Y-%m-%d")
+
+    with _reconcile_lock:
+        if not force and (time.time() - _last_reconcile_time) < 300:
+            latest = state.get("last_energy_reconciliation") or get_latest_reconciliation()
+            return {"success": True, "cached": True, "data": latest}
+        _last_reconcile_time = time.time()
+
+        conn = db_connect()
+        cur = conn.cursor()
+
+        # 1. Local SQLite integration for target date
+        next_date_str = (datetime.strptime(target_date_str, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        cur.execute(
+            "SELECT SUM(duration_sec * avg_power / 3600000.0) FROM cycles WHERE start_time >= ? AND start_time < ?",
+            (target_date_str, next_date_str)
+        )
+        row = cur.fetchone()
+        local_kwh = float(row[0]) if (row and row[0] is not None) else 0.0
+
+        # If reconciling today and compressor is currently running, add in-progress cycle energy
+        if target_date_str == now.strftime("%Y-%m-%d") and state.get("is_running") and state.get("cycle_start_time"):
+            try:
+                st_dt = parse_iso(state["cycle_start_time"])
+                if st_dt and st_dt.strftime("%Y-%m-%d") == target_date_str:
+                    in_progress_sec = max(0, int((now - st_dt).total_seconds()))
+                    cur_p = float(state.get("power") or 130.0)
+                    local_kwh += (in_progress_sec * cur_p / 3600000.0)
+            except Exception:
+                pass
+
+        # 2. Tuya Cloud hardware add_ele logs
+        cfg = load_config()
+        c = get_cloud_client(cfg)
+        dev_id = (cfg.get("device_id") or "").strip()
+        if not dev_id or not (cfg.get("api_key") or "").strip():
+            conn.close()
+            return {"success": False, "error": "Tuya Cloud credentials not configured"}
+
+        start_dt = datetime.strptime(target_date_str, "%Y-%m-%d")
+        end_dt = start_dt + timedelta(days=1)
+        if end_dt > now:
+            end_dt = now
+
+        start_ms = int(start_dt.timestamp() * 1000)
+        end_ms = int(end_dt.timestamp() * 1000)
+
+        try:
+            logs_res = c.getdevicelog(dev_id, start=start_ms, end=end_ms, params={"codes": "add_ele"}, max_fetches=3)
+            fetches = logs_res.get("fetches", 1) if isinstance(logs_res, dict) else 1
+            record_cloud_call(fetches)
+        except Exception as e:
+            conn.close()
+            return {"success": False, "error": f"Tuya Cloud request error: {e}"}
+
+        entries = logs_res.get("result", {}).get("logs", []) if isinstance(logs_res, dict) else []
+        cloud_wh = sum(int(e.get("value", 0)) for e in entries)
+        cloud_kwh = round(cloud_wh / 1000.0, 3)
+        local_kwh = round(local_kwh, 3)
+
+        delta_kwh = round(abs(local_kwh - cloud_kwh), 3)
+        base = max(cloud_kwh, local_kwh, 0.001)
+        accuracy_pct = round(max(0.0, 100.0 - (delta_kwh / base * 100.0)), 1)
+
+        now_iso = now.isoformat()
+        status_str = "aligned" if accuracy_pct >= 90.0 else "divergent"
+        if cloud_kwh == 0 and local_kwh == 0:
+            accuracy_pct = 100.0
+            status_str = "no_consumption"
+
+        cur.execute('''
+            INSERT INTO energy_reconciliations 
+            (date_str, local_kwh, cloud_kwh, delta_kwh, accuracy_pct, cloud_reports_count, reconciled_at, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(date_str) DO UPDATE SET
+                local_kwh = excluded.local_kwh,
+                cloud_kwh = excluded.cloud_kwh,
+                delta_kwh = excluded.delta_kwh,
+                accuracy_pct = excluded.accuracy_pct,
+                cloud_reports_count = excluded.cloud_reports_count,
+                reconciled_at = excluded.reconciled_at,
+                status = excluded.status
+        ''', (target_date_str, local_kwh, cloud_kwh, delta_kwh, accuracy_pct, len(entries), now_iso, status_str))
+        conn.commit()
+        conn.close()
+
+        res = {
+            "success": True,
+            "date": target_date_str,
+            "local_kwh": local_kwh,
+            "cloud_kwh": cloud_kwh,
+            "delta_kwh": delta_kwh,
+            "accuracy_pct": accuracy_pct,
+            "reports_count": len(entries),
+            "reconciled_at": now_iso,
+            "status": status_str
+        }
+        state["last_energy_reconciliation"] = res
+        return res
 
 def cooling_since_last_defrost_sec():
     try:
@@ -1251,12 +1404,21 @@ def tuya_poller():
             state["error_message"] = str(e)
             sleep_sec = 10
 
-        if state.get("connected"):
-            if state.get("connection_source") == "local_wifi":
-                sleep_sec = 3 if state.get("is_running") else 4
-            else:
-                # Cloud Eco-Fallback: 25s when running, 45s when resting (guarantees safe quota consumption if LAN is down)
-                sleep_sec = 25 if state.get("is_running") else 45
+        # Hourly cloud energy reconciliation in detached background thread (XX:05)
+        now_dt = datetime.now()
+        global _last_hourly_reconcile_hour
+        if now_dt.minute >= 5 and now_dt.hour != _last_hourly_reconcile_hour:
+            _last_hourly_reconcile_hour = now_dt.hour
+            def _bg_hourly():
+                try:
+                    if now_dt.hour == 0:
+                        y_str = (now_dt - timedelta(days=1)).strftime("%Y-%m-%d")
+                        reconcile_energy_with_cloud(y_str, force=True)
+                    reconcile_energy_with_cloud(now_dt.strftime("%Y-%m-%d"), force=True)
+                except Exception as err:
+                    print("Hourly reconciliation notice:", err)
+            threading.Thread(target=_bg_hourly, daemon=True).start()
+
         time.sleep(max(2, int(sleep_sec)))
 
 @app.before_request
@@ -1807,7 +1969,8 @@ def build_analytics_cache(tariff=None, currency=None):
                 "currency": current_currency,
                 "daily_cost": daily_cost,
                 "monthly_cost": monthly_cost_forecast,
-                "days_monitored": days_count
+                "days_monitored": days_count,
+                "reconciliation": state.get("last_energy_reconciliation") or get_latest_reconciliation()
             },
             "voltage_health": {
                 "red_cycles_count": v_red_count,
@@ -1855,13 +2018,54 @@ def get_analytics():
     curr_param = request.args.get("currency")
     force = request.args.get("refresh") == "1"
 
-    # Invalidate if tariff changed
+    # Invalidate if tariff changed or refresh requested
     if tariff_param is not None or curr_param is not None or force:
         build_analytics_cache(tariff_param, curr_param)
-    elif not _analytics_cache["data"] or (now - _analytics_cache["last_built"]) > 600.0:
+    elif not _analytics_cache["data"] or (now - _analytics_cache["last_built"]) > 60.0:
         build_analytics_cache()
 
     return jsonify(_analytics_cache["data"])
+
+@app.route("/api/reconcile-energy", methods=["GET", "POST"])
+def reconcile_energy_api():
+    if not is_lan_request():
+        return jsonify({"error": "Forbidden: LAN access only"}), 403
+
+    if request.method == "POST":
+        data = request.json or {}
+        target_date = data.get("date")
+        res = reconcile_energy_with_cloud(target_date, force=True)
+        _analytics_cache["last_built"] = 0.0 # invalidate cache
+        return jsonify(res)
+
+    latest = state.get("last_energy_reconciliation") or get_latest_reconciliation()
+    history = []
+    try:
+        conn = db_connect()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT date_str, local_kwh, cloud_kwh, delta_kwh, accuracy_pct, cloud_reports_count, reconciled_at, status
+            FROM energy_reconciliations
+            ORDER BY date_str DESC, id DESC LIMIT 7
+        ''')
+        for r in cur.fetchall():
+            history.append({
+                "date": r[0],
+                "local_kwh": r[1],
+                "cloud_kwh": r[2],
+                "delta_kwh": r[3],
+                "accuracy_pct": r[4],
+                "reports_count": r[5],
+                "reconciled_at": r[6],
+                "status": r[7]
+            })
+        conn.close()
+    except Exception:
+        pass
+    return jsonify({
+        "latest": latest,
+        "history": history
+    })
 
 @app.route("/api/tariff", methods=["GET", "POST"])
 def tariff_api():
@@ -1890,6 +2094,10 @@ def start_background_services():
     """DB, optional cloud backfill, and Tuya poller. Not run on import (keeps tests clean)."""
     global _poller_thread
     init_db()
+    try:
+        state["last_energy_reconciliation"] = get_latest_reconciliation()
+    except Exception:
+        pass
     try:
         sync_cloud_history()
     except Exception:

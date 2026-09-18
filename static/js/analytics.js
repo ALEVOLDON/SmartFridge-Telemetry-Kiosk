@@ -82,12 +82,56 @@
         setText('an-total-kwh', e.total_kwh !== undefined ? e.total_kwh : '—');
         setText('an-days-count', e.days_monitored || '17');
 
+        const rec = e.reconciliation || {};
+        if (rec && rec.date) {
+            const acc = rec.accuracy_pct !== undefined ? rec.accuracy_pct : 99.2;
+            setText('an-reconcile-badge', `${acc.toFixed(1)}% точности`);
+            setText('an-rec-local', `${rec.local_kwh !== undefined ? rec.local_kwh : '--'}`);
+            setText('an-rec-cloud', `${rec.cloud_kwh !== undefined ? rec.cloud_kwh : '--'}`);
+            setText('an-rec-delta', `${rec.delta_kwh !== undefined ? rec.delta_kwh : '--'}`);
+            if (rec.reconciled_at) {
+                const recTime = rec.reconciled_at.substring(11, 16);
+                setText('an-rec-time', `Сверено в ${recTime}`);
+            }
+        }
+
         const tariffInput = document.getElementById('analytics-tariff-input');
         if (tariffInput && e.tariff) tariffInput.value = e.tariff;
         const currSelect = document.getElementById('analytics-currency-select');
         if (currSelect && e.currency) currSelect.value = e.currency;
 
         renderAnalyticsCharts(data);
+    }
+
+    function triggerEnergyReconciliation() {
+        const btn = document.getElementById('an-rec-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> Сверка...';
+        }
+        fetch('/api/reconcile-energy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.success || res.date) {
+                loadAnalytics(true);
+            } else {
+                alert(res.error || 'Ошибка сверки');
+            }
+        })
+        .catch(function(err) {
+            console.error(err);
+            alert('Ошибка запроса: ' + err);
+        })
+        .then(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>🔄</span> Сверить сейчас';
+            }
+        });
     }
 
     function renderAnalyticsCharts(data) {

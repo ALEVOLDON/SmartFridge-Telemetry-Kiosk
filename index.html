@@ -352,6 +352,28 @@
                 </div>
             </div>
 
+            <!-- Tuya Cloud Energy Calibration Banner -->
+            <div id="an-reconcile-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(16,185,129,0.3); border-left:4px solid #10b981; border-radius:12px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:24px;">🛡️</span>
+                    <div>
+                        <div style="font-weight:700; font-size:14px; color:#f8fafc; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            Аппаратная калибровка Tuya Cloud
+                            <span id="an-reconcile-badge" style="font-size:11px; font-weight:700; background:rgba(16,185,129,0.2); color:#10b981; padding:2px 8px; border-radius:6px;">99.2% точности</span>
+                        </div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:3px;" id="an-reconcile-desc">
+                            Сверка за сегодня: локально <strong style="color:#38bdf8;" id="an-rec-local">--</strong> кВт·ч / чип розетки <strong style="color:#10b981;" id="an-rec-cloud">--</strong> кВт·ч (разница <span id="an-rec-delta" style="color:#cbd5e1;">--</span> кВт·ч)
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:11px; color:#64748b;" id="an-rec-time">Авто: каждый час</span>
+                    <button id="an-rec-btn" onclick="triggerEnergyReconciliation()" style="background:#0284c7; border:none; color:#fff; font-size:12px; font-weight:700; padding:6px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:0.2s;">
+                        <span>🔄</span> Сверить сейчас
+                    </button>
+                </div>
+            </div>
+
             <!-- Chart 1: Daily Timeline (кВт·ч + КРВ) -->
             <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:18px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">

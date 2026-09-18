@@ -415,22 +415,38 @@ function toggleFullScreen() {
                 "food_safety": "🟢 Оценка без датчика: за ≤4 ч камера обычно теряет около 1°C"
             }
         };
-    }
+    let statusAbortCtrl = null;
 
     function pollStatus() {
         if (isGhPages) {
             handleStatusPayload(generateMockStatus());
             return;
         }
-        fetch('/api/status')
-            .then(r => r.json())
-            .then(data => {
+        if (statusAbortCtrl) {
+            try { statusAbortCtrl.abort(); } catch (e) {}
+        }
+        statusAbortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = setTimeout(function() {
+            if (statusAbortCtrl) {
+                try { statusAbortCtrl.abort(); } catch (e) {}
+            }
+        }, 2500);
+
+        const opts = statusAbortCtrl ? { signal: statusAbortCtrl.signal } : {};
+        fetch('/api/status', opts)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                clearTimeout(timer);
                 handleStatusPayload(data);
             })
-            .catch(err => {
-                console.error(err);
+            .catch(function(err) {
+                clearTimeout(timer);
+                if (err && (err.name === 'AbortError' || err.message === 'The user aborted a request.')) {
+                    return; // silent abort
+                }
+                console.error('pollStatus error:', err);
                 failedPolls++;
-                if (failedPolls >= 2) {
+                if (failedPolls >= 5) { // require 5 consecutive failures (~15s)
                     autoDiscoverNewIP();
                 }
             });
@@ -953,17 +969,35 @@ function toggleFullScreen() {
     }
 
     
+    let historyAbortCtrl = null;
+
     function updateCyclesTable() {
         if (isGhPages) {
             handleHistoryPayload(mockHistoryData);
             return;
         }
-        fetch('/api/history?limit=30')
-            .then(r => r.json())
-            .then(data => {
+        if (historyAbortCtrl) {
+            try { historyAbortCtrl.abort(); } catch (e) {}
+        }
+        historyAbortCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = setTimeout(function() {
+            if (historyAbortCtrl) {
+                try { historyAbortCtrl.abort(); } catch (e) {}
+            }
+        }, 4000);
+
+        const opts = historyAbortCtrl ? { signal: historyAbortCtrl.signal } : {};
+        fetch('/api/history?limit=30', opts)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                clearTimeout(timer);
                 handleHistoryPayload(data);
             })
-            .catch(console.error);
+            .catch(function(err) {
+                clearTimeout(timer);
+                if (err && (err.name === 'AbortError' || err.message === 'The user aborted a request.')) return;
+                console.error('updateCyclesTable error:', err);
+            });
     }
 
     function handleHistoryPayload(data) {
@@ -1050,3 +1084,15 @@ function toggleFullScreen() {
     updateSoundButtonUI();
     pollStatus();
     updateCyclesTable();
+
+    // Instant wake-up upon screen unlock, tablet wake, or switching back to tab
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            pollStatus();
+            updateCyclesTable();
+        }
+    });
+    window.addEventListener('focus', function() {
+        pollStatus();
+        updateCyclesTable();
+    });
