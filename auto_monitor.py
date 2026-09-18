@@ -38,6 +38,14 @@ try:
 except ImportError:
     HAS_WINOTIFY = False
 
+try:
+    from telegram_bot import FridgeTelegramBot, DEFAULT_REPLY_KEYBOARD
+    HAS_TELEGRAM = True
+except ImportError:
+    HAS_TELEGRAM = False
+    FridgeTelegramBot = None
+    DEFAULT_REPLY_KEYBOARD = None
+
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(APP_DIR, "config.json")
 DB_FILE = os.path.join(APP_DIR, "fridge_data.db")
@@ -109,6 +117,7 @@ state = LockedState({
 })
 
 _poller_thread = None
+_telegram_bot = None
 _schema_ready = False
 _schema_lock = threading.Lock()
 
@@ -308,7 +317,10 @@ def load_config():
         "local_version": 3.5,
         "lan_subnet": "192.168.0.0/24",
         "last_stop_time": None,
-        "current_start_time": None
+        "current_start_time": None,
+        "telegram_bot_token": "",
+        "telegram_chat_id": "",
+        "telegram_enabled": False
     }
     if os.path.exists(CONFIG_FILE):
         try:
@@ -823,6 +835,11 @@ def check_cold_boot_blackout():
                 save_config(cfg_c)
                 conn.commit()
                 update_last_blackout_state()
+                if _telegram_bot:
+                    try:
+                        _telegram_bot.notify_blackout_resolved(last_ts_str, end_iso, int(gap_sec), safety)
+                    except Exception:
+                        pass
         conn.close()
     except Exception:
         pass
@@ -880,6 +897,11 @@ def persist_open_cycle():
 
 def _on_process_stop(signum, frame):
     persist_open_cycle()
+    if _telegram_bot:
+        try:
+            _telegram_bot.stop()
+        except Exception:
+            pass
     raise SystemExit(0)
 
 _local_dev = None
@@ -1380,6 +1402,11 @@ def tuya_poller():
                                 """, (last_m[0], now_iso, int(gap_sec), safety))
                                 conn.commit()
                                 update_last_blackout_state()
+                                if _telegram_bot:
+                                    try:
+                                        _telegram_bot.notify_blackout_resolved(last_m[0], now_iso, int(gap_sec), safety)
+                                    except Exception:
+                                        pass
 
                     tf = None if state.get("temp_freezer_estimated", True) else state.get("temp_freezer")
                     tr = None if state.get("temp_fridge_estimated", True) else state.get("temp_fridge")
@@ -1418,6 +1445,12 @@ def tuya_poller():
                 except Exception as err:
                     print("Hourly reconciliation notice:", err)
             threading.Thread(target=_bg_hourly, daemon=True).start()
+
+        if _telegram_bot:
+            try:
+                _telegram_bot.check_watchdogs()
+            except Exception:
+                pass
 
         time.sleep(max(2, int(sleep_sec)))
 
@@ -1506,16 +1539,30 @@ def config_api():
             cfg["temp_sensor_id"] = data["temp_sensor_id"].strip()
         if data.get("lan_subnet"):
             cfg["lan_subnet"] = str(parse_lan_network(data["lan_subnet"]))
+        if "telegram_bot_token" in data and "..." not in data["telegram_bot_token"] and data["telegram_bot_token"] != "********":
+            cfg["telegram_bot_token"] = data["telegram_bot_token"].strip()
+        if "telegram_chat_id" in data:
+            cfg["telegram_chat_id"] = str(data["telegram_chat_id"]).strip()
+        if "telegram_enabled" in data:
+            cfg["telegram_enabled"] = bool(data["telegram_enabled"])
         save_config(cfg)
+        if _telegram_bot:
+            _telegram_bot.update_credentials(
+                cfg.get("telegram_bot_token", ""),
+                cfg.get("telegram_chat_id", ""),
+                cfg.get("telegram_enabled", False)
+            )
         return jsonify({"status": "saved"})
     
     cfg = load_config()
     is_local = is_localhost_request()
     raw_key = cfg.get("api_key", "")
     raw_dev = cfg.get("device_id", "")
+    raw_tg = cfg.get("telegram_bot_token", "")
     
     safe_key = raw_key if is_local else (raw_key[:4] + "..." + raw_key[-4:] if len(raw_key) > 8 else "***")
     safe_dev = raw_dev if is_local else (raw_dev[:4] + "..." + raw_dev[-4:] if len(raw_dev) > 8 else "***")
+    safe_tg = raw_tg if is_local else (raw_tg[:4] + "..." + raw_tg[-4:] if len(raw_tg) > 8 else "***") if raw_tg else ""
     
     safe_cfg = {
         "api_region": cfg.get("api_region", "eu"),
@@ -1523,9 +1570,47 @@ def config_api():
         "api_secret": "********" if cfg.get("api_secret") else "",
         "device_id": safe_dev,
         "temp_sensor_id": cfg.get("temp_sensor_id", ""),
-        "lan_subnet": cfg.get("lan_subnet", "192.168.0.0/24")
+        "lan_subnet": cfg.get("lan_subnet", "192.168.0.0/24"),
+        "telegram_bot_token": safe_tg,
+        "telegram_chat_id": cfg.get("telegram_chat_id", ""),
+        "telegram_enabled": bool(cfg.get("telegram_enabled", False))
     }
     return jsonify(safe_cfg)
+
+@app.route("/api/test_telegram", methods=["POST"])
+def test_telegram_api():
+    if not is_lan_request():
+        return jsonify({"error": "Forbidden: LAN access only"}), 403
+    cfg = load_config()
+    token = cfg.get("telegram_bot_token", "").strip()
+    chat_id = cfg.get("telegram_chat_id", "").strip()
+    if not token or not chat_id:
+        return jsonify({"success": False, "error": "Токен или Chat ID не заданы в конфигурации"}), 400
+
+    global _telegram_bot
+    if not _telegram_bot and HAS_TELEGRAM:
+        _telegram_bot = FridgeTelegramBot(
+            token=token,
+            chat_id=chat_id,
+            enabled=True,
+            state_ref=state,
+            db_connect_fn=db_connect,
+            reconcile_fn=reconcile_energy_with_cloud,
+            config_fn=load_config
+        )
+    elif _telegram_bot:
+        _telegram_bot.update_credentials(token, chat_id, True)
+
+    if _telegram_bot:
+        ok = _telegram_bot.send_message(
+            "🔔 <b>Тест связи с Telegram!</b>\n\nМонитор холодильника Samsung RT34MB успешно подключён к вашему чату.",
+            chat_id=chat_id,
+            reply_markup=DEFAULT_REPLY_KEYBOARD
+        )
+        if ok:
+            return jsonify({"success": True, "message": "Тестовое сообщение успешно отправлено!"})
+        return jsonify({"success": False, "error": "Не удалось отправить сообщение. Проверьте токен бота и Chat ID."}), 500
+    return jsonify({"success": False, "error": "Модуль Telegram недоступен"}), 500
 
 def build_live_journal_row():
     """Open rest/work so the journal is not stuck on the last finished cycle."""
@@ -2109,6 +2194,22 @@ def start_background_services():
     if _poller_thread is None or not _poller_thread.is_alive():
         _poller_thread = threading.Thread(target=tuya_poller, daemon=True)
         _poller_thread.start()
+    global _telegram_bot
+    if _telegram_bot is None and HAS_TELEGRAM:
+        try:
+            cfg = load_config()
+            _telegram_bot = FridgeTelegramBot(
+                token=cfg.get("telegram_bot_token", ""),
+                chat_id=cfg.get("telegram_chat_id", ""),
+                enabled=cfg.get("telegram_enabled", False),
+                state_ref=state,
+                db_connect_fn=db_connect,
+                reconcile_fn=reconcile_energy_with_cloud,
+                config_fn=load_config
+            )
+            _telegram_bot.start()
+        except Exception as err:
+            print("Failed to start telegram bot:", err)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SmartFridge Telemetry Kiosk Server")

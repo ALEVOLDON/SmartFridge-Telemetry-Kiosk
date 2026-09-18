@@ -50,6 +50,16 @@ function toggleFullScreen() {
                 document.getElementById('cfg-secret').value = cfg.api_secret || '';
                 document.getElementById('cfg-device').value = cfg.device_id || '';
                 document.getElementById('cfg-temp-sensor').value = cfg.temp_sensor_id || '';
+
+                const tgToken = document.getElementById('cfg-tg-token');
+                const tgChat = document.getElementById('cfg-tg-chat-id');
+                const tgEn = document.getElementById('cfg-tg-enabled');
+                const tgSt = document.getElementById('tg-test-status');
+                if (tgToken) tgToken.value = cfg.telegram_bot_token || '';
+                if (tgChat) tgChat.value = cfg.telegram_chat_id || '';
+                if (tgEn) tgEn.checked = Boolean(cfg.telegram_enabled);
+                if (tgSt) tgSt.style.display = 'none';
+
                 document.getElementById('settings-modal').style.display = 'flex';
             });
     }
@@ -59,12 +69,19 @@ function toggleFullScreen() {
     }
 
     function saveSettings() {
+        const tgToken = document.getElementById('cfg-tg-token');
+        const tgChat = document.getElementById('cfg-tg-chat-id');
+        const tgEn = document.getElementById('cfg-tg-enabled');
+
         const payload = {
             api_region: document.getElementById('cfg-region').value,
             api_key: document.getElementById('cfg-key').value,
             api_secret: document.getElementById('cfg-secret').value,
             device_id: document.getElementById('cfg-device').value,
-            temp_sensor_id: document.getElementById('cfg-temp-sensor').value
+            temp_sensor_id: document.getElementById('cfg-temp-sensor').value,
+            telegram_bot_token: tgToken ? tgToken.value : '',
+            telegram_chat_id: tgChat ? tgChat.value : '',
+            telegram_enabled: tgEn ? tgEn.checked : false
         };
         fetch('/api/config', {
             method: 'POST',
@@ -73,6 +90,58 @@ function toggleFullScreen() {
         }).then(() => {
             closeSettings();
             pollStatus();
+        });
+    }
+
+    function testTelegram() {
+        const stEl = document.getElementById('tg-test-status');
+        if (stEl) {
+            stEl.style.display = 'block';
+            stEl.style.color = '#38bdf8';
+            stEl.innerText = '⏳ Отправка тестового сообщения...';
+        }
+
+        const tgToken = document.getElementById('cfg-tg-token');
+        const tgChat = document.getElementById('cfg-tg-chat-id');
+        const tgEn = document.getElementById('cfg-tg-enabled');
+
+        const payload = {
+            api_region: document.getElementById('cfg-region').value,
+            api_key: document.getElementById('cfg-key').value,
+            api_secret: document.getElementById('cfg-secret').value,
+            device_id: document.getElementById('cfg-device').value,
+            temp_sensor_id: document.getElementById('cfg-temp-sensor').value,
+            telegram_bot_token: tgToken ? tgToken.value : '',
+            telegram_chat_id: tgChat ? tgChat.value : '',
+            telegram_enabled: tgEn ? tgEn.checked : false
+        };
+
+        fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(() => {
+            return fetch('/api/test_telegram', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({})
+            });
+        }).then(r => r.json())
+        .then(res => {
+            if (stEl) {
+                if (res.success) {
+                    stEl.style.color = '#10b981';
+                    stEl.innerText = '✅ ' + (res.message || 'Сообщение доставлено в Telegram!');
+                } else {
+                    stEl.style.color = '#ef4444';
+                    stEl.innerText = '❌ ' + (res.error || 'Ошибка отправки');
+                }
+            }
+        }).catch(err => {
+            if (stEl) {
+                stEl.style.color = '#ef4444';
+                stEl.innerText = '❌ Ошибка сети: ' + err.message;
+            }
         });
     }
 
