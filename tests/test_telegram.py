@@ -43,6 +43,35 @@ class TestTelegramBot(unittest.TestCase):
         self.assertFalse(self.bot.is_authorized("111222333"))
         self.assertFalse(self.bot.is_authorized(""))
 
+    def test_multi_user_authorization(self):
+        """Comma, space, and semicolon-separated chat IDs are all properly authorized."""
+        bot = FridgeTelegramBot(
+            token="fake",
+            chat_id="111, 222; 333",
+            enabled=True,
+            state_ref=self.mock_state
+        )
+        self.assertEqual(bot.chat_ids, ["111", "222", "333"])
+        self.assertTrue(bot.is_authorized("111"))
+        self.assertTrue(bot.is_authorized(222))
+        self.assertTrue(bot.is_authorized("333"))
+        self.assertFalse(bot.is_authorized("444"))
+
+    @patch.object(FridgeTelegramBot, "send_message")
+    def test_multi_user_send_alert_broadcasts(self, mock_send_message):
+        """Alerts are broadcast to all whitelisted chat IDs."""
+        mock_send_message.return_value = True
+        bot = FridgeTelegramBot(
+            token="fake",
+            chat_id="111, 222",
+            enabled=True,
+            state_ref=self.mock_state
+        )
+        bot.send_alert("⚠️ Test Alert")
+        self.assertEqual(mock_send_message.call_count, 2)
+        called_cids = [call[1]["chat_id"] for call in mock_send_message.call_args_list]
+        self.assertEqual(called_cids, ["111", "222"])
+
     def test_format_status_message(self):
         """Status message contains power, voltage, mode and temperatures."""
         text = self.bot.format_status_message()

@@ -40,11 +40,22 @@ DEFAULT_REPLY_KEYBOARD = {
 class FridgeTelegramBot:
     """Lightweight, resilient Telegram Bot runner for RT34MB Kiosk."""
 
+    @staticmethod
+    def _parse_chat_ids(raw):
+        """Parse single ID, list, or comma/semicolon/space-separated string of IDs."""
+        if not raw:
+            return []
+        if isinstance(raw, (list, tuple, set)):
+            return [str(x).strip() for x in raw if str(x).strip()]
+        cleaned = str(raw).replace(";", ",").replace(" ", ",")
+        return [x.strip() for x in cleaned.split(",") if x.strip()]
+
     def __init__(self, token="", chat_id="", enabled=False,
                  state_ref=None, db_connect_fn=None, reconcile_fn=None, config_fn=None):
         self.token = str(token).strip()
         self.chat_id = str(chat_id).strip()
-        self.enabled = bool(enabled and self.token and self.chat_id)
+        self.chat_ids = self._parse_chat_ids(chat_id)
+        self.enabled = bool(enabled and self.token and self.chat_ids)
         self.state_ref = state_ref
         self.db_connect_fn = db_connect_fn
         self.reconcile_fn = reconcile_fn
@@ -66,7 +77,8 @@ class FridgeTelegramBot:
         """Update bot configuration at runtime."""
         self.token = str(token).strip()
         self.chat_id = str(chat_id).strip()
-        self.enabled = bool(enabled and self.token and self.chat_id)
+        self.chat_ids = self._parse_chat_ids(chat_id)
+        self.enabled = bool(enabled and self.token and self.chat_ids)
 
     def _api_call(self, method, payload=None, timeout=10):
         """Execute a Telegram Bot API method via HTTP POST."""
@@ -131,16 +143,20 @@ class FridgeTelegramBot:
         return bool(res and res.get("ok"))
 
     def send_alert(self, text, alert_type="alert"):
-        """Send a high-priority watchdog alert to the owner."""
+        """Send a high-priority watchdog alert to all authorized chats."""
         if not self.enabled:
             return False
-        return self.send_message(text, reply_markup=DEFAULT_REPLY_KEYBOARD)
+        sent_any = False
+        for cid in self.chat_ids:
+            if self.send_message(text, chat_id=cid, reply_markup=DEFAULT_REPLY_KEYBOARD):
+                sent_any = True
+        return sent_any
 
     def is_authorized(self, from_chat_id):
-        """Check if incoming message sender matches configured owner."""
-        if not self.chat_id:
+        """Check if incoming message sender matches configured whitelist."""
+        if not self.chat_ids:
             return False
-        return str(from_chat_id).strip() == str(self.chat_id).strip()
+        return str(from_chat_id).strip() in self.chat_ids
 
     # -------------------------------------------------------------------------
     # Message Formatters
@@ -422,6 +438,7 @@ class FridgeTelegramBot:
             return
 
         cmd = text.strip().lower()
+        target_chat = str(from_chat_id).strip()
 
         if cmd in ("/start", "/help", "❓ помощь", "помощь"):
             msg = [
@@ -438,22 +455,22 @@ class FridgeTelegramBot:
                 "",
                 "<i>Кнопки управления закреплены внизу экрана ⬇️</i>"
             ]
-            self.send_message("\n".join(msg), reply_markup=DEFAULT_REPLY_KEYBOARD)
+            self.send_message("\n".join(msg), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         elif cmd in ("/status", "🟢 статус", "статус"):
-            self.send_message(self.format_status_message(), reply_markup=DEFAULT_REPLY_KEYBOARD)
+            self.send_message(self.format_status_message(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         elif cmd in ("/today", "⚡ за сегодня", "за сегодня"):
-            self.send_message(self.format_today_message(), reply_markup=DEFAULT_REPLY_KEYBOARD)
+            self.send_message(self.format_today_message(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         elif cmd in ("/week", "📊 отчёт за неделю", "отчёт за неделю", "отчет за неделю"):
-            self.send_message(self.format_weekly_digest(), reply_markup=DEFAULT_REPLY_KEYBOARD)
+            self.send_message(self.format_weekly_digest(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         elif cmd in ("/audit", "🧠 аудит", "аудит"):
-            self.send_message(self.format_audit_message(), reply_markup=DEFAULT_REPLY_KEYBOARD)
+            self.send_message(self.format_audit_message(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         elif cmd in ("/reconcile", "⚖️ сверить счётчик", "сверить счётчик", "сверить"):
-            self.send_message("⏳ <i>Запуск облачной сверки с чипом розетки Tuya Cloud...</i>")
+            self.send_message("⏳ <i>Запуск облачной сверки с чипом розетки Tuya Cloud...</i>", chat_id=target_chat)
             if self.reconcile_fn:
                 try:
                     res = self.reconcile_fn(force=True)
@@ -471,15 +488,16 @@ class FridgeTelegramBot:
                         f"• Обработано отчётов розетки: <code>{rep}</code>",
                         f"• Статус: <b>{res.get('status', 'aligned')}</b>"
                     ]
-                    self.send_message("\n".join(msg), reply_markup=DEFAULT_REPLY_KEYBOARD)
+                    self.send_message("\n".join(msg), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
                 except Exception as e:
-                    self.send_message(f"❌ Ошибка сверки: {e}", reply_markup=DEFAULT_REPLY_KEYBOARD)
+                    self.send_message(f"❌ Ошибка сверки: {e}", chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
             else:
-                self.send_message("❌ Модуль сверки недоступен.", reply_markup=DEFAULT_REPLY_KEYBOARD)
+                self.send_message("❌ Модуль сверки недоступен.", chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         else:
             self.send_message(
                 "❓ Неизвестная команда. Воспользуйтесь кнопками меню внизу или командой /help.",
+                chat_id=target_chat,
                 reply_markup=DEFAULT_REPLY_KEYBOARD
             )
 
@@ -546,7 +564,8 @@ class FridgeTelegramBot:
             if self._last_weekly_sent_date != today_date:
                 self._last_weekly_sent_date = today_date
                 digest = self.format_weekly_digest()
-                self.send_message(digest, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                for cid in self.chat_ids:
+                    self.send_message(digest, chat_id=cid, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
     def notify_blackout_resolved(self, start_iso, end_iso, dur_sec, safety_status):
         """Immediately alert user when 220V power outage has concluded."""

@@ -1603,16 +1603,29 @@ def test_telegram_api():
         _telegram_bot.update_credentials(token, chat_id, True)
 
     if _telegram_bot:
-        ok = _telegram_bot.send_message(
-            "🔔 <b>Тест связи с Telegram!</b>\n\nМонитор холодильника Samsung RT34MB успешно подключён к вашему чату.",
-            chat_id=chat_id,
-            reply_markup=DEFAULT_REPLY_KEYBOARD
-        )
-        if ok:
-            return jsonify({"success": True, "message": "Тестовое сообщение успешно отправлено!"})
-        err_msg = _telegram_bot.last_error_desc or "Не удалось отправить сообщение"
+        target_ids = FridgeTelegramBot._parse_chat_ids(chat_id) if HAS_TELEGRAM else [chat_id]
+        success_count = 0
+        last_err = ""
+        for cid in target_ids:
+            ok = _telegram_bot.send_message(
+                "🔔 <b>Тест связи с Telegram!</b>\n\nМонитор холодильника Samsung RT34MB успешно подключён к вашему чату.",
+                chat_id=cid,
+                reply_markup=DEFAULT_REPLY_KEYBOARD
+            )
+            if ok:
+                success_count += 1
+            else:
+                last_err = _telegram_bot.last_error_desc
+
+        if success_count == len(target_ids):
+            msg = "Тестовое сообщение успешно отправлено!" if len(target_ids) == 1 else f"Тестовые сообщения отправлены ({success_count} получателям)!"
+            return jsonify({"success": True, "message": msg})
+        elif success_count > 0:
+            return jsonify({"success": True, "message": f"Отправлено {success_count} из {len(target_ids)} чатов. Ошибка: {last_err}"})
+
+        err_msg = last_err or "Не удалось отправить сообщение"
         if "chat not found" in err_msg.lower():
-            err_msg = "Чат не найден! Откройте бота в Telegram и нажмите кнопку 'Запустить' (/start)"
+            err_msg = "Чат не найден! Убедитесь, что все пользователи открыли бота и нажали 'Запустить' (/start)"
         return jsonify({"success": False, "error": err_msg}), 400
     return jsonify({"success": False, "error": "Модуль Telegram недоступен"}), 500
 
