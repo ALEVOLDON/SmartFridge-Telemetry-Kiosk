@@ -157,14 +157,17 @@ class LanPolicyTests(unittest.TestCase):
 
 
 class PagesIndexSyncTests(unittest.TestCase):
-    def test_root_index_matches_static(self):
+    def test_landing_and_kiosk_pages_exist(self):
         root = os.path.join(ROOT, "index.html")
         static = os.path.join(ROOT, "static", "index.html")
+        self.assertTrue(os.path.exists(root), "Root index.html (landing page) must exist")
+        self.assertTrue(os.path.exists(static), "Static index.html (kiosk) must exist")
         with open(root, "r", encoding="utf-8") as f:
-            a = f.read()
+            landing = f.read()
+        self.assertIn("Samsung RT34MB", landing)
         with open(static, "r", encoding="utf-8") as f:
-            b = f.read()
-        self.assertEqual(a, b)
+            kiosk = f.read()
+        self.assertIn("Samsung RT34MB", kiosk)
 
 
 if __name__ == "__main__":

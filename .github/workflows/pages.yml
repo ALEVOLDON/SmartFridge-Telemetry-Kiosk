@@ -23,8 +23,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Sync Pages homepage from static dashboard
-        run: cp static/index.html index.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
