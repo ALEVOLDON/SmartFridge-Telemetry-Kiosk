@@ -60,6 +60,7 @@ class FridgeTelegramBot:
         self._last_long_cycle_alert = 0.0
         self._last_long_defrost_alert = 0.0
         self._last_weekly_sent_date = None
+        self.last_error_desc = ""
 
     def update_credentials(self, token, chat_id, enabled):
         """Update bot configuration at runtime."""
@@ -70,6 +71,7 @@ class FridgeTelegramBot:
     def _api_call(self, method, payload=None, timeout=10):
         """Execute a Telegram Bot API method via HTTP POST."""
         if not self.token:
+            self.last_error_desc = "Токен бота не указан"
             return None
         url = f"https://api.telegram.org/bot{self.token}/{method}"
         headers = {"Content-Type": "application/json"}
@@ -79,18 +81,35 @@ class FridgeTelegramBot:
             try:
                 resp = requests.post(url, data=data, headers=headers, timeout=timeout)
                 if resp.status_code == 200:
+                    self.last_error_desc = ""
                     return resp.json()
+                try:
+                    err_json = resp.json()
+                    self.last_error_desc = err_json.get("description", resp.text)
+                except Exception:
+                    self.last_error_desc = resp.text
                 logger.warning("Telegram API error %s: %s", resp.status_code, resp.text)
             except Exception as e:
+                self.last_error_desc = str(e)
                 logger.debug("Telegram API request error: %s", e)
         else:
             try:
                 import urllib.request
+                import urllib.error
                 req = urllib.request.Request(url, data=data, headers=headers)
                 with urllib.request.urlopen(req, timeout=timeout) as response:
+                    self.last_error_desc = ""
                     return json.loads(response.read().decode("utf-8"))
             except Exception as e:
-                logger.debug("Telegram API urllib error: %s", e)
+                try:
+                    if hasattr(e, "read"):
+                        err_json = json.loads(e.read().decode("utf-8"))
+                        self.last_error_desc = err_json.get("description", str(e))
+                    else:
+                        self.last_error_desc = str(e)
+                except Exception:
+                    self.last_error_desc = str(e)
+                logger.debug("Telegram API error: %s", e)
         return None
 
     def send_message(self, text, chat_id=None, reply_markup=None, parse_mode="HTML"):

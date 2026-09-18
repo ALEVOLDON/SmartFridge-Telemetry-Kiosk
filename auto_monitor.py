@@ -1521,10 +1521,10 @@ def test_notification():
 
 @app.route("/api/config", methods=["GET", "POST"])
 def config_api():
-    """Secure Config Endpoint: Masks secrets on GET, restricts POST to localhost"""
+    """Secure Config Endpoint: Masks secrets on GET, restricts POST to LAN"""
     if request.method == "POST":
-        if not is_localhost_request():
-            return jsonify({"error": "Forbidden: Configuration changes allowed only from localhost"}), 403
+        if not is_lan_request():
+            return jsonify({"error": "Forbidden: LAN access only"}), 403
         data = request.json or {}
         cfg = load_config()
         if data.get("api_region"):
@@ -1581,9 +1581,10 @@ def config_api():
 def test_telegram_api():
     if not is_lan_request():
         return jsonify({"error": "Forbidden: LAN access only"}), 403
+    data = request.json or {}
     cfg = load_config()
-    token = cfg.get("telegram_bot_token", "").strip()
-    chat_id = cfg.get("telegram_chat_id", "").strip()
+    token = str(data.get("telegram_bot_token") or cfg.get("telegram_bot_token", "")).strip()
+    chat_id = str(data.get("telegram_chat_id") or cfg.get("telegram_chat_id", "")).strip()
     if not token or not chat_id:
         return jsonify({"success": False, "error": "Токен или Chat ID не заданы в конфигурации"}), 400
 
@@ -1609,7 +1610,10 @@ def test_telegram_api():
         )
         if ok:
             return jsonify({"success": True, "message": "Тестовое сообщение успешно отправлено!"})
-        return jsonify({"success": False, "error": "Не удалось отправить сообщение. Проверьте токен бота и Chat ID."}), 500
+        err_msg = _telegram_bot.last_error_desc or "Не удалось отправить сообщение"
+        if "chat not found" in err_msg.lower():
+            err_msg = "Чат не найден! Откройте бота в Telegram и нажмите кнопку 'Запустить' (/start)"
+        return jsonify({"success": False, "error": err_msg}), 400
     return jsonify({"success": False, "error": "Модуль Telegram недоступен"}), 500
 
 def build_live_journal_row():
