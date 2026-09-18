@@ -503,7 +503,7 @@
                 </div>
                 <div>
                     <div class="about-title-row">
-                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.6.0</span>
+                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.7.0</span>
                     </div>
                     <div class="about-subtitle">Автономная система энергомониторинга и предиктивной диагностики No-Frost</div>
                 </div>
@@ -632,6 +632,18 @@
 
             <!-- Tab 3: Changelog -->
             <div id="tab-changelog" style="display:none;">
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.7.0 Pro — Tuya Cloud Hardware Calibration & Wake-Up Engine</span>
+                        <span class="changelog-date">18.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Аппаратная калибровка энергии (Tuya Cloud Add-Ele):</strong> автоматическая сверка локального интегрального расчёта с аппаратным чипом розетки каждый час в фоновом потоке (XX:05). Подтверждённая точность — 99.9% при расходе всего ~1.4% месячной квоты Tuya.</div>
+                    <div class="changelog-point"><strong>Устранение задержки пробуждения (Wake-Up Engine):</strong> добавлены таймауты запросов через <code>AbortController</code> (2.5 с / 4.0 с), слушатели событий <code>visibilitychange</code> и <code>focus</code> для мгновенного возобновления опроса при включении экрана планшета.</div>
+                    <div class="changelog-point"><strong>Атомарная сохранность конфигов при авариях 220В:</strong> внедрена технология <code>atomic_write</code> для предотвращения повреждения JSON-конфигурации при внезапных отключениях питания.</div>
+                    <div class="changelog-point"><strong>Сетевая безопасность и LAN-Guard:</strong> строгая изоляция административных и облачных эндпоинтов (доступ разрешён только из локальной подсети), защита междоменных запросов CORS Origin Whitelist.</div>
+                    <div class="changelog-point"><strong>Модульная архитектура и тесты:</strong> вынос чистой термодинамической логики компрессора в <code>fridge_logic.py</code>, разделение фронтенда и полный тестовый набор из 33 модульных тестов.</div>
+                </div>
+
                 <div class="changelog-card">
                     <div class="changelog-ver">
                         <span>v3.6.0 Pro — Energy & Health Analytics Intelligence</span>
