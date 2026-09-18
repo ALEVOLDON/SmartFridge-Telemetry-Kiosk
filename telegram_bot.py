@@ -605,10 +605,25 @@ class FridgeTelegramBot:
                 logger.debug("Polling iteration error: %s", e)
                 time.sleep(5)
 
+    def _setup_bot_profile(self):
+        """Register bot commands menu in Telegram."""
+        if not self.token:
+            return
+        commands = [
+            {"command": "status", "description": "🟢 Моментальный снимок мощности и режима"},
+            {"command": "week", "description": "📊 Еженедельный дайджест (кВт⋅ч, затраты, КРВ)"},
+            {"command": "today", "description": "⚡ Статистика работы за текущие сутки"},
+            {"command": "reconcile", "description": "⚖️ Сверка счётчика с чипом Tuya Cloud"},
+            {"command": "audit", "description": "🧠 Экспертный термодинамический аудит"},
+            {"command": "help", "description": "❓ Справка и быстрые кнопки"}
+        ]
+        self._api_call("setMyCommands", {"commands": commands})
+
     def start(self):
         """Start the background bot thread."""
         if self._thread and self._thread.is_alive():
             return
+        self._setup_bot_profile()
         self._stop_event.clear()
         self._thread = threading.Thread(target=self._poll_updates, name="TelegramBotPoll", daemon=True)
         self._thread.start()
