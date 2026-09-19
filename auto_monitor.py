@@ -1480,6 +1480,7 @@ def index():
     return send_from_directory(STATIC_DIR, "index.html")
 
 @app.route("/ipad")
+@app.route("/ipad.html")
 def ipad():
     return send_from_directory(STATIC_DIR, "ipad.html")
 
@@ -2227,6 +2228,13 @@ def start_background_services():
             _telegram_bot.start()
         except Exception as err:
             print("Failed to start telegram bot:", err)
+
+@app.route("/<path:filename>")
+def serve_root_static(filename):
+    target = os.path.join(STATIC_DIR, filename)
+    if os.path.isfile(target):
+        return send_from_directory(STATIC_DIR, filename)
+    return jsonify({"error": f"File '{filename}' not found"}), 404
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SmartFridge Telemetry Kiosk Server")

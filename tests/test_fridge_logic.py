@@ -169,6 +169,19 @@ class PagesIndexSyncTests(unittest.TestCase):
             kiosk = f.read()
         self.assertIn("Samsung RT34MB", kiosk)
 
+    def test_static_assets_relative_paths(self):
+        static = os.path.join(ROOT, "static", "index.html")
+        ipad = os.path.join(ROOT, "static", "ipad.html")
+        with open(static, "r", encoding="utf-8") as f:
+            kiosk_content = f.read()
+        self.assertNotIn('href="static/', kiosk_content)
+        self.assertNotIn('src="static/', kiosk_content)
+        with open(ipad, "r", encoding="utf-8") as f:
+            ipad_content = f.read()
+        self.assertNotIn('href="/static/', ipad_content)
+        self.assertNotIn('src="/static/', ipad_content)
+        self.assertNotIn("url('/static/", ipad_content)
+
 
 if __name__ == "__main__":
     unittest.main()

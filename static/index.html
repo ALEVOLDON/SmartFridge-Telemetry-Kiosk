@@ -6,20 +6,20 @@
     <title>Samsung RT34MB — Монитор</title>
     
     <!-- PWA & Mobile Icons -->
-    <link rel="manifest" href="static/manifest.json">
-    <link rel="icon" type="image/png" sizes="64x64" href="static/favicon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
     
-    <script src="static/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="static/css/dashboard.css?v=3.7.0">
+    <script src="chart.umd.min.js"></script>
+    <link rel="stylesheet" href="css/dashboard.css?v=3.7.0">
 
 </head>
 <body>
-<audio id="pc-audio-player" preload="auto" src="static/chime.wav" style="display:none;"></audio>
+<audio id="pc-audio-player" preload="auto" src="chime.wav" style="display:none;"></audio>
 
 <!-- Mobile Slide-out Drawer Menu -->
 <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeMobileDrawer()"></div>
@@ -54,9 +54,13 @@
         <span>ℹ️</span>
         <span>О программе, FAQ и версии</span>
     </button>
-    <a class="drawer-item" href="/ipad">
+    <a class="drawer-item" href="ipad.html">
         <span>📟</span>
         <span>Режим Киоска iPad / Планшет</span>
+    </a>
+    <a class="drawer-item" href="../index.html" id="drawer-landing-btn" style="display:none;">
+        <span>🌐</span>
+        <span>На страницу презентации</span>
     </a>
 
     <!-- Section 2: Controls & Audio -->
@@ -107,6 +111,7 @@
             <button class="btn btn-secondary" onclick="openAboutModal()" style="color:#38bdf8; border-color:rgba(56,189,248,0.4);">ℹ️ О программе & FAQ</button>
             <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки API</button>
             <button class="btn btn-secondary" onclick="printReport()">🖨 Печать отчета</button>
+            <a class="btn btn-secondary" href="../index.html" id="desktop-landing-btn" style="display:none; color:#f8fafc; border-color:rgba(255,255,255,0.25);">← Презентация</a>
         </div>
         <!-- Mobile Menu Hamburger Trigger -->
         <button class="mobile-menu-btn" onclick="openMobileDrawer()" id="mobile-menu-toggle">
@@ -827,8 +832,8 @@
     </div>
 </div>
 
-<script src="static/js/dashboard.js?v=3.7.0"></script>
-<script src="static/js/analytics.js?v=3.7.0"></script>
+<script src="js/dashboard.js?v=3.7.0"></script>
+<script src="js/analytics.js?v=3.7.0"></script>
 
 
 </body>

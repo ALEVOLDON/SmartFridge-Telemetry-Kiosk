@@ -14,7 +14,67 @@
         if (modal) modal.style.display = 'none';
     }
 
+    const isGhPagesAnalytics = window.location.hostname.includes('github.io') || window.location.protocol === 'file:' || window.location.search.includes('demo=1');
+
+    const mockAnalyticsPayload = {
+        health_score: 95,
+        energy: {
+            daily_avg_kwh: 0.94,
+            monthly_forecast_kwh: 28.2,
+            monthly_cost: 141,
+            currency: '₽',
+            daily_cost: 4.7,
+            defrost_share_pct: 18.5,
+            total_kwh: 16.0,
+            days_monitored: 17,
+            tariff: 5.0,
+            reconciliation: {
+                date: "19.09.2026",
+                accuracy_pct: 99.4,
+                local_kwh: 0.942,
+                cloud_kwh: 0.948,
+                delta_kwh: 0.006,
+                reconciled_at: "2026-09-19T03:00:00"
+            }
+        },
+        voltage_health: {
+            red_hours: 0,
+            norm_pct: 99.8
+        },
+        defrost_health: {
+            avg_duration_min: 24,
+            total_count: 8
+        },
+        daily_timeline: [
+            { date_short: "13.09", kwh: 0.92, krv: 0.32 },
+            { date_short: "14.09", kwh: 0.96, krv: 0.35 },
+            { date_short: "15.09", kwh: 0.91, krv: 0.31 },
+            { date_short: "16.09", kwh: 0.98, krv: 0.36 },
+            { date_short: "17.09", kwh: 0.93, krv: 0.33 },
+            { date_short: "18.09", kwh: 0.95, krv: 0.34 },
+            { date_short: "19.09", kwh: 0.94, krv: 0.34 }
+        ],
+        hourly_profile: [
+            { hour: "00", duty_pct: 30, avg_voltage: 221 },
+            { hour: "02", duty_pct: 28, avg_voltage: 223 },
+            { hour: "04", duty_pct: 32, avg_voltage: 224 },
+            { hour: "06", duty_pct: 35, avg_voltage: 222 },
+            { hour: "08", duty_pct: 55, avg_voltage: 219 },
+            { hour: "10", duty_pct: 42, avg_voltage: 218 },
+            { hour: "12", duty_pct: 45, avg_voltage: 217 },
+            { hour: "14", duty_pct: 38, avg_voltage: 218 },
+            { hour: "16", duty_pct: 40, avg_voltage: 216 },
+            { hour: "18", duty_pct: 50, avg_voltage: 215 },
+            { hour: "20", duty_pct: 48, avg_voltage: 217 },
+            { hour: "22", duty_pct: 35, avg_voltage: 220 }
+        ]
+    };
+
     function loadAnalytics(forceRefresh) {
+        if (isGhPagesAnalytics) {
+            renderAnalytics(mockAnalyticsPayload);
+            return;
+        }
         const tariffInput = document.getElementById('analytics-tariff-input');
         const currencySelect = document.getElementById('analytics-currency-select');
         let url = '/api/analytics';
@@ -30,7 +90,8 @@
                 renderAnalytics(data);
             })
             .catch(err => {
-                console.error('Ошибка загрузки аналитики:', err);
+                console.error('Ошибка загрузки аналитики, переключение на демо:', err);
+                renderAnalytics(mockAnalyticsPayload);
             });
     }
 
@@ -108,6 +169,16 @@
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<span>⏳</span> Сверка...';
+        }
+        if (isGhPagesAnalytics) {
+            setTimeout(function() {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🔄</span> Сверить сейчас';
+                }
+                loadAnalytics(true);
+            }, 600);
+            return;
         }
         fetch('/api/reconcile-energy', {
             method: 'POST',

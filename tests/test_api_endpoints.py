@@ -49,6 +49,17 @@ class ApiEndpointsSecurityAndCorsTests(unittest.TestCase):
         self.assertIn("defrost_health", data)
         self.assertIn("voltage_health", data)
 
+    def test_root_static_file_serving(self):
+        res_css = self.client.get("/css/dashboard.css", environ_base={"REMOTE_ADDR": "127.0.0.1"})
+        self.assertEqual(res_css.status_code, 200)
+        res_css.close()
+        res_ipad = self.client.get("/ipad.html", environ_base={"REMOTE_ADDR": "127.0.0.1"})
+        self.assertEqual(res_ipad.status_code, 200)
+        res_ipad.close()
+        res_static_css = self.client.get("/static/css/dashboard.css", environ_base={"REMOTE_ADDR": "127.0.0.1"})
+        self.assertEqual(res_static_css.status_code, 200)
+        res_static_css.close()
+
 
 if __name__ == "__main__":
     unittest.main()

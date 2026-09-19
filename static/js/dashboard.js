@@ -45,23 +45,39 @@ function toggleFullScreen() {
         fetch('/api/config')
             .then(r => r.json())
             .then(cfg => {
-                document.getElementById('cfg-region').value = cfg.api_region || 'eu';
-                document.getElementById('cfg-key').value = cfg.api_key || '';
-                document.getElementById('cfg-secret').value = cfg.api_secret || '';
-                document.getElementById('cfg-device').value = cfg.device_id || '';
-                document.getElementById('cfg-temp-sensor').value = cfg.temp_sensor_id || '';
-
-                const tgToken = document.getElementById('cfg-tg-token');
-                const tgChat = document.getElementById('cfg-tg-chat-id');
-                const tgEn = document.getElementById('cfg-tg-enabled');
-                const tgSt = document.getElementById('tg-test-status');
-                if (tgToken) tgToken.value = cfg.telegram_bot_token || '';
-                if (tgChat) tgChat.value = cfg.telegram_chat_id || '';
-                if (tgEn) tgEn.checked = Boolean(cfg.telegram_enabled);
-                if (tgSt) tgSt.style.display = 'none';
-
-                document.getElementById('settings-modal').style.display = 'flex';
+                populateSettingsUI(cfg);
+            })
+            .catch(() => {
+                populateSettingsUI({
+                    api_region: 'eu',
+                    api_key: 'demo_tuya_key_preview',
+                    api_secret: '********************************',
+                    device_id: 'bf429...demo',
+                    temp_sensor_id: '',
+                    telegram_bot_token: '',
+                    telegram_chat_id: '',
+                    telegram_enabled: false
+                });
             });
+    }
+
+    function populateSettingsUI(cfg) {
+        document.getElementById('cfg-region').value = cfg.api_region || 'eu';
+        document.getElementById('cfg-key').value = cfg.api_key || '';
+        document.getElementById('cfg-secret').value = cfg.api_secret || '';
+        document.getElementById('cfg-device').value = cfg.device_id || '';
+        document.getElementById('cfg-temp-sensor').value = cfg.temp_sensor_id || '';
+
+        const tgToken = document.getElementById('cfg-tg-token');
+        const tgChat = document.getElementById('cfg-tg-chat-id');
+        const tgEn = document.getElementById('cfg-tg-enabled');
+        const tgSt = document.getElementById('tg-test-status');
+        if (tgToken) tgToken.value = cfg.telegram_bot_token || '';
+        if (tgChat) tgChat.value = cfg.telegram_chat_id || '';
+        if (tgEn) tgEn.checked = Boolean(cfg.telegram_enabled);
+        if (tgSt) tgSt.style.display = 'none';
+
+        document.getElementById('settings-modal').style.display = 'flex';
     }
 
     function closeSettings() {
@@ -419,7 +435,7 @@ function toggleFullScreen() {
     
     
     // ================= GITHUB PAGES DEMO MODE FALLBACK =================
-    const isGhPages = window.location.hostname.includes('github.io') || window.location.protocol === 'file:';
+    const isGhPages = window.location.hostname.includes('github.io') || window.location.protocol === 'file:' || window.location.search.includes('demo=1');
     let demoTimer = 0;
     let demoPower = 132.4;
     let demoVoltage = 219.8;
@@ -434,6 +450,40 @@ function toggleFullScreen() {
         { "full_end": "2026-09-01T08:05:00", "date": "01.09.2026", "date_short": "01.09", "start": "07:45", "end": "08:05", "duration_sec": 1200, "duration_str": "20 мин", "rest_sec": 1080, "rest_str": "18 мин", "rest_start": "08:05", "rest_end": "08:23", "krv": "0.53", "avg_power": 164.5, "avg_voltage": 212.0, "cycle_type": "defrost" },
         { "full_end": "2026-09-01T06:50:00", "date": "01.09.2026", "date_short": "01.09", "start": "06:22", "end": "06:50", "duration_sec": 1680, "duration_str": "28 мин", "rest_sec": 3300, "rest_str": "55 мин", "rest_start": "06:50", "rest_end": "07:45", "krv": "0.34", "avg_power": 132.1, "avg_voltage": 214.2, "cycle_type": "cooling" }
     ];
+
+    const mockHistoryData = {
+        cycles: sampleCycles,
+        blackouts: [
+            {
+                start: "29.08.2026 13:00",
+                end: "29.08.2026 15:03",
+                duration_str: "2 ч 3 мин",
+                status: "normal",
+                food_safety: "🟢 Оценка без датчика: за ≤4 ч камера обычно теряет около 1°C"
+            }
+        ],
+        summary: {
+            overall_krv: "0.34",
+            krv_status: "Оптимальный",
+            total_cycles: 6
+        }
+    };
+
+    if (isGhPages) {
+        fullArchiveCyclesData = sampleCycles;
+        allBlackoutsData = mockHistoryData.blackouts;
+        function showLandingLinks() {
+            const deskLanding = document.getElementById('desktop-landing-btn');
+            if (deskLanding) deskLanding.style.display = 'inline-flex';
+            const drawerLanding = document.getElementById('drawer-landing-btn');
+            if (drawerLanding) drawerLanding.style.display = 'flex';
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', showLandingLinks);
+        } else {
+            showLandingLinks();
+        }
+    }
 
     function getMockStatus() {
         demoTimer++;
@@ -490,7 +540,7 @@ function toggleFullScreen() {
 
     function pollStatus() {
         if (isGhPages) {
-            handleStatusPayload(generateMockStatus());
+            handleStatusPayload(getMockStatus());
             return;
         }
         if (statusAbortCtrl) {
