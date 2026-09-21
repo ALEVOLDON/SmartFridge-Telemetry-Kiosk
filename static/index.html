@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
     
     <script src="chart.umd.min.js"></script>
-    <link rel="stylesheet" href="css/dashboard.css?v=3.7.0">
+    <link rel="stylesheet" href="css/dashboard.css?v=3.8.0">
 
 </head>
 <body>
@@ -529,7 +529,7 @@
                 </div>
                 <div>
                     <div class="about-title-row">
-                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.7.0</span>
+                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.8.0</span>
                     </div>
                     <div class="about-subtitle">Автономная система энергомониторинга и предиктивной диагностики No-Frost</div>
                 </div>
@@ -658,6 +658,18 @@
 
             <!-- Tab 3: Changelog -->
             <div id="tab-changelog" style="display:none;">
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.8.0 Pro — TypeSafe AI (System 1) Co-Pilot & Telegram Bot Ecosystem</span>
+                        <span class="changelog-date">21.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Нейросетевой сопроцессор TypeSafe AI (Jev System 1):</strong> автономная классификация интентов и термодинамическая экспертиза холодильника через лёгкий REST-протокол (Zero-Dependency) без тяжеловесных SDK.</div>
+                    <div class="changelog-point"><strong>Естественный язык в Telegram-боте:</strong> бот понимает свободные фразы («как дела?», «сколько намотало?», «проверь компрессор», «спасибо») с мгновенным fallback на классические регулярные выражения при отсутствии сети.</div>
+                    <div class="changelog-point"><strong>Диагностика компрессора (AI Health Audit):</strong> глубокий аудит термического равновесия, коэффициента рабочего времени (КРВ) и выявление деградации уплотнителя / испарителя прямо в отчёте <code>/audit</code>.</div>
+                    <div class="changelog-point"><strong>Автономный локальный SQLite Fallback:</strong> генерация актуальной сводки и расчёта затрат даже при временном разрыве связи с демоном опроса розетки.</div>
+                    <div class="changelog-point"><strong>Расширенное тестовое покрытие:</strong> 51 модульный тест (100% прохождение), тестирование интеграции AI-модели и отказоустойчивости сетевого стека.</div>
+                </div>
+
                 <div class="changelog-card">
                     <div class="changelog-ver">
                         <span>v3.7.0 Pro — Tuya Cloud Hardware Calibration & Wake-Up Engine</span>
@@ -832,8 +844,8 @@
     </div>
 </div>
 
-<script src="js/dashboard.js?v=3.7.0"></script>
-<script src="js/analytics.js?v=3.7.0"></script>
+<script src="js/dashboard.js?v=3.8.0"></script>
+<script src="js/analytics.js?v=3.8.0"></script>
 
 
 </body>
