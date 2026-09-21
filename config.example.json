@@ -11,5 +11,8 @@
     "last_stop_time": null,
     "current_start_time": null,
     "typesafe_api_key": "YOUR_TYPESAFE_API_KEY",
-    "typesafe_enabled": true
+    "typesafe_enabled": true,
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "gemini_enabled": true,
+    "gemini_model": "gemini-flash-latest"
 }

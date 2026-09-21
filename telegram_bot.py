@@ -30,6 +30,12 @@ try:
 except ImportError:
     HAS_TYPESAFE_AI = False
 
+try:
+    from gemini_ai import GeminiFridgeAdvisor
+    HAS_GEMINI_AI = True
+except ImportError:
+    HAS_GEMINI_AI = False
+
 logger = logging.getLogger("telegram_bot")
 
 DEFAULT_REPLY_KEYBOARD = {
@@ -57,7 +63,8 @@ class FridgeTelegramBot:
         return [x.strip() for x in cleaned.split(",") if x.strip()]
 
     def __init__(self, token="", chat_id="", enabled=False,
-                 state_ref=None, db_connect_fn=None, reconcile_fn=None, config_fn=None, ai_engine=None):
+                 state_ref=None, db_connect_fn=None, reconcile_fn=None, config_fn=None,
+                 ai_engine=None, gemini_engine=None):
         self.token = str(token).strip()
         self.chat_id = str(chat_id).strip()
         self.chat_ids = self._parse_chat_ids(chat_id)
@@ -76,6 +83,18 @@ class FridgeTelegramBot:
             except Exception as e:
                 logger.warning("TypeSafeFridgeAI initialization skipped: %s", e)
                 self.ai = None
+
+        self.gemini = gemini_engine
+        if self.gemini is None and HAS_GEMINI_AI:
+            try:
+                cfg = self.config_fn() if callable(self.config_fn) else {}
+                g_key = str(cfg.get("gemini_api_key", "")).strip()
+                g_enabled = bool(cfg.get("gemini_enabled", True))
+                g_model = str(cfg.get("gemini_model", "")).strip()
+                self.gemini = GeminiFridgeAdvisor(api_key=g_key, enabled=g_enabled, model=g_model)
+            except Exception as e:
+                logger.warning("GeminiFridgeAdvisor initialization skipped: %s", e)
+                self.gemini = None
 
         self._stop_event = threading.Event()
         self._thread = None
@@ -156,6 +175,14 @@ class FridgeTelegramBot:
             payload["reply_markup"] = reply_markup
 
         res = self._api_call("sendMessage", payload)
+        return bool(res and res.get("ok"))
+
+    def send_chat_action(self, action="typing", chat_id=None):
+        """Send chat action (e.g. typing) to authorized chat."""
+        target_chat = str(chat_id or self.chat_id).strip()
+        if not self.token or not target_chat:
+            return False
+        res = self._api_call("sendChatAction", {"chat_id": target_chat, "action": action})
         return bool(res and res.get("ok"))
 
     def send_alert(self, text, alert_type="alert"):
@@ -482,11 +509,42 @@ class FridgeTelegramBot:
             except Exception as e:
                 logger.error("AI audit diagnosis error: %s", e)
 
+        chamber_health = st.get("chamber_health", "🟢 Отличная")
         lines.extend([
             "",
-            f"<i>Текущий статус агрегата: {mode.upper()}</i>"
+            f"<i>Текущий статус агрегата: {mode.upper()}</i>",
+            f"• Оценка герметичности камер: <b>{chamber_health}</b>"
         ])
         return "\n".join(lines)
+
+    def _collect_telemetry_context(self):
+        """Assemble current telemetry snapshot dictionary for AI advisors."""
+        ctx = {}
+        if self.state_ref:
+            st = self.state_ref.snapshot() if hasattr(self.state_ref, "snapshot") else dict(self.state_ref or {})
+            ctx["power"] = float(st.get("power", 0.0))
+            ctx["voltage"] = float(st.get("voltage", 220.0))
+            ctx["is_running"] = bool(st.get("is_running", False))
+            ctx["cycle_duration_sec"] = int(st.get("cycle_duration_sec", 0))
+            ctx["rest_duration_sec"] = int(st.get("rest_duration_sec", 0))
+            ctx["today_kwh"] = float(st.get("today_kwh", 0.0))
+            ctx["today_cost"] = float(st.get("today_cost", 0.0))
+            ctx["freezer_temp_est"] = float(st.get("freezer_temp_est", -18.5))
+            ctx["fridge_temp_est"] = float(st.get("fridge_temp_est", 4.2))
+            ctx["blackout_duration_min"] = int(st.get("blackout_duration_min", 0))
+        elif self.db_connect_fn:
+            try:
+                conn = self.db_connect_fn()
+                cur = conn.cursor()
+                cur.execute("SELECT power, voltage FROM measurements ORDER BY id DESC LIMIT 1")
+                row = cur.fetchone()
+                if row:
+                    ctx["power"] = float(row[0])
+                    ctx["voltage"] = float(row[1])
+                conn.close()
+            except Exception:
+                pass
+        return ctx
 
     # -------------------------------------------------------------------------
     # Incoming Command Dispatcher
@@ -509,16 +567,19 @@ class FridgeTelegramBot:
             msg = [
                 "👋 <b>Добро пожаловать в бот мониторинга Samsung RT34MB!</b>",
                 "",
-                "Бот транслирует телеметрию с ТВ-бокса H96, следит за авариями электросети и формирует отчёты.",
+                "Бот транслирует телеметрию с ТВ-бокса H96, следит за авариями электросети и консультирует по работе агрегата.",
                 "",
                 "<b>Быстрые кнопки:</b>",
                 "• <b>🟢 Статус</b> — моментальный снимок мощности, напряжения и режима",
                 "• <b>📊 Отчёт за неделю</b> — сводка расхода кВт⋅ч, затрат и здоровья",
                 "• <b>⚡ За сегодня</b> — статистика работы компрессора за текущие сутки",
                 "• <b>⚖️ Сверить счётчик</b> — калибровка с чипом розетки через Tuya Cloud",
-                "• <b>🧠 Аудит</b> — AI-экспертиза компрессора (TypeSafe AI)",
+                "• <b>🧠 Аудит</b> — экспресс-анализ компрессора (TypeSafe AI)",
                 "",
-                "💡 <i>Поддерживается естественный язык TypeSafe AI: можно писать «как дела?», «сколько намотало?», «проверь компрессор».</i>",
+                "💡 <i>Задавайте любые вопросы естественным языком:</i>",
+                "• <i>«Как дела у холодильника?»</i>",
+                "• <i>«Почему боковые стенки горячие?»</i> (Google Gemini Flash)",
+                "• <i>«Сколько намотало за сегодня?»</i>",
                 "",
                 "<i>Кнопки управления закреплены внизу экрана ⬇️</i>"
             ]
@@ -560,6 +621,29 @@ class FridgeTelegramBot:
                     self.send_message(f"❌ Ошибка сверки: {e}", chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
             else:
                 self.send_message("❌ Модуль сверки недоступен.", chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+
+        elif cmd.startswith(("/ask", "/gemini", "/ai", "🤖")):
+            query = text
+            for pfx in ("/ask", "/gemini", "/ai", "🤖"):
+                if text.lower().startswith(pfx):
+                    query = text[len(pfx):].strip()
+                    break
+            if not query:
+                self.send_message(
+                    "💡 <b>Задайте вопрос эксперту Gemini AI:</b>\n\n"
+                    "Например:\n"
+                    "• <code>/ask почему боковые стенки горячие?</code>\n"
+                    "• <code>/ask сколько продуктов можно заморозить за раз?</code>\n"
+                    "• <code>/ask как настроить температуру No-Frost?</code>",
+                    chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD
+                )
+            elif self.gemini and self.gemini.is_available():
+                self.send_chat_action("typing", chat_id=target_chat)
+                ctx = self._collect_telemetry_context()
+                ans = self.gemini.ask_expert(query, ctx)
+                self.send_message(ans, chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+            else:
+                self.send_message("⚠️ Модуль Gemini AI не настроен или отключён.", chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         else:
             # TypeSafe AI (Jev) Natural Language Intent Routing
@@ -615,10 +699,19 @@ class FridgeTelegramBot:
                         self.send_message("\n".join(msg), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
                         handled = True
 
+            # If not handled by TypeSafe AI, pass to Gemini AI expert!
+            if not handled and self.gemini and self.gemini.is_available():
+                self.send_chat_action("typing", chat_id=target_chat)
+                ctx = self._collect_telemetry_context()
+                ai_reply = self.gemini.ask_expert(text, ctx)
+                if ai_reply:
+                    self.send_message(ai_reply, chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                    handled = True
+
             if not handled:
                 self.send_message(
                     "🤔 <i>Пока не совсем понял ваш запрос.</i>\n\n"
-                    "Я отслеживаю работу холодильника. Вы можете спросить меня обычными словами (например: <i>«как там холодильник?»</i>, <i>«расход за сегодня»</i>, <i>«почему он гудит?»</i>) или выбрать действие на кнопках внизу ⬇️",
+                    "Я отслеживаю работу холодильника. Вы можете спросить меня обычными словами (например: <i>«как там холодильник?»</i>, <i>«расход за сегодня»</i>, <i>«почему боковые стенки горячие?»</i>) или выбрать действие на кнопках внизу ⬇️",
                     chat_id=target_chat,
                     reply_markup=DEFAULT_REPLY_KEYBOARD
                 )
