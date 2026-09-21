@@ -880,6 +880,7 @@ def find_open_cycle_start():
     run_voltages = []
     run_currents = []
     run_end = None
+    idle_count = 0
 
     for r in rows:
         ts = r[0]
@@ -887,6 +888,7 @@ def find_open_cycle_start():
         v = r[2] or 220.0
         curr = r[3]
         if p > 35.0:
+            idle_count = 0
             if run_start is None:
                 run_start = ts
                 run_powers = [p]
@@ -898,37 +900,39 @@ def find_open_cycle_start():
                 run_currents.append(curr)
             run_end = ts
         else:
-            if run_start and len(run_powers) >= 3 and run_end:
-                st_dt = parse_iso(run_start)
-                en_dt = parse_iso(run_end)
-                if st_dt and en_dt:
-                    dur_sec = int((en_dt - st_dt).total_seconds())
-                    if dur_sec >= 120:
-                        try:
-                            avg_p = sum(run_powers) / len(run_powers)
-                            avg_v = sum(run_voltages) / len(run_voltages)
-                            valid_curr = [c for c in run_currents if c is not None]
-                            avg_c = sum(valid_curr) / len(valid_curr) if valid_curr else None
-                            c_type = classify_cycle(avg_p, dur_sec, cooling_since_last_defrost_sec(), run_powers, voltage=avg_v, current=avg_c)
-                            c_conn = db_connect()
-                            c_cur = c_conn.cursor()
-                            c_cur.execute('''
-                                INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
-                                VALUES (?, ?, ?, ?, ?, ?)
-                            ''', (run_start, run_end, dur_sec, round(avg_p, 1), round(avg_v, 1), c_type))
-                            c_conn.commit()
-                            c_conn.close()
-                            invalidate_history_cache()
-                        except Exception:
-                            pass
-            run_start = None
-            run_powers = []
-            run_voltages = []
-            run_currents = []
-            run_end = None
+            idle_count += 1
+            if idle_count >= 2:
+                if run_start and len(run_powers) >= 3 and run_end:
+                    st_dt = parse_iso(run_start)
+                    en_dt = parse_iso(run_end)
+                    if st_dt and en_dt:
+                        dur_sec = int((en_dt - st_dt).total_seconds())
+                        if dur_sec >= 120:
+                            try:
+                                avg_p = sum(run_powers) / len(run_powers)
+                                avg_v = sum(run_voltages) / len(run_voltages)
+                                valid_curr = [c for c in run_currents if c is not None]
+                                avg_c = sum(valid_curr) / len(valid_curr) if valid_curr else None
+                                c_type = classify_cycle(avg_p, dur_sec, cooling_since_last_defrost_sec(), run_powers, voltage=avg_v, current=avg_c)
+                                c_conn = db_connect()
+                                c_cur = c_conn.cursor()
+                                c_cur.execute('''
+                                    INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                ''', (run_start, run_end, dur_sec, round(avg_p, 1), round(avg_v, 1), c_type))
+                                c_conn.commit()
+                                c_conn.close()
+                                invalidate_history_cache()
+                            except Exception:
+                                pass
+                run_start = None
+                run_powers = []
+                run_voltages = []
+                run_currents = []
+                run_end = None
 
     # An open cycle only exists if the latest trailing samples are actively running
-    if run_start and len(run_powers) >= 3:
+    if run_start and len(run_powers) >= 3 and idle_count == 0:
         return run_start
     return None
 
@@ -1123,6 +1127,9 @@ def _local_status(cfg):
         _close_local()
         return None
     dps = data.get("dps") or {}
+    # Ignore empty status payloads that lack telemetry DPS
+    if not any(k in dps for k in ("19", 19, "20", 20, "18", 18)):
+        return None
     _remember_plug(cfg, ip, ver)
     return {
         "ok": True,
@@ -1303,9 +1310,10 @@ def tuya_poller():
                 except Exception:
                     pass
                 restored = None
-                open_start = find_open_cycle_start()
-                if open_start:
-                    restored = open_start
+                if not state["is_running"] and is_hot:
+                    open_start = find_open_cycle_start()
+                    if open_start:
+                        restored = open_start
                 elif not is_hot and cfg.get("current_start_time"):
                     cfg["current_start_time"] = None
                     save_config(cfg)

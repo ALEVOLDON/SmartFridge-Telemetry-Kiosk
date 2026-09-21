@@ -101,6 +101,18 @@ class MergeAndParseTests(unittest.TestCase):
         self.assertEqual(merged[0][2], 600 + 570 + 30)
         self.assertEqual(merged[0][1], "2026-09-01T10:20:00")
 
+    def test_merge_overlapping_and_subsumed_cycles(self):
+        rows = [
+            ("2026-09-21T22:09:09", "2026-09-21T22:38:42", 1772, 126.7, 189.1, "cooling"),
+            ("2026-09-21T22:39:14", "2026-09-21T22:44:38", 323, 126.6, 193.0, "cooling"),
+            ("2026-09-21T22:39:14", "2026-09-21T22:45:10", 355, 123.4, 190.5, "cooling"),
+        ]
+        merged = merge_micro_cycles(rows)
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0][0], "2026-09-21T22:09:09")
+        self.assertEqual(merged[0][1], "2026-09-21T22:45:10")
+        self.assertGreater(merged[0][2], 2100)
+
     def test_does_not_merge_different_types(self):
         rows = [
             ("2026-09-01T10:00:00", "2026-09-01T10:10:00", 600, 160.0, 210.0, "defrost"),

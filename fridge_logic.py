@@ -113,7 +113,7 @@ def fill_rest_after(dt_end, next_st, next_end_label, raw_blackouts, work_dur, ma
 
 
 def merge_micro_cycles(raw_cycles, max_gap_sec=90):
-    """Merge split fragments of the same cycle type when rest between them is tiny."""
+    """Merge split fragments or overlapping records of the same cycle type."""
     merged = []
     for c in raw_cycles:
         row = list(c)
@@ -123,14 +123,25 @@ def merge_micro_cycles(raw_cycles, max_gap_sec=90):
         prev = merged[-1]
         prev_end = parse_iso(prev[1])
         cur_st = parse_iso(row[0])
+        cur_end = parse_iso(row[1])
         same_type = (prev[5] if len(prev) > 5 else None) == (row[5] if len(row) > 5 else None)
-        if prev_end and cur_st and same_type and 0 <= (cur_st - prev_end).total_seconds() <= max_gap_sec:
-            prev[1] = row[1]
-            prev[2] = prev[2] + row[2] + int((cur_st - prev_end).total_seconds())
-            prev[3] = round((prev[3] + row[3]) / 2.0, 1)
-            prev[4] = round((prev[4] + row[4]) / 2.0, 1)
-        else:
-            merged.append(row)
+        if prev_end and cur_st and same_type:
+            gap_sec = (cur_st - prev_end).total_seconds()
+            if 0 <= gap_sec <= max_gap_sec:
+                prev[1] = row[1]
+                prev[2] = prev[2] + row[2] + int(gap_sec)
+                prev[3] = round((prev[3] + row[3]) / 2.0, 1)
+                prev[4] = round((prev[4] + row[4]) / 2.0, 1)
+                continue
+            elif gap_sec < 0:
+                if cur_end and cur_end > prev_end:
+                    extension_sec = int((cur_end - prev_end).total_seconds())
+                    prev[1] = row[1]
+                    prev[2] = prev[2] + extension_sec
+                    prev[3] = round((prev[3] + row[3]) / 2.0, 1)
+                    prev[4] = round((prev[4] + row[4]) / 2.0, 1)
+                continue
+        merged.append(row)
     return merged
 
 
