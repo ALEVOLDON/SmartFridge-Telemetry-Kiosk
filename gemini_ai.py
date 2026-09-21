@@ -23,7 +23,14 @@ except ImportError:
 
 logger = logging.getLogger("gemini_ai")
 
-DEFAULT_MODEL = "gemini-3.6-flash"
+DEFAULT_MODEL = "gemini-flash-lite-latest"
+FALLBACK_MODELS = [
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
+    "gemini-3.6-flash",
+]
 FALLBACK_MODEL = "gemini-flash-latest"
 API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -93,7 +100,7 @@ class GeminiFridgeAdvisor:
             "6. При вопросах о сроках хранения продуктов сопоставляй с расчетными температурами в камерах."
         )
 
-    def _call_api(self, model: str, payload: dict, timeout: int = 20) -> dict:
+    def _call_api(self, model: str, payload: dict, timeout: int = 10) -> dict:
         """Execute REST request to Google Generative Language API."""
         url = f"{API_BASE_URL}/{model}:generateContent?key={self.api_key}"
         body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -134,10 +141,11 @@ class GeminiFridgeAdvisor:
             }
         }
 
-        # Try primary model first, fallback if not found
-        models_to_try = [self.model]
-        if FALLBACK_MODEL not in models_to_try:
-            models_to_try.append(FALLBACK_MODEL)
+        # Try primary model first, followed by all candidate models in fallback chain
+        models_to_try = [self.model] if self.model else []
+        for m in FALLBACK_MODELS:
+            if m not in models_to_try:
+                models_to_try.append(m)
 
         last_error = ""
         for mod in models_to_try:
