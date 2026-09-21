@@ -577,6 +577,12 @@ function toggleFullScreen() {
         failedPolls = 0;
         isAutoScanning = false;
         
+        if (data.app_version) {
+            document.querySelectorAll('.about-pro-badge, .badge-pro').forEach(function(el) {
+                el.textContent = data.app_version;
+            });
+        }
+        
         const cloudDot = document.getElementById('cloud-dot');
         const cloudText = document.getElementById('cloud-text');
         if (data.connected) {

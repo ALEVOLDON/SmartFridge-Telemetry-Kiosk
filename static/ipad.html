@@ -384,7 +384,7 @@
                     <span style="font-size:20px; margin-right:8px;">🧊</span>
                     <div>
                         <div style="font-weight:bold; font-size:15px; color:#f8fafc;">
-                            Samsung RT34MB Monitor <span style="font-size:10px; background:#0284c7; color:#fff; padding:1px 6px; border-radius:4px;">PRO v3.8.0</span>
+                            Samsung RT34MB Monitor <span id="ipad-version-badge" style="font-size:10px; background:#0284c7; color:#fff; padding:1px 6px; border-radius:4px;">PRO v3.9.0</span>
                         </div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Автономный диагностический комплекс No-Frost</div>
                     </div>
@@ -453,7 +453,16 @@
                 <!-- Tab: Changelog -->
                 <div id="ipad-tab-ver" style="display:none;">
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #10b981; margin-bottom:10px;">
-                        <div style="font-weight:bold; color:#10b981;">v3.8.0 Pro (21.09.2026) — Актуальная версия</div>
+                        <div style="font-weight:bold; color:#10b981;">v3.9.0 Pro (21.09.2026) — Актуальная версия</div>
+                        <div>• Google Gemini Flash (System 2): диалоговый ИИ-эксперт с живой телеметрией в Telegram.</div>
+                        <div>• Двухуровневый AI-стек: мгновенные команды TypeSafe AI (System 1) + открытый консалтинг Gemini.</div>
+                        <div>• Автовосстановление прерванных циклов и устранение зависания таймеров пуска компрессора.</div>
+                        <div>• Единый источник правды версий (Single Source of Truth) и динамическое обновление интерфейсов.</div>
+                        <div>• 57 модульных тестов, полное покрытие логики и абсолютная стабильность.</div>
+                    </div>
+
+                    <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; border-left:4px solid #38bdf8; margin-bottom:10px;">
+                        <div style="font-weight:bold; color:#38bdf8;">v3.8.0 Pro (21.09.2026)</div>
                         <div>• TypeSafe AI (Jev System 1): нейросетевой сопроцессор анализа естественного языка и термодинамической диагностики.</div>
                         <div>• Диалоговый Telegram-бот: понимание произвольных фраз («как дела?», «сколько намотало?», «проверь компрессор») без жестких команд.</div>
                         <div>• Предиктивный AI-аудит компрессора: диагностика теплового баланса, термодинамического здоровья и оценка герметичности камер.</div>
@@ -977,6 +986,11 @@
                                     bBadge.innerText = data.last_blackout.duration_str;
                                     bBadge.style.color = '#f59e0b';
                                 }
+                            }
+
+                            if (data.app_version) {
+                                var vBadge = document.getElementById('ipad-version-badge');
+                                if (vBadge) vBadge.innerText = data.app_version;
                             }
 
                             var pStatus = document.getElementById('power-status');

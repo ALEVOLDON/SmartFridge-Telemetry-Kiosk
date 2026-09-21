@@ -12,6 +12,7 @@ import subprocess
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, send_from_directory
 import tinytuya
+import version
 from fridge_logic import (
     DEFROST_MAX_SEC,
     DEFROST_MIN_SEC,
@@ -113,7 +114,10 @@ state = LockedState({
         "date": "—",
         "food_safety": "🟢 Электросеть стабильна"
     },
-    "last_energy_reconciliation": None
+    "last_energy_reconciliation": None,
+    "app_version": getattr(version, "VERSION_STRING", "PRO v3.9.0"),
+    "app_version_name": getattr(version, "RELEASE_TITLE", "Dual-Tier AI & Cycle Resilience"),
+    "app_release_date": getattr(version, "RELEASE_DATE", "21.09.2026")
 })
 
 _poller_thread = None

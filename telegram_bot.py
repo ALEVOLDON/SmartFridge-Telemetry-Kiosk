@@ -36,6 +36,12 @@ try:
 except ImportError:
     HAS_GEMINI_AI = False
 
+try:
+    import version
+    BOT_VERSION = getattr(version, "VERSION_STRING", "PRO v3.9.0")
+except Exception:
+    BOT_VERSION = "PRO v3.9.0"
+
 logger = logging.getLogger("telegram_bot")
 
 DEFAULT_REPLY_KEYBOARD = {
@@ -565,7 +571,7 @@ class FridgeTelegramBot:
 
         if cmd in ("/start", "/help", "❓ помощь", "помощь"):
             msg = [
-                "👋 <b>Добро пожаловать в бот мониторинга Samsung RT34MB!</b>",
+                f"👋 <b>Добро пожаловать в бот мониторинга Samsung RT34MB!</b> <code>[{BOT_VERSION}]</code>",
                 "",
                 "Бот транслирует телеметрию с ТВ-бокса H96, следит за авариями электросети и консультирует по работе агрегата.",
                 "",
