@@ -10,6 +10,7 @@
 [![iOS Legacy](https://img.shields.io/badge/Kiosk-iOS%208--12%20WebKit%20(ES5)-orange.svg?logo=apple)](https://apple.com)
 [![LAN Direct](https://img.shields.io/badge/LAN%20Direct-TinyTuya%20(0%20Cloud)-brightgreen.svg)](https://github.com/jasonacox/tinytuya)
 [![TypeSafe AI](https://img.shields.io/badge/AI%20Co--Pilot-TypeSafe%20Jev%20(System%201)-blueviolet.svg)](https://typesafe.ai)
+[![Google Gemini](https://img.shields.io/badge/AI%20Advisor-Google%20Gemini%20Flash-orange.svg?logo=google)](https://aistudio.google.com)
 [![Telegram Bot](https://img.shields.io/badge/Bot-Telegram%20NLP-2CA5E0.svg?logo=telegram)](https://telegram.org)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blueviolet.svg)](https://alevoldon.github.io/SmartFridge-Telemetry-Kiosk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -35,7 +36,9 @@ When a repair technician claims that your refrigerator compressor is running exc
 - 🏠 **Dual-Channel LAN Direct Polling (0 Cloud Quota Usage):** Directly reads smart plug sensors via local Wi-Fi network (TinyTuya LAN UDP/TCP) at 3-second intervals with **100% quota savings**, automatically failing over to Tuya Cloud API only if local Wi-Fi drops.
 - 🍏 **Second Life for E-Waste (Vintage iPad Kiosk):** Ancient iPads (tested on **iPad 3 Retina iOS 9.3.6**, iPad 2, iPad 4, iPad mini 1-2) that cannot open modern heavy web frameworks run a dedicated, ultra-responsive **pure ES5 / CSS3 table-based dashboard** (`/ipad`) with zero dependencies.
 - 🤖 **3-Watt 24/7 Autonomous Microserver:** Runs seamlessly inside **Termux on a $15 Android TV Box (H96 Max / Rockchip RK3318 / Amlogic)**, replacing expensive Raspberry Pi hardware.
-- 🧠 **TypeSafe AI Co-Pilot (Jev System One):** Sub-second (~100 ms) deterministic natural language routing and thermodynamic health scoring. Allows conversational Telegram queries (*"how's the fridge doing?", "did it finish cooling?", "how much spent today?"*) without heavy models on the 3-Watt TV Box, delivering calibrated compressor wear scores and anomaly warnings.
+- 🧠 **Dual-Tier AI Ecosystem (TypeSafe AI + Google Gemini Flash):**
+  - **System 1 (TypeSafe AI Jev):** Sub-second (~80 ms) deterministic natural language routing, compressor wear & thermodynamic health scoring. Allows instant Telegram queries (*"how's the fridge doing?", "did it finish cooling?", "how much spent today?"*) without local compute overhead on the 3-Watt TV Box.
+  - **System 2 (Google Gemini Flash):** Conversational advisor & refrigeration engineer grounded in real Samsung RT34MB hardware specs and live telemetry (power, chamber temperatures, phase duration, blackout status) answering open questions in Telegram (*"why are side walls hot?", "safe loading limits?", "optimal food shelf?"*).
 - 🔔 **Gentle Musical Audio Engine:** Synthesized soft 2-tone chime (`chime.wav` + WebAudio) that signals cycle completion with permanent iOS Safari background audio unlock and on/off toggles.
 - 📱 **Mobile App Bar & Slide-out Drawer:** Fully responsive modern smartphone UI with slide-out drawer menu, quick actions, audio testing, and table rows filter.
 - 🖨️ **Professional PDF Report Printing:** Instant black-and-white, ink-friendly PDF generation with automated drawer suppression and full cycle history export.
@@ -63,9 +66,11 @@ graph TD
         C -.->|"Live Telemetry State"| H
     end
 
-    subgraph "System 1 Probabilistic AI"
-        I["⚡ TypeSafe AI Jev (REST API)"]
-        H <-->|"NLP Intent Routing & Wear Scoring (100ms)"| I
+    subgraph "Dual-Tier AI Co-Pilot"
+        I["⚡ TypeSafe AI Jev (System 1)"]
+        K["🤖 Google Gemini Flash (System 2)"]
+        H <-->|"NLP Intent Routing & Wear Scoring (80ms)"| I
+        H <-->|"Deep Appliance & Food Storage Advisory"| K
     end
     
     subgraph "Client Dashboards & Telegram Alerts"
@@ -104,7 +109,8 @@ Samsung_RT34MB_Monitor/
 ├── 🧮 fridge_logic.py          # Pure classifier / KRV / LAN helpers (unit-tested)
 ├── 💬 telegram_bot.py          # Telegram Bot with 2-way natural language control & alerts
 ├── 🧠 typesafe_ai.py           # TypeSafe AI Jev System-1 co-pilot (0 external dependencies)
-├── 🧪 tests/                   # Comprehensive unittest suite (51 tests passing)
+├── 🤖 gemini_ai.py             # Google Gemini Flash conversational advisor (System 2)
+├── 🧪 tests/                   # Comprehensive unittest suite (57 tests passing)
 ├── ⚙️ config.json              # Active configuration & API credentials
 ├── ⚙️ config.example.json      # Template configuration file
 ├── 🗄️ fridge_data.db           # SQLite telemetry & duty cycle database
@@ -178,7 +184,10 @@ Edit `config.json` with your credentials:
     "telegram_chat_id": "YOUR_CHAT_ID",
     "telegram_enabled": true,
     "typesafe_api_key": "YOUR_TYPESAFE_API_KEY",
-    "typesafe_enabled": true
+    "typesafe_enabled": true,
+    "gemini_api_key": "YOUR_GEMINI_API_KEY",
+    "gemini_enabled": true,
+    "gemini_model": "gemini-flash-latest"
 }
 ```
 
