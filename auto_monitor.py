@@ -845,9 +845,11 @@ def check_cold_boot_blackout():
         pass
 
 def find_open_cycle_start():
-    """First sustained compressor-on run after the last saved cycle end or blackout.
+    """Finds the true start timestamp of an in-progress compressor run and recovers orphaned cycles.
 
-    Ignores 1-sample Tuya glitches and idle rows written during a process restart.
+    1. Checks measurements since the last recorded cycle or blackout end.
+    2. Recovers any completed cooling/defrost runs (interrupted by process restart) into the cycles table.
+    3. Returns the start timestamp ONLY if the compressor is currently running right now (sustained power > 35W).
     """
     last_end = get_latest_end_time() or "1970-01-01T00:00:00"
     try:
@@ -858,31 +860,73 @@ def find_open_cycle_start():
         if b_end and b_end > last_end:
             last_end = b_end
         cur.execute(
-            "SELECT timestamp, power FROM measurements WHERE timestamp > ? ORDER BY timestamp",
+            "SELECT timestamp, power, voltage, current FROM measurements WHERE timestamp > ? ORDER BY timestamp",
             (last_end,),
         )
         rows = cur.fetchall()
         conn.close()
     except Exception:
         return None
+
+    if not rows:
+        return None
+
     run_start = None
-    run_n = 0
-    last_closed_start = None
-    for ts, p in rows:
-        if (p or 0) > 35.0:
+    run_powers = []
+    run_voltages = []
+    run_currents = []
+    run_end = None
+
+    for r in rows:
+        ts = r[0]
+        p = r[1] or 0.0
+        v = r[2] or 220.0
+        curr = r[3]
+        if p > 35.0:
             if run_start is None:
                 run_start = ts
-                run_n = 1
+                run_powers = [p]
+                run_voltages = [v]
+                run_currents = [curr]
             else:
-                run_n += 1
+                run_powers.append(p)
+                run_voltages.append(v)
+                run_currents.append(curr)
+            run_end = ts
         else:
-            if run_n >= 3:
-                last_closed_start = run_start
+            if run_start and len(run_powers) >= 3 and run_end:
+                st_dt = parse_iso(run_start)
+                en_dt = parse_iso(run_end)
+                if st_dt and en_dt:
+                    dur_sec = int((en_dt - st_dt).total_seconds())
+                    if dur_sec >= 120:
+                        try:
+                            avg_p = sum(run_powers) / len(run_powers)
+                            avg_v = sum(run_voltages) / len(run_voltages)
+                            valid_curr = [c for c in run_currents if c is not None]
+                            avg_c = sum(valid_curr) / len(valid_curr) if valid_curr else None
+                            c_type = classify_cycle(avg_p, dur_sec, cooling_since_last_defrost_sec(), run_powers, voltage=avg_v, current=avg_c)
+                            c_conn = db_connect()
+                            c_cur = c_conn.cursor()
+                            c_cur.execute('''
+                                INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            ''', (run_start, run_end, dur_sec, round(avg_p, 1), round(avg_v, 1), c_type))
+                            c_conn.commit()
+                            c_conn.close()
+                            invalidate_history_cache()
+                        except Exception:
+                            pass
             run_start = None
-            run_n = 0
-    if run_n >= 3:
+            run_powers = []
+            run_voltages = []
+            run_currents = []
+            run_end = None
+
+    # An open cycle only exists if the latest trailing samples are actively running
+    if run_start and len(run_powers) >= 3:
         return run_start
-    return last_closed_start
+    return None
 
 def persist_open_cycle():
     """Keep the in-progress start time across SIGTERM restarts."""
@@ -1256,10 +1300,11 @@ def tuya_poller():
                     pass
                 restored = None
                 open_start = find_open_cycle_start()
-                cfg_start = cfg.get("current_start_time")
-                cands = [x for x in (open_start, cfg_start) if x and x > last_end]
-                if cands:
-                    restored = min(cands)
+                if open_start:
+                    restored = open_start
+                elif not is_hot and cfg.get("current_start_time"):
+                    cfg["current_start_time"] = None
+                    save_config(cfg)
                 
                 if not state["is_running"] and (active_streak >= ON_STREAK or (is_hot and restored)):
                     state["is_running"] = True
@@ -1274,7 +1319,7 @@ def tuya_poller():
                     save_config(cfg_save)
                 elif state["is_running"] and restored:
                     cur_start = state.get("cycle_start_time")
-                    if not cur_start or restored < cur_start:
+                    if not cur_start or restored != cur_start:
                         state["cycle_start_time"] = restored
                         cfg_save = load_config()
                         cfg_save["current_start_time"] = restored
