@@ -24,6 +24,12 @@ except ImportError:
     import urllib.request
     HAS_REQUESTS = False
 
+try:
+    from typesafe_ai import TypeSafeFridgeAI
+    HAS_TYPESAFE_AI = True
+except ImportError:
+    HAS_TYPESAFE_AI = False
+
 logger = logging.getLogger("telegram_bot")
 
 DEFAULT_REPLY_KEYBOARD = {
@@ -51,7 +57,7 @@ class FridgeTelegramBot:
         return [x.strip() for x in cleaned.split(",") if x.strip()]
 
     def __init__(self, token="", chat_id="", enabled=False,
-                 state_ref=None, db_connect_fn=None, reconcile_fn=None, config_fn=None):
+                 state_ref=None, db_connect_fn=None, reconcile_fn=None, config_fn=None, ai_engine=None):
         self.token = str(token).strip()
         self.chat_id = str(chat_id).strip()
         self.chat_ids = self._parse_chat_ids(chat_id)
@@ -60,6 +66,16 @@ class FridgeTelegramBot:
         self.db_connect_fn = db_connect_fn
         self.reconcile_fn = reconcile_fn
         self.config_fn = config_fn
+        self.ai = ai_engine
+        if self.ai is None and HAS_TYPESAFE_AI:
+            try:
+                cfg = self.config_fn() if callable(self.config_fn) else {}
+                ai_key = str(cfg.get("typesafe_api_key", "")).strip()
+                ai_enabled = bool(cfg.get("typesafe_enabled", True))
+                self.ai = TypeSafeFridgeAI(api_key=ai_key, enabled=ai_enabled)
+            except Exception as e:
+                logger.warning("TypeSafeFridgeAI initialization skipped: %s", e)
+                self.ai = None
 
         self._stop_event = threading.Event()
         self._thread = None
@@ -165,6 +181,24 @@ class FridgeTelegramBot:
     def format_status_message(self):
         """Format current real-time telemetry snapshot."""
         if not self.state_ref:
+            if self.db_connect_fn:
+                try:
+                    conn = self.db_connect_fn()
+                    cur = conn.cursor()
+                    cur.execute("SELECT timestamp, power, voltage, current FROM measurements ORDER BY id DESC LIMIT 1")
+                    row = cur.fetchone()
+                    conn.close()
+                    if row:
+                        ts, pwr, volt, curr = row
+                        return (
+                            f"<b>🧊 Samsung RT34MB — Телеметрия (по базе данных)</b>\n\n"
+                            f"⚡ <b>Мощность:</b> <code>{pwr:.1f} Вт</code>\n"
+                            f"🔌 <b>Напряжение:</b> <code>{volt:.1f} В</code>\n"
+                            f"📊 <b>Ток:</b> <code>{curr:.2f} А</code>\n\n"
+                            f"<i>Зафиксировано в БД: {ts}</i>"
+                        )
+                except Exception:
+                    pass
             return "❌ Состояние телеметрии недоступно."
 
         st = self.state_ref.snapshot() if hasattr(self.state_ref, "snapshot") else dict(self.state_ref)
@@ -400,6 +434,21 @@ class FridgeTelegramBot:
         st = self.state_ref.snapshot() if hasattr(self.state_ref, "snapshot") else dict(self.state_ref)
         volt = st.get("voltage", 220.0)
         mode = st.get("current_mode", "idle")
+        power = st.get("power", 0.0)
+        dur_min = round(st.get("cycle_duration_sec", 0) / 60.0, 1)
+
+        krv_val = 0.42
+        if self.db_connect_fn:
+            try:
+                conn = self.db_connect_fn()
+                cur = conn.cursor()
+                cur.execute("SELECT sum(duration_sec) FROM cycles WHERE start_time >= datetime('now', '-24 hours') AND cycle_type = 'cooling'")
+                row = cur.fetchone()
+                cool_sec = (row[0] or 0) if row else 0
+                krv_val = round(cool_sec / 86400.0, 2)
+                conn.close()
+            except Exception:
+                pass
 
         lines = [
             "<b>👨‍🔧 ЭКСПЕРТНЫЙ АУДИТ ТЕХНИЧЕСКОГО СОСТОЯНИЯ</b>",
@@ -418,9 +467,25 @@ class FridgeTelegramBot:
             "<b>3. Рекомендации по эксплуатации:</b>",
             "  • Сохраняйте зазор не менее 5 см от задней стенки для естественного охлаждения конденсатора.",
             "  • При падении напряжения ниже 185 В компрессор издаёт повышенный гул — защита автоматически зафиксирует событие.",
+        ]
+
+        if self.ai and self.ai.is_available():
+            try:
+                diag = self.ai.diagnose_thermodynamics(duty_cycle=krv_val, cycle_duration_min=dur_min, avg_voltage=volt, power_watts=power)
+                lines.extend([
+                    "",
+                    "<b>4. 🤖 Оценка интеллекта TypeSafe AI (Jev):</b>",
+                    f"  • Состояние компрессора: <b>{diag['level_name']}</b> (КРВ: <code>{krv_val}</code>)",
+                    f"  • Калиброванная уверенность: <b>{diag['confidence']:.0%}</b>",
+                    f"  • Риск аварийной аномалии: <b>{diag['alert_prob']:.0%}</b>"
+                ])
+            except Exception as e:
+                logger.error("AI audit diagnosis error: %s", e)
+
+        lines.extend([
             "",
             f"<i>Текущий статус агрегата: {mode.upper()}</i>"
-        ]
+        ])
         return "\n".join(lines)
 
     # -------------------------------------------------------------------------
@@ -495,11 +560,66 @@ class FridgeTelegramBot:
                 self.send_message("❌ Модуль сверки недоступен.", chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
 
         else:
-            self.send_message(
-                "❓ Неизвестная команда. Воспользуйтесь кнопками меню внизу или командой /help.",
-                chat_id=target_chat,
-                reply_markup=DEFAULT_REPLY_KEYBOARD
-            )
+            # TypeSafe AI (Jev) Natural Language Intent Routing
+            handled = False
+            if self.ai and self.ai.is_available():
+                intent, conf = self.ai.classify_intent(text)
+                if conf >= 0.65 and intent != "other":
+                    logger.info("TypeSafe AI routed '%s' -> %s (conf: %.2f)", text, intent, conf)
+                    if intent == "status":
+                        self.send_message(self.format_status_message(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                        handled = True
+                    elif intent == "today":
+                        self.send_message(self.format_today_message(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                        handled = True
+                    elif intent == "week":
+                        self.send_message(self.format_weekly_digest(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                        handled = True
+                    elif intent == "audit":
+                        self.send_message(self.format_audit_message(), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                        handled = True
+                    elif intent == "reconcile":
+                        self.handle_command("/reconcile", from_chat_id)
+                        handled = True
+                    elif intent == "help":
+                        self.handle_command("/help", from_chat_id)
+                        handled = True
+                    elif intent == "thanks":
+                        msg = (
+                            "🫡 <b>Рад стараться!</b>\n\n"
+                            "Я на круглосуточном посту 24/7. Если возникнут просадки сети ниже 185 В или компрессор начнёт аномально греться — я сразу пришлю экстренное оповещение!\n\n"
+                            "Если нужно что-то проверить — спрашивайте обычными словами."
+                        )
+                        self.send_message(msg, chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                        handled = True
+                    elif intent == "chitchat":
+                        st = self.state_ref.snapshot() if hasattr(self.state_ref, "snapshot") else dict(self.state_ref or {})
+                        is_running = st.get("is_running", False)
+                        mode_title = st.get("mode_title", "в покое (отдых)" if not is_running else "охлаждает камеры")
+                        pwr = st.get("power", 0.0)
+                        dur_sec = st.get("cycle_duration_sec", 0) if is_running else st.get("rest_duration_sec", 0)
+                        dur_min = int(dur_sec / 60.0)
+                        icon = "🟢" if is_running else "⚪"
+
+                        msg = [
+                            f"🧊 <b>На связи микросервер Samsung RT34MB!</b>",
+                            "",
+                            f"Прямо сейчас агрегат: {icon} <b>{mode_title}</b>",
+                            f"• Мощность: <code>{pwr:.1f} Вт</code>",
+                            f"• Длительность текущей фазы: <b>{dur_min} мин</b>",
+                            "",
+                            "<i>Спросите меня: «сколько накрутило сегодня?», «как там компрессор?» или нажмите кнопку внизу ⬇️</i>"
+                        ]
+                        self.send_message("\n".join(msg), chat_id=target_chat, reply_markup=DEFAULT_REPLY_KEYBOARD)
+                        handled = True
+
+            if not handled:
+                self.send_message(
+                    "🤔 <i>Пока не совсем понял ваш запрос.</i>\n\n"
+                    "Я отслеживаю работу холодильника. Вы можете спросить меня обычными словами (например: <i>«как там холодильник?»</i>, <i>«расход за сегодня»</i>, <i>«почему он гудит?»</i>) или выбрать действие на кнопках внизу ⬇️",
+                    chat_id=target_chat,
+                    reply_markup=DEFAULT_REPLY_KEYBOARD
+                )
 
     # -------------------------------------------------------------------------
     # Watchdog & Scheduler Logic
@@ -654,3 +774,42 @@ class FridgeTelegramBot:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=2.0)
         logger.info("Telegram Bot stopped")
+
+
+if __name__ == "__main__":
+    import os
+    import sqlite3
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+    cfg = {}
+    config_path = os.path.join(os.path.dirname(__file__), "config.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+    db_path = os.path.join(os.path.dirname(__file__), "fridge_data.db")
+    def db_conn():
+        return sqlite3.connect(db_path)
+
+    token = cfg.get("telegram_bot_token", "")
+    chat_id = cfg.get("telegram_chat_id", "")
+    enabled = cfg.get("telegram_enabled", True)
+
+    print(f"Starting standalone FridgeTelegramBot (token: {token[:10]}..., chat_id: {chat_id})...")
+    bot = FridgeTelegramBot(
+        token=token,
+        chat_id=chat_id,
+        enabled=enabled,
+        db_connect_fn=db_conn if os.path.exists(db_path) else None,
+        config_fn=lambda: cfg
+    )
+    bot.start()
+    print("Bot is polling updates. Send messages to your bot in Telegram! Press Ctrl+C to exit.")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        bot.stop()
+        print("Bot stopped.")
+

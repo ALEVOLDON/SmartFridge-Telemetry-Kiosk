@@ -9,5 +9,7 @@
     "local_version": 3.5,
     "lan_subnet": "192.168.0.0/24",
     "last_stop_time": null,
-    "current_start_time": null
+    "current_start_time": null,
+    "typesafe_api_key": "YOUR_TYPESAFE_API_KEY",
+    "typesafe_enabled": true
 }
