@@ -324,9 +324,10 @@ function toggleFullScreen() {
 
     function syncLiveTimer(data) {
         if (!data) return;
+        const isBlackout = (data.current_mode === 'blackout' || data.blackout_active);
         const isRun = (data.current_mode === 'defrost' || data.is_running);
-        const mode = isRun ? 'run' : 'rest';
-        const srvSec = isRun ? (Number(data.cycle_duration_sec) || 0) : (Number(data.rest_duration_sec) || 0);
+        const mode = isBlackout ? 'blackout' : (isRun ? 'run' : 'rest');
+        const srvSec = isBlackout ? (Number(data.blackout_duration_sec) || 0) : (isRun ? (Number(data.cycle_duration_sec) || 0) : (Number(data.rest_duration_sec) || 0));
         
         if (liveTimerMode !== mode) {
             liveTimerMode = mode;
@@ -659,9 +660,17 @@ function toggleFullScreen() {
             dQuota.innerHTML = `Квота: <strong style="color:#10b981;">${rem} / ${tot}</strong>`;
         }
 
-        document.getElementById('live-power').innerHTML = `${data.power.toFixed(1)} <span class="unit">Вт</span>`;
-        document.getElementById('live-voltage').innerHTML = `${data.voltage.toFixed(1)} <span class="unit">В</span>`;
-        document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
+        const isBlackout = (data.current_mode === 'blackout' || data.blackout_active);
+
+        if (isBlackout) {
+            document.getElementById('live-power').innerHTML = `0.0 <span class="unit">Вт</span>`;
+            document.getElementById('live-voltage').innerHTML = `<span style="color:#ef4444;font-weight:bold;">0.0</span> <span class="unit" style="color:#ef4444;">В (НЕТ СЕТИ)</span>`;
+            document.getElementById('live-current').innerHTML = `0.00 <span class="unit">А</span>`;
+        } else {
+            document.getElementById('live-power').innerHTML = `${data.power.toFixed(1)} <span class="unit">Вт</span>`;
+            document.getElementById('live-voltage').innerHTML = `${data.voltage.toFixed(1)} <span class="unit">В</span>`;
+            document.getElementById('live-current').innerHTML = `${data.current.toFixed(2)} <span class="unit">А</span>`;
+        }
         
         const freezerEst = (data.temp_freezer_estimated !== undefined)
             ? data.temp_freezer_estimated
@@ -717,16 +726,27 @@ function toggleFullScreen() {
         }
 
         // Update Blackout Status Banner
-        if (data.last_blackout && data.last_blackout.detected) {
-            const bCard = document.getElementById('blackout-card');
-            const bTitle = document.getElementById('blackout-title');
-            const bSub = document.getElementById('blackout-subtitle');
-            const bBadge = document.getElementById('blackout-badge');
-            
-            bTitle.innerHTML = `⚡ Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
-            bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${escapeHTML(data.last_blackout.food_safety)}`;
-            bBadge.innerText = data.last_blackout.duration_str;
-            bBadge.style.color = '#f59e0b';
+        const bCard = document.getElementById('blackout-card');
+        const bTitle = document.getElementById('blackout-title');
+        const bSub = document.getElementById('blackout-subtitle');
+        const bBadge = document.getElementById('blackout-badge');
+        if (isBlackout) {
+            if (bTitle && bSub && bBadge) {
+                const bDur = data.blackout_duration_str || (Math.floor((data.blackout_duration_sec || 0) / 60) + ' мин');
+                bTitle.innerHTML = `⚡ <strong>АВАРИЯ ЭЛЕКТРОСЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО ПРЯМО СЕЙЧАС!</strong>`;
+                bSub.innerHTML = `Длительность: <strong>${escapeHTML(bDur)}</strong>. Розетка обесточена. Холодильник изолирован, продукты удерживают холод.`;
+                bBadge.innerText = '🔴 БЛЭКАУТ: ' + bDur;
+                bBadge.style.color = '#ef4444';
+                bBadge.style.background = 'rgba(239,68,68,0.2)';
+            }
+        } else if (data.last_blackout && data.last_blackout.detected) {
+            if (bTitle && bSub && bBadge) {
+                bTitle.innerHTML = `⚡ Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
+                bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${escapeHTML(data.last_blackout.food_safety)}`;
+                bBadge.innerText = data.last_blackout.duration_str;
+                bBadge.style.color = '#f59e0b';
+                bBadge.style.background = 'rgba(245,158,11,0.15)';
+            }
         }
 
         const desc = document.getElementById('live-state-desc');
@@ -736,7 +756,17 @@ function toggleFullScreen() {
         
         lastStatus = data;
         syncLiveTimer(data);
-        if (data.current_mode === 'defrost') {
+        if (isBlackout) {
+            desc.innerText = '🔴 ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО (БЛЭКАУТ)';
+            desc.style.color = '#ef4444';
+            
+            timerTitle.innerText = '⚡ АКТИВНЫЙ РЕЖИМ: АВАРИЯ ЭЛЕКТРОСЕТИ (БЛЭКАУТ)';
+            timerTitle.style.color = '#ef4444';
+            timerVal.style.color = '#ef4444';
+            const bSec = data.blackout_duration_sec || 0;
+            const bMin = Math.floor(bSec / 60);
+            verdictEl.innerHTML = `⚠️ Питание розетки отсутствует! Сеть обесточена (авария длится <strong>${bMin} мин</strong>). Холодильник удерживает накопленный холод.`;
+        } else if (data.current_mode === 'defrost') {
             desc.innerText = '🔥 Автооттайка No Frost (ТЭН)';
             desc.style.color = '#f97316';
             

@@ -384,7 +384,7 @@
                     <span style="font-size:20px; margin-right:8px;">🧊</span>
                     <div>
                         <div style="font-weight:bold; font-size:15px; color:#f8fafc;">
-                            Samsung RT34MB Monitor <span id="ipad-version-badge" style="font-size:10px; background:#0284c7; color:#fff; padding:1px 6px; border-radius:4px;">PRO v3.9.2</span>
+                            Samsung RT34MB Monitor <span id="ipad-version-badge" style="font-size:10px; background:#0284c7; color:#fff; padding:1px 6px; border-radius:4px;">PRO v3.10.0</span>
                         </div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Автономный диагностический комплекс No-Frost</div>
                     </div>
@@ -788,9 +788,10 @@
 
         function syncIpadTimer(data) {
             if (!data) return;
+            var isBlackout = (data.current_mode === 'blackout' || data.blackout_active);
             var running = (data.current_mode === 'defrost' || data.is_running);
-            var mode = running ? 'run' : 'rest';
-            var srvSec = running ? (Number(data.cycle_duration_sec) || 0) : (Number(data.rest_duration_sec) || 0);
+            var mode = isBlackout ? 'blackout' : (running ? 'run' : 'rest');
+            var srvSec = isBlackout ? (Number(data.blackout_duration_sec) || 0) : (running ? (Number(data.cycle_duration_sec) || 0) : (Number(data.rest_duration_sec) || 0));
             
             if (liveTimerMode !== mode) {
                 liveTimerMode = mode;
@@ -908,13 +909,21 @@
                         try {
                             var data = JSON.parse(xhr.responseText);
                             var vVal = (data.voltage !== undefined && data.voltage !== null) ? data.voltage : 0;
+                            var isBlackout = (data.current_mode === 'blackout' || data.blackout_active);
                             
                             // Voltage, Power, Current
-                            document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
-                            document.getElementById('volt-val').innerHTML = vVal.toFixed(1) + ' <span class="dial-unit">В</span>';
-                            document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
-                            var src = (data.connection_source === 'local_wifi') ? 'LAN' : 'облако';
-                            document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | ' + src + ' | Сеть: ' + vVal.toFixed(0) + ' В';
+                            if (isBlackout) {
+                                document.getElementById('power-val').innerHTML = '0.0 <span class="dial-unit">Вт</span>';
+                                document.getElementById('volt-val').innerHTML = '<span style="color:#ef4444;">0.0</span> <span class="dial-unit" style="color:#ef4444;">В (НЕТ СЕТИ)</span>';
+                                document.getElementById('curr-val').innerHTML = '0.00 <span class="dial-unit">А</span>';
+                                document.getElementById('last-sync').innerHTML = '⚠️ <strong>АВАРИЯ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО</strong> | ' + (data.last_update || '--:--:--');
+                            } else {
+                                document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
+                                document.getElementById('volt-val').innerHTML = vVal.toFixed(1) + ' <span class="dial-unit">В</span>';
+                                document.getElementById('curr-val').innerHTML = (data.current || 0).toFixed(2) + ' <span class="dial-unit">А</span>';
+                                var src = (data.connection_source === 'local_wifi') ? 'LAN' : 'облако';
+                                document.getElementById('last-sync').innerHTML = 'Обновлено: ' + (data.last_update || '--:--:--') + ' | ' + src + ' | Сеть: ' + vVal.toFixed(0) + ' В';
+                            }
                             
                             var freezerEst = (data.temp_freezer_estimated !== undefined)
                                 ? data.temp_freezer_estimated
@@ -976,10 +985,18 @@
                             }
 
                             // Blackout Info
-                            if (data.last_blackout && data.last_blackout.detected) {
-                                var bTitle = document.getElementById('ipad-blackout-title');
-                                var bSub = document.getElementById('ipad-blackout-sub');
-                                var bBadge = document.getElementById('ipad-blackout-badge');
+                            var bTitle = document.getElementById('ipad-blackout-title');
+                            var bSub = document.getElementById('ipad-blackout-sub');
+                            var bBadge = document.getElementById('ipad-blackout-badge');
+                            if (isBlackout) {
+                                var bDur = data.blackout_duration_str || (Math.floor((data.blackout_duration_sec || 0) / 60) + ' мин');
+                                if (bTitle) bTitle.innerHTML = '⚡ <strong>Авария электросети: Электричество отключено прямо сейчас!</strong>';
+                                if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(bDur) + '</strong>. Розетка обесточена. Продукты удерживают холод.';
+                                if (bBadge) {
+                                    bBadge.innerText = '🔴 БЛЭКАУТ: ' + bDur;
+                                    bBadge.style.color = '#ef4444';
+                                }
+                            } else if (data.last_blackout && data.last_blackout.detected) {
                                 if (bTitle) bTitle.innerHTML = '⚡ Отключение света: ' + escapeHTML(data.last_blackout.date) + ' (' + escapeHTML(data.last_blackout.start) + ' → ' + escapeHTML(data.last_blackout.end) + ')';
                                 if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(data.last_blackout.duration_str) + '</strong> (' + escapeHTML(data.last_blackout.food_safety) + ')';
                                 if (bBadge) {
@@ -1000,7 +1017,17 @@
                             var timerHint = document.getElementById('timer-hint');
                             
                             lastStatus = data;
-                            if (data.current_mode === 'defrost') {
+                            if (isBlackout) {
+                                pStatus.innerHTML = '🔴 Нет сети';
+                                pStatus.className = 'dial-status color-red';
+                                
+                                timerBox.style.borderColor = '#ef4444';
+                                timerMode.innerHTML = '⚡ АВАРИЯ СЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО';
+                                timerMode.className = 'timer-mode color-red';
+                                timerVal.className = 'timer-num color-red';
+                                var bMin = Math.floor((data.blackout_duration_sec || 0) / 60);
+                                timerHint.innerHTML = '⚠️ Питание розетки отсутствует! Сеть обесточена (' + bMin + ' мин). Холодильник изолирован, идёт удержание холода.';
+                            } else if (data.current_mode === 'defrost') {
                                 pStatus.innerHTML = '🔥 Оттайка (ТЭН)';
                                 pStatus.className = 'dial-status color-orange';
                                 

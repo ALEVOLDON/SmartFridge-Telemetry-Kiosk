@@ -105,6 +105,11 @@ state = LockedState({
     "temp_freezer_estimated": True,
     "temp_fridge_estimated": True,
     "connection_source": "",
+    "blackout_active": False,
+    "blackout_start_time": None,
+    "blackout_duration_sec": 0,
+    "blackout_duration_str": "",
+    "energy_calibration_factor": 1.0,
     "last_blackout": {
         "detected": False,
         "start": "—",
@@ -472,6 +477,13 @@ def reconcile_energy_with_cloud(target_date_str=None, force=False):
         base = max(cloud_kwh, local_kwh, 0.001)
         accuracy_pct = round(max(0.0, 100.0 - (delta_kwh / base * 100.0)), 1)
 
+        calib_factor = 1.0
+        if cloud_kwh > 0.05 and local_kwh > 0.05:
+            ratio = cloud_kwh / local_kwh
+            if 0.70 <= ratio <= 1.30:
+                calib_factor = round(ratio, 3)
+                state["energy_calibration_factor"] = calib_factor
+
         now_iso = now.isoformat()
         status_str = "aligned" if accuracy_pct >= 90.0 else "divergent"
         if cloud_kwh == 0 and local_kwh == 0:
@@ -501,6 +513,7 @@ def reconcile_energy_with_cloud(target_date_str=None, force=False):
             "cloud_kwh": cloud_kwh,
             "delta_kwh": delta_kwh,
             "accuracy_pct": accuracy_pct,
+            "calibration_factor": calib_factor,
             "reports_count": len(entries),
             "reconciled_at": now_iso,
             "status": status_str
@@ -812,16 +825,17 @@ def check_cold_boot_blackout():
             return
             
         gap_sec = (boot_time - last_dt).total_seconds()
-        # If the server host itself was unpowered for >= 15 minutes:
-        if gap_sec >= 900:
+        effective_gap = max(gap_sec, (now - last_dt).total_seconds() - uptime_sec)
+        # If the server host itself was unpowered for >= 60 seconds:
+        if effective_gap >= 60:
             cur.execute("SELECT COUNT(*) FROM blackouts WHERE start_time = ?", (last_ts_str,))
             if cur.fetchone()[0] == 0:
-                safety = food_safety_label(gap_sec)
-                end_iso = now.isoformat()
+                safety = food_safety_label(effective_gap)
+                end_iso = boot_time.isoformat()
                 cur.execute("""
                     INSERT INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
                     VALUES (?, ?, ?, ?)
-                """, (last_ts_str, end_iso, int(gap_sec), safety))
+                """, (last_ts_str, end_iso, int(effective_gap), safety))
                 
                 # Close pre-blackout cycle if dangling
                 cfg_c = load_config()
@@ -836,12 +850,16 @@ def check_cold_boot_blackout():
                                 VALUES (?, ?, ?, ?, ?, ?)
                             """, (c_start, last_ts_str, c_dur, float(row[1] or 135.0), float(row[2] or 210.0), "cooling"))
                 cfg_c["current_start_time"] = None
+                cfg_c["last_stop_time"] = last_ts_str
                 save_config(cfg_c)
+                state["is_running"] = False
+                state["cycle_start_time"] = None
+                state["rest_start_time"] = boot_time.isoformat()
                 conn.commit()
                 update_last_blackout_state()
                 if _telegram_bot:
                     try:
-                        _telegram_bot.notify_blackout_resolved(last_ts_str, end_iso, int(gap_sec), safety)
+                        _telegram_bot.notify_blackout_resolved(last_ts_str, end_iso, int(effective_gap), safety)
                     except Exception:
                         pass
         conn.close()
@@ -881,12 +899,48 @@ def find_open_cycle_start():
     run_currents = []
     run_end = None
     idle_count = 0
+    prev_sample_ts = None
 
     for r in rows:
         ts = r[0]
         p = r[1] or 0.0
         v = r[2] or 220.0
         curr = r[3]
+
+        if prev_sample_ts:
+            dt_c = parse_iso(ts)
+            dt_p = parse_iso(prev_sample_ts)
+            if dt_c and dt_p and (dt_c - dt_p).total_seconds() >= 60:
+                if run_start and len(run_powers) >= 3 and run_end:
+                    st_dt = parse_iso(run_start)
+                    en_dt = parse_iso(run_end)
+                    if st_dt and en_dt:
+                        dur_sec = int((en_dt - st_dt).total_seconds())
+                        if dur_sec >= 120:
+                            try:
+                                avg_p = sum(run_powers) / len(run_powers)
+                                avg_v = sum(run_voltages) / len(run_voltages)
+                                valid_curr = [c for c in run_currents if c is not None]
+                                avg_c = sum(valid_curr) / len(valid_curr) if valid_curr else None
+                                c_type = classify_cycle(avg_p, dur_sec, cooling_since_last_defrost_sec(), run_powers, voltage=avg_v, current=avg_c)
+                                c_conn = db_connect()
+                                c_cur = c_conn.cursor()
+                                c_cur.execute('''
+                                    INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                ''', (run_start, run_end, dur_sec, round(avg_p, 1), round(avg_v, 1), c_type))
+                                c_conn.commit()
+                                c_conn.close()
+                                invalidate_history_cache()
+                            except Exception:
+                                pass
+                run_start = None
+                run_powers = []
+                run_voltages = []
+                run_currents = []
+                run_end = None
+                idle_count = 0
+        prev_sample_ts = ts
         if p > 35.0:
             idle_count = 0
             if run_start is None:
@@ -1213,6 +1267,11 @@ def tuya_poller():
     ON_STREAK = 2
     OFF_STREAK = 2
     cloud_ok = False
+    last_pvi = None
+    stuck_pvi_count = 0
+    offline_streak = 0
+    blackout_active = False
+    blackout_start_time = None
     
     cfg = load_config()
     db_last_end = get_latest_end_time()
@@ -1247,6 +1306,36 @@ def tuya_poller():
             tele = fetch_device_telemetry(cfg)
             
             if tele.get("ok"):
+                offline_streak = 0
+                if blackout_active and blackout_start_time:
+                    try:
+                        b_st = parse_iso(blackout_start_time)
+                        b_dur = int((datetime.now() - b_st).total_seconds()) if b_st else 0
+                        if b_dur >= 45:
+                            safety = food_safety_label(b_dur)
+                            conn_bl = db_connect()
+                            cur_bl = conn_bl.cursor()
+                            cur_bl.execute(
+                                "INSERT INTO blackouts (start_time, end_time, duration_sec, food_safety_status) VALUES (?, ?, ?, ?)",
+                                (blackout_start_time, datetime.now().isoformat(), b_dur, safety)
+                            )
+                            conn_bl.commit()
+                            conn_bl.close()
+                            update_last_blackout_state()
+                            if _telegram_bot:
+                                try:
+                                    _telegram_bot.notify_blackout_resolved(blackout_start_time, datetime.now().isoformat(), b_dur, safety)
+                                except Exception:
+                                    pass
+                    except Exception as b_err:
+                        print(f"Error closing active blackout: {b_err}")
+                    blackout_active = False
+                    blackout_start_time = None
+                    state["blackout_active"] = False
+                    state["blackout_start_time"] = None
+                    state["blackout_duration_sec"] = 0
+                    state["blackout_duration_str"] = ""
+
                 state["connected"] = True
                 state["error_message"] = ""
                 state["connection_source"] = tele.get("source", "tuya_cloud")
@@ -1264,6 +1353,18 @@ def tuya_poller():
                 state["voltage"] = round(voltage, 1)
                 state["current"] = round(current, 2)
                 state["last_update"] = datetime.now().strftime("%H:%M:%S")
+
+                # Anti-stall: detect frozen telemetry socket values
+                cur_pvi = (round(power, 1), round(voltage, 1), round(current, 2))
+                if power > 30.0 and cur_pvi == last_pvi:
+                    stuck_pvi_count += 1
+                    if stuck_pvi_count >= 4:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] Anti-stall: socket values frozen at {cur_pvi} for {stuck_pvi_count} polls. Reconnecting socket...")
+                        _close_local()
+                        stuck_pvi_count = 0
+                else:
+                    stuck_pvi_count = 0
+                last_pvi = cur_pvi
                 
                 # Optional Tuya probe is treated as freezer-only; fridge stays a model.
                 temp_sensor_id = cfg.get("temp_sensor_id", "").strip()
@@ -1290,7 +1391,8 @@ def tuya_poller():
                 state["temp_is_estimated"] = state["temp_freezer_estimated"]
                 
                 now_iso = datetime.now().isoformat()
-                is_hot = power > 35.0
+                # Dual criteria: power AND current drop guard
+                is_hot = (power > 35.0) and (current > 0.08)
                 if is_hot:
                     active_streak += 1
                     idle_streak = 0
@@ -1392,7 +1494,11 @@ def tuya_poller():
                         state["current_mode"] = "cooling"
                         state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
                     
-                    ez, er = estimated_chamber_temps(True, state["cycle_duration_sec"])
+                    recent_b_sec = 0
+                    if state.get("last_blackout", {}).get("detected"):
+                        recent_b_sec = int(state.get("last_blackout", {}).get("duration_sec", 0))
+
+                    ez, er = estimated_chamber_temps(True, state["cycle_duration_sec"], blackout_sec=recent_b_sec)
                     if state.get("temp_freezer_estimated", True):
                         state["temp_freezer"] = ez
                     if state.get("temp_fridge_estimated", True):
@@ -1410,7 +1516,10 @@ def tuya_poller():
                     state["mode_title"] = "⚪ ПОЛНЫЙ ПОКОЙ (ОТДЫХ)"
                     apply_idle_rest_clock()
                     update_restart_lockout(False)
-                    ez, er = estimated_chamber_temps(False, state["rest_duration_sec"])
+                    recent_b_sec = 0
+                    if state.get("last_blackout", {}).get("detected"):
+                        recent_b_sec = int(state.get("last_blackout", {}).get("duration_sec", 0))
+                    ez, er = estimated_chamber_temps(False, state["rest_duration_sec"], blackout_sec=recent_b_sec)
                     if state.get("temp_freezer_estimated", True):
                         state["temp_freezer"] = ez
                     if state.get("temp_fridge_estimated", True):
@@ -1435,35 +1544,38 @@ def tuya_poller():
                             except Exception:
                                 pass
                             is_cold_boot = (uptime_sec <= 900)
-                            if gap_sec >= 1800 and is_cold_boot:
-                                # 1. Close unclosed cycle prior to the blackout
-                                cfg_c = load_config()
-                                c_start = cfg_c.get("current_start_time")
-                                if c_start and c_start < last_m[0]:
-                                    c_st_dt = parse_iso(c_start)
-                                    if c_st_dt:
-                                        c_dur = int((prev_ts - c_st_dt).total_seconds())
-                                        if c_dur >= 60:
-                                            cur.execute("""
-                                                INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
-                                                VALUES (?, ?, ?, ?, ?, ?)
-                                            """, (c_start, last_m[0], c_dur, float(last_m[1] or 135.0), float(last_m[2] or 210.0), "cooling"))
-                                cfg_c["current_start_time"] = None
-                                save_config(cfg_c)
+                            if (gap_sec >= 60 and is_cold_boot) or (gap_sec >= 120):
+                                cur.execute("SELECT COUNT(*) FROM blackouts WHERE start_time = ?", (last_m[0],))
+                                if cur.fetchone()[0] == 0:
+                                    # 1. Close unclosed cycle prior to the blackout
+                                    cfg_c = load_config()
+                                    c_start = cfg_c.get("current_start_time")
+                                    if c_start and c_start < last_m[0]:
+                                        c_st_dt = parse_iso(c_start)
+                                        if c_st_dt:
+                                            c_dur = int((prev_ts - c_st_dt).total_seconds())
+                                            if c_dur >= 60:
+                                                cur.execute("""
+                                                    INSERT OR IGNORE INTO cycles (start_time, end_time, duration_sec, avg_power, avg_voltage, cycle_type)
+                                                    VALUES (?, ?, ?, ?, ?, ?)
+                                                """, (c_start, last_m[0], c_dur, float(last_m[1] or 135.0), float(last_m[2] or 210.0), "cooling"))
+                                    cfg_c["current_start_time"] = None
+                                    cfg_c["last_stop_time"] = last_m[0]
+                                    save_config(cfg_c)
 
-                                # 2. Auto-record blackout into database
-                                safety = food_safety_label(gap_sec)
-                                cur.execute("""
-                                    INSERT OR IGNORE INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
-                                    VALUES (?, ?, ?, ?)
-                                """, (last_m[0], now_iso, int(gap_sec), safety))
-                                conn.commit()
-                                update_last_blackout_state()
-                                if _telegram_bot:
-                                    try:
-                                        _telegram_bot.notify_blackout_resolved(last_m[0], now_iso, int(gap_sec), safety)
-                                    except Exception:
-                                        pass
+                                    # 2. Auto-record blackout into database
+                                    safety = food_safety_label(gap_sec)
+                                    cur.execute("""
+                                        INSERT INTO blackouts (start_time, end_time, duration_sec, food_safety_status)
+                                        VALUES (?, ?, ?, ?)
+                                    """, (last_m[0], now_iso, int(gap_sec), safety))
+                                    conn.commit()
+                                    update_last_blackout_state()
+                                    if _telegram_bot:
+                                        try:
+                                            _telegram_bot.notify_blackout_resolved(last_m[0], now_iso, int(gap_sec), safety)
+                                        except Exception:
+                                            pass
 
                     tf = None if state.get("temp_freezer_estimated", True) else state.get("temp_freezer")
                     tr = None if state.get("temp_fridge_estimated", True) else state.get("temp_fridge")
@@ -1477,16 +1589,80 @@ def tuya_poller():
                     pass
                 
             else:
+                offline_streak += 1
                 state["connected"] = False
                 state["connection_source"] = ""
                 state["error_message"] = tele.get("msg", "Tuya request error")
                 sleep_sec = 10
+                if offline_streak >= 2:
+                    if not blackout_active:
+                        blackout_active = True
+                        blackout_start_time = datetime.now().isoformat()
+                        if _telegram_bot:
+                            try:
+                                _telegram_bot.notify_telegram(
+                                    "⚡ <b>Внимание: Отключение питания!</b>\nРозетка холодильника обесточена. Зафиксирована авария электросети."
+                                )
+                            except Exception:
+                                pass
+                    b_st = parse_iso(blackout_start_time)
+                    b_dur = int((datetime.now() - b_st).total_seconds()) if b_st else 0
+                    state["blackout_active"] = True
+                    state["blackout_start_time"] = blackout_start_time
+                    state["blackout_duration_sec"] = b_dur
+                    state["blackout_duration_str"] = format_gap_str(b_dur) or "0 мин"
+                    state["current_mode"] = "blackout"
+                    state["mode_title"] = "🔴 ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО (БЛЭКАУТ)"
+                    state["power"] = 0.0
+                    state["voltage"] = 0.0
+                    state["current"] = 0.0
+                    state["is_running"] = False
+                    state["cycle_duration_sec"] = 0
+                    state["rest_duration_sec"] = b_dur
+                    ez, er = estimated_chamber_temps(False, b_dur, blackout_sec=b_dur)
+                    if state.get("temp_freezer_estimated", True):
+                        state["temp_freezer"] = ez
+                    if state.get("temp_fridge_estimated", True):
+                        state["temp_fridge"] = er
+                    state["last_update"] = datetime.now().strftime("%H:%M:%S")
                 
         except Exception as e:
+            offline_streak += 1
             state["connected"] = False
             state["connection_source"] = ""
             state["error_message"] = str(e)
             sleep_sec = 10
+            if offline_streak >= 2:
+                if not blackout_active:
+                    blackout_active = True
+                    blackout_start_time = datetime.now().isoformat()
+                    if _telegram_bot:
+                        try:
+                            _telegram_bot.notify_telegram(
+                                "⚡ <b>Внимание: Отключение питания!</b>\nРозетка холодильника обесточена. Зафиксирована авария электросети."
+                            )
+                        except Exception:
+                            pass
+                b_st = parse_iso(blackout_start_time)
+                b_dur = int((datetime.now() - b_st).total_seconds()) if b_st else 0
+                state["blackout_active"] = True
+                state["blackout_start_time"] = blackout_start_time
+                state["blackout_duration_sec"] = b_dur
+                state["blackout_duration_str"] = format_gap_str(b_dur) or "0 мин"
+                state["current_mode"] = "blackout"
+                state["mode_title"] = "🔴 ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО (БЛЭКАУТ)"
+                state["power"] = 0.0
+                state["voltage"] = 0.0
+                state["current"] = 0.0
+                state["is_running"] = False
+                state["cycle_duration_sec"] = 0
+                state["rest_duration_sec"] = b_dur
+                ez, er = estimated_chamber_temps(False, b_dur, blackout_sec=b_dur)
+                if state.get("temp_freezer_estimated", True):
+                    state["temp_freezer"] = ez
+                if state.get("temp_fridge_estimated", True):
+                    state["temp_fridge"] = er
+                state["last_update"] = datetime.now().strftime("%H:%M:%S")
 
         # Hourly cloud energy reconciliation in detached background thread (XX:05)
         now_dt = datetime.now()
@@ -1688,8 +1864,31 @@ def test_telegram_api():
     return jsonify({"success": False, "error": "Модуль Telegram недоступен"}), 500
 
 def build_live_journal_row():
-    """Open rest/work so the journal is not stuck on the last finished cycle."""
+    """Open rest/work/blackout so the journal is not stuck on the last finished cycle."""
     now = datetime.now()
+    if state.get("blackout_active") and state.get("blackout_start_time"):
+        bs = parse_iso(state.get("blackout_start_time"))
+        if bs:
+            b_dur = int(state.get("blackout_duration_sec") or 0)
+            return {
+                "full_end": now.isoformat(),
+                "date": bs.strftime("%d.%m.%Y"),
+                "date_short": bs.strftime("%d.%m"),
+                "start": bs.strftime("%H:%M"),
+                "end": "сейчас",
+                "duration_sec": b_dur,
+                "duration_str": format_gap_str(max(b_dur, 1)) or "1 мин",
+                "rest_sec": 0,
+                "rest_str": "Сеть 0V",
+                "rest_start": "—",
+                "rest_end": "—",
+                "krv": "—",
+                "avg_power": 0.0,
+                "avg_voltage": 0.0,
+                "cycle_type": "blackout",
+                "safety": food_safety_label(b_dur),
+                "live": True
+            }
     if state.get("is_running") and state.get("cycle_start_time"):
         cs = parse_iso(state.get("cycle_start_time"))
         if not cs:

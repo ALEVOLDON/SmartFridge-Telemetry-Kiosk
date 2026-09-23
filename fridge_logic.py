@@ -152,9 +152,40 @@ def duty_cycle(work_sec, rest_sec):
     return round(float(work_sec or 0) / total, 2)
 
 
-def estimated_chamber_temps(is_running, duration_sec):
-    """Thermal model used when no probe is connected. Not a sensor reading."""
+def estimated_chamber_temps(is_running, duration_sec, blackout_sec=0):
+    """
+    Thermal inertia model used when no physical probe is connected.
+    If blackout_sec >= 1800, accounts for thermal leakage during the power outage.
+    """
     dur = max(0, int(duration_sec or 0))
+    b_sec = max(0, int(blackout_sec or 0))
+
+    if b_sec >= 1800:
+        # Thermal leakage during/after power outage
+        # Samsung RT34MB polyurethane insulation: warms ~1.4°C/hr in freezer, ~0.8°C/hr in fridge
+        hours_off = b_sec / 3600.0
+        fz_warmup = min(22.0, hours_off * 1.4)
+        fr_warmup = min(12.0, hours_off * 0.8)
+
+        base_fz = -19.5 + fz_warmup
+        base_fr = 3.6 + fr_warmup
+
+        if is_running:
+            # Compressor pull-down curve: cools down ~4-6°C per hour of run
+            c_prog = min(1.0, dur / 7200.0)
+            target_fz = -21.0
+            target_fr = 3.0
+            cur_fz = base_fz - (base_fz - target_fz) * c_prog
+            cur_fr = base_fr - (base_fr - target_fr) * c_prog
+            return (round(cur_fz, 1), round(cur_fr, 1))
+        else:
+            # Still off / resting after outage
+            r_prog = min(1.0, dur / 3600.0)
+            cur_fz = min(20.0, base_fz + (1.5 * r_prog))
+            cur_fr = min(20.0, base_fr + (1.0 * r_prog))
+            return (round(cur_fz, 1), round(cur_fr, 1))
+
+    # Standard nominal cycle when fridge is in thermal equilibrium
     if is_running:
         c_prog = min(1.0, dur / 3600.0)
         return (round(-16.0 - (5.0 * c_prog), 1), round(5.2 - (2.2 * c_prog), 1))
