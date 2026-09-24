@@ -37,40 +37,41 @@ RELEASE_DATE = "{today_str}"
         f.write(version_py_content)
     print("  [OK] Updated version.py")
 
-    # 2. Update index.html
-    index_html_path = os.path.join(BASE_DIR, "index.html")
-    if os.path.exists(index_html_path):
-        with open(index_html_path, "r", encoding="utf-8") as f:
-            content = f.read()
+    # 2. Update index.html and index.en.html
+    for landing_page in ["index.html", "index.en.html"]:
+        landing_path = os.path.join(BASE_DIR, landing_page)
+        if os.path.exists(landing_path):
+            with open(landing_path, "r", encoding="utf-8") as f:
+                content = f.read()
 
-        content = re.sub(
-            r'<span class="badge-pro">PRO v[\d\.]+</span>',
-            f'<span class="badge-pro">{ver_str}</span>',
-            content,
-        )
-        content = re.sub(
-            r'<span>Релиз v[\d\.]+ Pro • (.*?)</span>',
-            f'<span>Релиз v{clean_ver} Pro • \\1</span>',
-            content,
-        )
-        content = re.sub(
-            r'releases/tag/v[\d\.]+',
-            f'releases/tag/v{clean_ver}',
-            content,
-        )
-        content = re.sub(
-            r'📦 Скачать релиз v[\d\.]+',
-            f'📦 Скачать релиз v{clean_ver}',
-            content,
-        )
-        content = re.sub(
-            r'Samsung RT34MB Intelligent Energy Monitor • Pro Edition v[\d\.]+',
-            f'Samsung RT34MB Intelligent Energy Monitor • Pro Edition v{clean_ver}',
-            content,
-        )
-        with open(index_html_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        print("  [OK] Updated index.html")
+            content = re.sub(
+                r'<span class="badge-pro">PRO v[\d\.]+</span>',
+                f'<span class="badge-pro">{ver_str}</span>',
+                content,
+            )
+            content = re.sub(
+                r'<span>(Релиз|Release) v[\d\.]+ Pro • (.*?)</span>',
+                f'<span>\\1 v{clean_ver} Pro • \\2</span>',
+                content,
+            )
+            content = re.sub(
+                r'releases/tag/v[\d\.]+',
+                f'releases/tag/v{clean_ver}',
+                content,
+            )
+            content = re.sub(
+                r'📦 (Скачать релиз|Скачать|Download) v[\d\.]+',
+                f'📦 \\1 v{clean_ver}',
+                content,
+            )
+            content = re.sub(
+                r'Samsung RT34MB Intelligent Energy Monitor • Pro Edition v[\d\.]+',
+                f'Samsung RT34MB Intelligent Energy Monitor • Pro Edition v{clean_ver}',
+                content,
+            )
+            with open(landing_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            print(f"  [OK] Updated {landing_page}")
 
     # 3. Update static/index.html (cache busters and modal badge)
     static_index_path = os.path.join(BASE_DIR, "static", "index.html")
