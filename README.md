@@ -3,6 +3,10 @@
 # 🧊 SmartFridge-Telemetry-Kiosk
 ### Turn Any Vintage Refrigerator into a Smart IoT Hub for $0 using an Android TV Box, Smart Plug & Retired iPad
 
+<p align="center">
+  <b>English</b> • <a href="README.ru.md">Русский</a>
+</p>
+
 [![Release: PRO v3.10.0](https://img.shields.io/badge/Release-PRO%20v3.10.0-blue.svg)](version.py)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Backend-Flask-green.svg?logo=flask)](https://flask.palletsprojects.com/)

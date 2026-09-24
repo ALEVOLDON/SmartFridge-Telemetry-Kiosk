@@ -106,6 +106,20 @@ RELEASE_DATE = "{today_str}"
             f.write(c_ipad)
         print("  [OK] Updated static/ipad.html")
 
+    # 5. Update README.md and README.ru.md badges
+    for readme_fname, pattern, repl in [
+        ("README.md", r'Release-PRO%20v[\d\.]+', f'Release-PRO%20v{clean_ver}'),
+        ("README.ru.md", r'Релиз-PRO%20v[\d\.]+', f'Релиз-PRO%20v{clean_ver}'),
+    ]:
+        readme_path = os.path.join(BASE_DIR, readme_fname)
+        if os.path.exists(readme_path):
+            with open(readme_path, "r", encoding="utf-8") as f:
+                r_content = f.read()
+            r_content = re.sub(pattern, repl, r_content)
+            with open(readme_path, "w", encoding="utf-8") as f:
+                f.write(r_content)
+            print(f"  [OK] Updated {readme_fname}")
+
     print(f"\nAll files successfully bumped to {clean_ver}!")
 
 
