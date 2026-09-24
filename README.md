@@ -3,6 +3,7 @@
 # 🧊 SmartFridge-Telemetry-Kiosk
 ### Turn Any Vintage Refrigerator into a Smart IoT Hub for $0 using an Android TV Box, Smart Plug & Retired iPad
 
+[![Release: PRO v3.10.0](https://img.shields.io/badge/Release-PRO%20v3.10.0-blue.svg)](version.py)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Backend-Flask-green.svg?logo=flask)](https://flask.palletsprojects.com/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-lightgrey.svg?logo=sqlite)](https://sqlite.org/)
@@ -36,13 +37,16 @@ When a repair technician claims that your refrigerator compressor is running exc
 - 🏠 **Dual-Channel LAN Direct Polling (0 Cloud Quota Usage):** Directly reads smart plug sensors via local Wi-Fi network (TinyTuya LAN UDP/TCP) at 3-second intervals with **100% quota savings**, automatically failing over to Tuya Cloud API only if local Wi-Fi drops.
 - 🍏 **Second Life for E-Waste (Vintage iPad Kiosk):** Ancient iPads (tested on **iPad 3 Retina iOS 9.3.6**, iPad 2, iPad 4, iPad mini 1-2) that cannot open modern heavy web frameworks run a dedicated, ultra-responsive **pure ES5 / CSS3 table-based dashboard** (`/ipad`) with zero dependencies.
 - 🤖 **3-Watt 24/7 Autonomous Microserver:** Runs seamlessly inside **Termux on a $15 Android TV Box (H96 Max / Rockchip RK3318 / Amlogic)**, replacing expensive Raspberry Pi hardware.
+- ⚡ **Real-Time Blackout Detection & Emergency Kiosk Mode:** Detects grid power failure within seconds, immediately switching dashboards into high-visibility *"🔴 ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО (БЛЭКАУТ)"* emergency status with outage stopwatch and instant Telegram broadcast alert.
+- 🌡️ **Thermodynamic Thermal Inertia Modeling:** Calculates chamber temperature rise without physical probes during power outages ($+1.4^\circ\text{C/h}$ freezer, $+0.8^\circ\text{C/h}$ fridge) and projects compressor pull-down curves upon power restoration.
+- 🔄 **Hourly Hardware Telemetry Calibration:** Reconciles local cycle energy integration with the smart plug's dedicated hardware energy metering chip (`add_ele` DP logs in Tuya Cloud) every hour at `XX:05`, continuously adjusting telemetry calibration factors.
+- 🛡️ **Socket Anti-Stall & Telemetry Resilience:** Proactively detects frozen hardware metering registers under steady load, filters out Wi-Fi dropout glitches, and prevents duplicate or fragmented cycle recordings.
 - 🧠 **Dual-Tier AI Ecosystem (TypeSafe AI + Google Gemini Flash):**
   - **System 1 (TypeSafe AI Jev):** Sub-second (~80 ms) deterministic natural language routing, compressor wear & thermodynamic health scoring. Allows instant Telegram queries (*"how's the fridge doing?", "did it finish cooling?", "how much spent today?"*) without local compute overhead on the 3-Watt TV Box.
-  - **System 2 (Google Gemini Flash):** Conversational advisor & refrigeration engineer grounded in real Samsung RT34MB hardware specs and live telemetry (power, chamber temperatures, phase duration, blackout status) answering open questions in Telegram (*"why are side walls hot?", "safe loading limits?", "optimal food shelf?"*).
+  - **System 2 (Google Gemini Flash):** Conversational advisor & refrigeration engineer grounded in real Samsung RT34MB hardware specs and live telemetry with 5-model cascading fallback (`gemini-flash-lite-latest` down to `gemini-3.6-flash`), answering open questions in Telegram (*"why are side walls hot?", "safe loading limits?", "optimal food shelf?"*).
 - 🔔 **Gentle Musical Audio Engine:** Synthesized soft 2-tone chime (`chime.wav` + WebAudio) that signals cycle completion with permanent iOS Safari background audio unlock and on/off toggles.
 - 📱 **Mobile App Bar & Slide-out Drawer:** Fully responsive modern smartphone UI with slide-out drawer menu, quick actions, audio testing, and table rows filter.
 - 🖨️ **Professional PDF Report Printing:** Instant black-and-white, ink-friendly PDF generation with automated drawer suppression and full cycle history export.
-- ⚡ **Power Outage Resilience & Food Safety:** Automatically records blackouts, estimates thermal rise during power outages, and reconciles state without data gaps.
 
 ---
 
@@ -110,9 +114,11 @@ Samsung_RT34MB_Monitor/
 ├── 💬 telegram_bot.py          # Telegram Bot with 2-way natural language control & alerts
 ├── 🧠 typesafe_ai.py           # TypeSafe AI Jev System-1 co-pilot (0 external dependencies)
 ├── 🤖 gemini_ai.py             # Google Gemini Flash conversational advisor (System 2)
-├── 🧪 tests/                   # Comprehensive unittest suite (57 tests passing)
+├── 🏷️ version.py              # Single Source of Truth for version metadata (v3.10.0 Pro)
+├── 🧪 tests/                   # Comprehensive unittest suite (58 tests passing)
 ├── ⚙️ config.json              # Active configuration & API credentials
 ├── ⚙️ config.example.json      # Template configuration file
+├── 🌐 lan.env.example          # LAN & Ethernet binding template for Android/Linux
 ├── 🗄️ fridge_data.db           # SQLite telemetry & duty cycle database
 ├── 📦 requirements.txt         # Python dependencies
 ├── 📖 README.md, LICENSE       # Project documentation & MIT license
@@ -131,6 +137,7 @@ Samsung_RT34MB_Monitor/
 │   └── *.png, *.ico, *.jpg     # App icons and responsive UI backgrounds
 │
 ├── 📁 scripts/                 # Automation & utility scripts
+│   ├── bump_version.py         # Automated version bumper across project
 │   ├── find_fridge.py          # Auto-discovery tool for smart plugs on LAN
 │   ├── generate_report.py      # Diagnostic text report generator
 │   ├── h96_start_fridge.sh     # Android TV Box boot daemon script
@@ -180,6 +187,8 @@ Edit `config.json` with your credentials:
     "device_id": "YOUR_SMART_PLUG_DEVICE_ID",
     "local_key": "YOUR_TUYA_LOCAL_KEY",
     "lan_subnet": "192.168.0.0/24",
+    "electricity_tariff": 1.94,
+    "currency": "₽",
     "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
     "telegram_chat_id": "YOUR_CHAT_ID",
     "telegram_enabled": true,
@@ -187,9 +196,11 @@ Edit `config.json` with your credentials:
     "typesafe_enabled": true,
     "gemini_api_key": "YOUR_GEMINI_API_KEY",
     "gemini_enabled": true,
-    "gemini_model": "gemini-flash-latest"
+    "gemini_model": "gemini-flash-lite-latest"
 }
 ```
+
+*Note: The Gemini integration features a resilient 5-tier automatic fallback cascade (`gemini-flash-lite-latest` $\to$ `gemini-3.5-flash-lite` $\to$ `gemini-3.1-flash-lite` $\to$ `gemini-flash-latest` $\to$ `gemini-3.6-flash`).*
 
 On an Android TV box, copy `lan.env.example` to `lan.env` if the Ethernet address or subnet is not `192.168.0.103 / 192.168.0.0/24`. Run tests with `python -m unittest discover -s tests -v`.
 
@@ -230,6 +241,57 @@ nohup python auto_monitor.py > /sdcard/monitor.log 2>&1 &
 3. Tap the **Share** button $\to$ **"Add to Home Screen"** (На экран «Домой»).
 4. In iOS Settings $\to$ Display $\to$ Auto-Lock, set to **"Never"**.
 5. Mount the iPad to the refrigerator door using double-sided magnetic tape or magnetic case.
+
+---
+
+## 💬 Telegram Bot & Smart Watchdog
+
+The system includes a dedicated, self-hosted 2-way Telegram Bot ([`telegram_bot.py`](telegram_bot.py)) running directly on the 3-Watt Android TV Box with zero heavy dependencies. It provides conversational remote control, real-time emergency watchdogs, and family-wide alerts.
+
+```text
+┌──────────────────────────────────────────────┐
+│  📱 Telegram Refrigerator Kiosk Control      │
+├──────────────────────┬───────────────────────┤
+│  🟢 Статус           │  📊 Отчёт за неделю   │
+├──────────────────────┼───────────────────────┤
+│  ⚡ За сегодня       │  ⚖️ Сверить счётчик   │
+├──────────────────────┼───────────────────────┤
+│  🧠 Аудит            │  ❓ Помощь            │
+└──────────────────────┴───────────────────────┘
+```
+
+### 🎛️ Interactive Commands & Quick Buttons
+
+- **🟢 Статус (`/status`):** Instant snapshot of live operation mode, motor power, mains voltage, chamber temperatures, and active cycle elapsed time.
+- **⚡ За сегодня (`/today`):** Daily energy consumption (kWh), compressor operating hours, duty cycle, and electricity cost calculated using your local tariff.
+- **📊 Отчёт за неделю (`/weekly`):** 7-day comprehensive performance audit with total kWh, utility expenses, average duty cycle, defrost health, and compressor wear verdict.
+- **⚖️ Сверить счётчик (`/reconcile`):** On-demand hardware reconciliation with the smart plug's internal energy metering chip (`add_ele` DP in Tuya Cloud).
+- **🧠 Аудит (`/audit`):** Thermodynamic efficiency scoring and wear analysis.
+- **❓ Помощь (`/help`):** Command reference and quick troubleshooting tips.
+
+### 🚨 24/7 Watchdog Alerts
+
+- ⚡ **Instant Blackout Alerts:** Sends immediate notification when grid power is lost, and a follow-up report upon power restoration detailing total outage duration and food safety temperature risk.
+- ⚠️ **Under-Voltage Guard (< 185V):** Alerts when grid voltage drops below safe compressor motor tolerances.
+- ⏱️ **Extended Cycle Warning (> 60m):** Warns if the compressor runs continuously beyond normal parameters (door left ajar, gasket leak, or hot food overload).
+- 📅 **Automated Sunday Digest:** Pushes a consolidated weekly digest every Sunday at 20:00.
+
+### 🧠 Dual-Tier AI in Your Chat
+
+- **Natural Language Intents (TypeSafe AI Jev):** Chat naturally in Russian or English (*"как дела?", "холодильник отдыхает?", "сколько нагорело за день?"*) — the bot automatically recognizes user intent and executes the corresponding diagnostic command.
+- **Conversational Expert (Google Gemini Flash):** Grounded in live sensor telemetry and Samsung RT34MB technical specifications to answer technical questions (*"why are the side walls hot?", "safe loading limits?", "optimal food shelf?"*).
+
+### 🔒 Multi-User Whitelist Security
+
+The bot strictly authorizes designated chat IDs and silently ignores unauthorized requests. Multiple family members can be configured via comma-separated IDs:
+
+```json
+{
+    "telegram_bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+    "telegram_chat_id": "YOUR_CHAT_ID_1, YOUR_CHAT_ID_2",
+    "telegram_enabled": true
+}
+```
 
 ---
 
