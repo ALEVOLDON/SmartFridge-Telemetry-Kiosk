@@ -40,6 +40,14 @@
             padding: 0;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
+        section[id] {
+            scroll-margin-top: 75px;
+        }
+
         body {
             background-color: var(--bg-dark);
             background-image: 
@@ -749,7 +757,7 @@
         /* Dual-Tier AI Section */
         .ai-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 24px;
             margin-bottom: 75px;
         }
@@ -1069,24 +1077,273 @@
             100% { box-shadow: 0 0 22px rgba(56, 189, 248, 0.45); }
         }
 
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            color: #f8fafc;
+            padding: 6px 9px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-btn:hover,
+        .mobile-menu-btn:focus {
+            background: rgba(51, 65, 85, 0.9);
+            border-color: var(--cyan-neon);
+            color: #fff;
+        }
+
+        /* Slide-out Mobile Drawer */
+        .drawer-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .drawer-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 320px;
+            max-width: 86vw;
+            background: rgba(11, 17, 32, 0.98);
+            border-left: 1px solid var(--border-card-hover);
+            box-shadow: -15px 0 45px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            z-index: 1050;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mobile-drawer.active {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-card);
+        }
+
+        .drawer-close-btn {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            color: #94a3b8;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .drawer-close-btn:hover {
+            color: #fff;
+            border-color: var(--cyan-neon);
+        }
+
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .drawer-section-title {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .drawer-nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .drawer-nav-list a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .drawer-nav-list a:hover,
+        .drawer-nav-list a:focus {
+            background: rgba(30, 41, 59, 0.7);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.2);
+        }
+
+        .drawer-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .drawer-actions .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 10px 16px;
+            font-size: 13.5px;
+        }
+
+        .drawer-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-card);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
         /* Responsive */
         @media (max-width: 980px) {
             .nav-links { display: none; }
-            .hardware-grid { grid-template-columns: 1fr; }
-            .telegram-spotlight { grid-template-columns: 1fr; }
-            .hero { padding: 40px 0 30px; }
+            .mobile-menu-btn { display: inline-flex; }
+            .hardware-grid { grid-template-columns: 1fr; gap: 24px; padding: 28px; }
+            .telegram-spotlight { grid-template-columns: 1fr; gap: 24px; padding: 28px; }
+            .hero { padding: 45px 0 30px; }
             .grid-stats { grid-template-columns: repeat(2, 1fr); }
+            .ai-grid { grid-template-columns: 1fr; }
+            .feature-card { flex: 0 0 calc((100% - 20px) / 2); }
+            .metrics-strip { grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 25px auto 45px; }
         }
 
-        @media (max-width: 540px) {
+        @media (max-width: 640px) {
+            .container { padding: 0 16px; }
+            .hero { padding: 32px 0 24px; }
+            .hero-pill { font-size: 11px; padding: 5px 12px; white-space: normal; text-align: center; }
+            .hero-title { font-size: clamp(24px, 7vw, 36px); letter-spacing: -0.8px; }
+            .hero-subtitle { font-size: 14px; margin-bottom: 24px; }
+            .hero-cta { flex-direction: column; width: 100%; }
+            .hero-cta .btn { width: 100%; font-size: 13.5px; }
+            .mockup-header { flex-direction: column; align-items: flex-start; gap: 10px; }
             .grid-stats { grid-template-columns: 1fr; }
-            .hero-cta { flex-direction: column; }
-            .btn { width: 100%; }
-            .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+            .stat-box { padding: 12px 14px; }
+            .metrics-strip { grid-template-columns: 1fr; }
+            .feature-card { flex: 0 0 100%; padding: 20px; }
+            .carousel-btn { display: none; }
+            .carousel-track { padding: 4px 0 14px; }
+            .hardware-grid { padding: 20px 16px; border-radius: 18px; }
+            .hardware-specs-list li { flex-direction: column; gap: 2px; }
+            .topology-card { padding: 20px 16px; }
+            .flow-diagram { grid-template-columns: 1fr; }
+            .telegram-spotlight { padding: 22px 16px; }
+            .tg-avatar-img { width: 110px; height: 110px; }
+            .tg-chat-mockup { padding: 16px 12px; }
+            .tg-buttons-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+            .tg-mock-btn { font-size: 11px; padding: 6px 8px; }
+            .footer-content { flex-direction: column; text-align: center; gap: 16px; }
+            .footer-content div:last-child { justify-content: center; }
+        }
+
+        @media (max-width: 440px) {
+            .nav-logo { font-size: 14px; gap: 6px; }
+            .nav-logo .badge-pro { font-size: 9.5px; padding: 2px 5px; }
+            .btn-github { display: none; }
+            .nav-cta-group { gap: 6px; }
+            .nav-dropdown-btn { padding: 6px 10px; font-size: 12px; }
+            .lang-switcher { padding: 2px 3px; font-size: 10px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Mobile Navigation Drawer Backdrop & Aside -->
+    <div class="drawer-backdrop" id="drawer-backdrop" onclick="toggleMobileDrawer(false)"></div>
+    <aside class="mobile-drawer" id="mobile-drawer" aria-label="Мобильное меню">
+        <div class="drawer-header">
+            <div class="nav-logo">
+                <span>🧊</span> Samsung RT34MB
+                <span class="badge-pro">PRO</span>
+            </div>
+            <button class="drawer-close-btn" onclick="toggleMobileDrawer(false)" aria-label="Закрыть меню">✕</button>
+        </div>
+        <div class="drawer-body">
+            <div>
+                <div class="drawer-section-title">Разделы страницы</div>
+                <ul class="drawer-nav-list">
+                    <li><a href="#features" onclick="toggleMobileDrawer(false)"><span>⚡</span> Возможности комплекса</a></li>
+                    <li><a href="#ai" onclick="toggleMobileDrawer(false)"><span>🧠</span> Двухуровневый AI-копилот</a></li>
+                    <li><a href="#hardware" onclick="toggleMobileDrawer(false)"><span>🔌</span> Железо и iPad-киоск</a></li>
+                    <li><a href="#architecture" onclick="toggleMobileDrawer(false)"><span>📐</span> Топология и сеть</a></li>
+                    <li><a href="#telegram" onclick="toggleMobileDrawer(false)"><span>✈️</span> Telegram-бот</a></li>
+                    <li><a href="#specs" onclick="toggleMobileDrawer(false)"><span>📋</span> Характеристики ТТХ</a></li>
+                    <li><a href="#install" onclick="toggleMobileDrawer(false)"><span>🛠️</span> Установка и запуск</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="drawer-section-title">Быстрый доступ к приложениям</div>
+                <div class="drawer-actions">
+                    <a href="static/index.html" class="btn btn-primary">
+                        <span>🖥️ Главный дашборд</span>
+                    </a>
+                    <a href="static/ipad.html" class="btn btn-kiosk">
+                        <span>📟 Режим Киоска iPad (ES5)</span>
+                    </a>
+                    <a href="https://t.me/my_fridge_rt34_bot" target="_blank" class="btn btn-telegram">
+                        <span>✈️ Telegram-бот</span>
+                    </a>
+                    <a href="https://github.com/ALEVOLDON/SmartFridge-Telemetry-Kiosk" target="_blank" class="btn btn-secondary">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        <span>GitHub репозиторий</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="drawer-footer">
+                <span class="drawer-section-title" style="margin-bottom:0;">Язык сайта:</span>
+                <div class="lang-switcher">
+                    <span class="lang-btn active">RU</span>
+                    <a href="index.en.html" class="lang-btn" title="Switch to English">EN</a>
+                </div>
+            </div>
+        </div>
+    </aside>
 
     <!-- Sticky Navbar -->
     <header class="navbar">
@@ -1140,6 +1397,15 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
                     <span>GitHub</span>
                 </a>
+
+                <!-- Mobile Hamburger Menu Button -->
+                <button class="mobile-menu-btn" onclick="toggleMobileDrawer(true)" aria-label="Открыть мобильное меню">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -1753,6 +2019,28 @@ bash scripts/h96_start_fridge.sh
 
             updateDots();
         })();
+
+        /* Mobile Drawer Controller */
+        function toggleMobileDrawer(open) {
+            var drawer = document.getElementById('mobile-drawer');
+            var backdrop = document.getElementById('drawer-backdrop');
+            if (!drawer || !backdrop) return;
+            if (open) {
+                drawer.classList.add('active');
+                backdrop.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                drawer.classList.remove('active');
+                backdrop.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' || e.keyCode === 27) {
+                toggleMobileDrawer(false);
+            }
+        });
     </script>
 </body>
 </html>
