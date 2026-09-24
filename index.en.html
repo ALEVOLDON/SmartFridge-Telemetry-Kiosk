@@ -1239,9 +1239,23 @@
             justify-content: space-between;
         }
 
+        .drawer-footer .lang-switcher {
+            display: inline-flex;
+            padding: 3px 6px;
+            gap: 4px;
+        }
+
+        .drawer-footer .lang-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
         /* Responsive */
         @media (max-width: 980px) {
             .nav-links { display: none; }
+            .nav-cta-group .lang-switcher { display: none; }
+            .nav-cta-group .nav-dropdown { display: none; }
+            .nav-cta-group .btn-github { display: none; }
             .mobile-menu-btn { display: inline-flex; }
             .hardware-grid { grid-template-columns: 1fr; gap: 24px; padding: 28px; }
             .telegram-spotlight { grid-template-columns: 1fr; gap: 24px; padding: 28px; }
@@ -1281,12 +1295,8 @@
         }
 
         @media (max-width: 440px) {
-            .nav-logo { font-size: 14px; gap: 6px; }
-            .nav-logo .badge-pro { font-size: 9.5px; padding: 2px 5px; }
-            .btn-github { display: none; }
-            .nav-cta-group { gap: 6px; }
-            .nav-dropdown-btn { padding: 6px 10px; font-size: 12px; }
-            .lang-switcher { padding: 2px 3px; font-size: 10px; }
+            .nav-logo { font-size: 14.5px; gap: 6px; }
+            .nav-logo .badge-pro { font-size: 9.5px; padding: 2px 6px; }
         }
     </style>
 </head>
@@ -1298,7 +1308,7 @@
         <div class="drawer-header">
             <div class="nav-logo">
                 <span>🧊</span> Samsung RT34MB
-                <span class="badge-pro">PRO</span>
+                <span class="badge-pro">PRO v3.10.0</span>
             </div>
             <button class="drawer-close-btn" onclick="toggleMobileDrawer(false)" aria-label="Close menu">✕</button>
         </div>
