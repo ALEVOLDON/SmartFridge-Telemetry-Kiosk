@@ -17,9 +17,104 @@
     <script src="chart.umd.min.js"></script>
     <link rel="stylesheet" href="css/dashboard.css?v=3.10.0">
 
+    <style>
+        /* Safeguard style to ensure instant dark splash screen display on load */
+        #app-splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 99999;
+            background: #050914;
+            display: flex;
+        }
+    </style>
 </head>
 <body>
 <audio id="pc-audio-player" preload="auto" src="chime.wav" style="display:none;"></audio>
+
+<!-- App Intro Splash Screen (Заставка при входе) -->
+<div id="app-splash-screen" class="app-splash-screen" onclick="dismissSplashScreen()">
+    <!-- Ambient glowing backdrop lighting -->
+    <div class="splash-glow splash-glow-1"></div>
+    <div class="splash-glow splash-glow-2"></div>
+    <div class="splash-glow splash-glow-3"></div>
+    <div class="splash-grid-pattern"></div>
+
+    <!-- Quick Skip Button in top-right -->
+    <button type="button" class="splash-skip-btn" id="splash-skip-btn" onclick="event.stopPropagation(); dismissSplashScreen();" title="Пропустить заставку [Esc]">
+        <span>Пропустить</span> <span style="font-size:11px; opacity:0.8;">✕</span>
+    </button>
+
+    <div class="splash-container" onclick="event.stopPropagation();">
+        <!-- Animated Tech Emblem -->
+        <div class="splash-emblem-wrap">
+            <div class="splash-orbit-outer"></div>
+            <div class="splash-orbit-inner"></div>
+            <div class="splash-radar-sweep"></div>
+            <div class="splash-emblem-core">
+                <div class="splash-icon-glow"></div>
+                <!-- Precision SVG Refrigerator with Freezer Cryo Snowflake & Live Telemetry Wave -->
+                <svg class="splash-svg-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Modern Fridge Chassis -->
+                    <rect x="14" y="6" width="36" height="52" rx="6" stroke="url(#splash-cyan-grad)" stroke-width="2.5" />
+                    <!-- Freezer Divider -->
+                    <line x1="14" y1="23" x2="50" y2="23" stroke="url(#splash-cyan-grad)" stroke-width="2" />
+                    <!-- Ergonomic Door Handles -->
+                    <line x1="18" y1="12" x2="18" y2="18" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+                    <line x1="18" y1="28" x2="18" y2="38" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+                    <!-- Cryo Snowflake in Freezer Section -->
+                    <path d="M32 10V20M27 15H37M28.5 11.5L35.5 18.5M35.5 11.5L28.5 18.5" stroke="#67e8f9" stroke-width="1.8" stroke-linecap="round" />
+                    <!-- Live ECG / Compressor Power Pulse Wave in Main Section -->
+                    <path d="M20 38H25L28 32L32 44L35 35L38 41H44" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="splash-pulse-path" />
+                    <defs>
+                        <linearGradient id="splash-cyan-grad" x1="14" y1="6" x2="50" y2="58" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#38bdf8"/>
+                            <stop offset="0.5" stop-color="#06b6d4"/>
+                            <stop offset="1" stop-color="#10b981"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Typography & Brand -->
+        <div class="splash-brand">
+            <div class="splash-brand-badge">
+                <span class="splash-dot-pulse"></span>
+                <span>TELEMETRY KIOSK • PRO v3.10.0</span>
+            </div>
+            <h1 class="splash-title">SAMSUNG <span class="splash-highlight">RT34MB</span></h1>
+            <p class="splash-subtitle">Автономный комплекс термодинамики &amp; энергомониторинга</p>
+        </div>
+
+        <!-- Progress Bar & Status Text -->
+        <div class="splash-progress-section">
+            <div class="splash-progress-track">
+                <div class="splash-progress-bar" id="splash-progress-bar">
+                    <div class="splash-progress-sheen"></div>
+                </div>
+            </div>
+            <div class="splash-status-row">
+                <span class="splash-status-text" id="splash-status-text">Инициализация LAN Direct...</span>
+                <span class="splash-status-pct" id="splash-status-pct">0%</span>
+            </div>
+        </div>
+
+        <!-- System Architecture Pill Tags -->
+        <div class="splash-tags">
+            <span class="splash-tag"><span>⚡</span> 220V RMS</span>
+            <span class="splash-tag"><span>❄️</span> No Frost</span>
+            <span class="splash-tag"><span>🧠</span> Dual AI</span>
+            <span class="splash-tag"><span>🛡️</span> Watchdog</span>
+            <span class="splash-tag"><span>🍏</span> iPad Kiosk</span>
+        </div>
+
+        <!-- Bottom Tap / Click Hint -->
+        <div class="splash-hint" onclick="dismissSplashScreen()">Нажмите в любое место или клавишу Esc для быстрого входа</div>
+    </div>
+</div>
 
 <!-- Mobile Slide-out Drawer Menu -->
 <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeMobileDrawer()"></div>
@@ -68,6 +163,10 @@
     <button class="drawer-item" onclick="togglePcSound(); syncDrawerSoundUI();">
         <span id="drawer-sound-icon">🔔</span>
         <span id="drawer-sound-text">Звуковой сигнал: ВКЛ</span>
+    </button>
+    <button class="drawer-item" onclick="closeMobileDrawer(); showSplashScreen(true);">
+        <span>🎬</span>
+        <span>Заставка при входе</span>
     </button>
     <button class="drawer-item" onclick="toggleFullScreen(); closeMobileDrawer();">
         <span>⛶</span>
@@ -514,6 +613,21 @@
             </button>
             <div id="tg-test-status" style="display:none; font-size:11.5px; margin-top:6px; text-align:center;"></div>
         </div>
+
+        <!-- Splash Screen Settings -->
+        <div style="margin: 14px 0 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;">
+            <div style="font-weight: 700; color: #38bdf8; font-size: 13.5px; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
+                <span>🎬</span> Заставка при входе
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <label for="cfg-splash-enabled" style="margin:0; font-size:13px; color:#f8fafc; cursor:pointer;">Красивая заставка при запуске приложения</label>
+                <input type="checkbox" id="cfg-splash-enabled" style="width:18px; height:18px; cursor:pointer;" checked>
+            </div>
+            <button type="button" class="btn btn-secondary" style="width:100%; margin-top:8px; font-size:12.5px; padding:7px 12px; background:rgba(56,189,248,0.12); border-color:rgba(56,189,248,0.3); color:#38bdf8;" onclick="closeSettings(); showSplashScreen(true);">
+                ▶️ Просмотреть заставку сейчас
+            </button>
+        </div>
+
         <button class="btn" style="width:100%;" onclick="saveSettings()">💾 Сохранить и подключиться</button>
     </div>
 </div>
@@ -601,6 +715,10 @@
                         <div>• <strong>Клиентские интерфейсы:</strong> Главный Cyber-дашборд + Облегченный Kiosk Mode для iPad (iOS 9–12)</div>
                         <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI & DEV</div>
                     </div>
+
+                    <button type="button" class="btn btn-secondary" onclick="closeAboutModal(); showSplashScreen(true);" style="width:100%; margin-top:14px; background:rgba(56,189,248,0.15); border-color:rgba(56,189,248,0.35); color:#38bdf8; justify-content:center; font-size:13px; padding:10px;">
+                        🎬 Просмотреть заставку при запуске
+                    </button>
                 </div>
             </div>
 

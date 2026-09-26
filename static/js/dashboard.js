@@ -18,6 +18,15 @@ function toggleFullScreen() {
         if (btn) btn.innerText = document.fullscreenElement ? '🗗 Свернуть' : '⛶ На весь экран';
     });
 
+    var splashDismissed = false;
+    var splashTimeouts = [];
+    var initialDataArrived = false;
+    var allCyclesData = [];
+    var fullArchiveCyclesData = null;
+    var allBlackoutsData = [];
+    var isArchiveLoading = false;
+    var currentArchiveFilter = 'all';
+
     const ctx = document.getElementById('liveChart').getContext('2d');
     const liveChart = new Chart(ctx, {
         type: 'line',
@@ -77,6 +86,11 @@ function toggleFullScreen() {
         if (tgEn) tgEn.checked = Boolean(cfg.telegram_enabled);
         if (tgSt) tgSt.style.display = 'none';
 
+        const splashEn = document.getElementById('cfg-splash-enabled');
+        if (splashEn) {
+            splashEn.checked = localStorage.getItem('fridge_splash_enabled') !== 'false';
+        }
+
         document.getElementById('settings-modal').style.display = 'flex';
     }
 
@@ -88,6 +102,11 @@ function toggleFullScreen() {
         const tgToken = document.getElementById('cfg-tg-token');
         const tgChat = document.getElementById('cfg-tg-chat-id');
         const tgEn = document.getElementById('cfg-tg-enabled');
+
+        const splashEn = document.getElementById('cfg-splash-enabled');
+        if (splashEn) {
+            localStorage.setItem('fridge_splash_enabled', splashEn.checked ? 'true' : 'false');
+        }
 
         const payload = {
             api_region: document.getElementById('cfg-region').value,
@@ -357,7 +376,7 @@ function toggleFullScreen() {
     }
 
     function autoDiscoverNewIP() {
-        if (isAutoScanning) return;
+        if (isAutoScanning || window.location.protocol === 'file:') return;
         isAutoScanning = true;
         
         const cloudText = document.getElementById('cloud-text');
@@ -578,6 +597,10 @@ function toggleFullScreen() {
         failedPolls = 0;
         isAutoScanning = false;
         
+        if (typeof onInitialDataLoaded === 'function') {
+            onInitialDataLoaded();
+        }
+
         if (data.app_version) {
             document.querySelectorAll('.about-pro-badge, .badge-pro').forEach(function(el) {
                 el.textContent = data.app_version;
@@ -921,11 +944,6 @@ function toggleFullScreen() {
         });
     }
 
-    let allCyclesData = [];
-    let fullArchiveCyclesData = null;
-    let isArchiveLoading = false;
-    let currentArchiveFilter = 'all';
-
     function loadFullArchive(callback) {
         if (fullArchiveCyclesData) {
             if (callback) callback();
@@ -979,8 +997,6 @@ function toggleFullScreen() {
         if (activeBtn) activeBtn.classList.add('active');
         renderArchiveTable(type);
     }
-
-    let allBlackoutsData = [];
 
     function createCycleRow(c) {
         const mins = Math.floor((c.duration_sec || 0) / 60);
@@ -1225,8 +1241,127 @@ function toggleFullScreen() {
         if (btn) btn.classList.add('active');
     }
 
-// Close on Escape key
+    /* ==========================================================================
+       APP INTRO SPLASH SCREEN ENGINE (Заставка при входе)
+       ========================================================================== */
+    function playTechBootChime() {
+        if (typeof soundEnabled !== 'undefined' && !soundEnabled) return;
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 (Major chord)
+            notes.forEach((freq, idx) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.07);
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime + idx * 0.07);
+                gain.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + idx * 0.07 + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.07 + 0.55);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + idx * 0.07);
+                osc.stop(ctx.currentTime + idx * 0.07 + 0.6);
+            });
+        } catch (e) {
+            // Audio policy or context not allowed
+        }
+    }
+
+    function setSplashStep(pct, msg) {
+        const progressBar = document.getElementById('splash-progress-bar');
+        const statusText = document.getElementById('splash-status-text');
+        const statusPct = document.getElementById('splash-status-pct');
+        if (progressBar) progressBar.style.width = pct + '%';
+        if (statusText) statusText.innerHTML = msg;
+        if (statusPct) statusPct.textContent = pct + '%';
+    }
+
+    function dismissSplashScreen() {
+        if (splashDismissed) return;
+        splashDismissed = true;
+        splashTimeouts.forEach(clearTimeout);
+        splashTimeouts = [];
+
+        const splashEl = document.getElementById('app-splash-screen');
+        if (splashEl) {
+            setSplashStep(100, 'Система готова к работе');
+            splashEl.classList.add('splash-fading');
+            setTimeout(function() {
+                splashEl.style.display = 'none';
+            }, 550);
+        }
+    }
+
+    function showSplashScreen(force) {
+        const splashEl = document.getElementById('app-splash-screen');
+        if (!splashEl) return;
+
+        if (!force && localStorage.getItem('fridge_splash_enabled') === 'false') {
+            splashEl.style.display = 'none';
+            splashDismissed = true;
+            return;
+        }
+
+        splashDismissed = false;
+        splashTimeouts.forEach(clearTimeout);
+        splashTimeouts = [];
+
+        splashEl.classList.remove('splash-fading');
+        splashEl.style.display = 'flex';
+        setSplashStep(12, 'Инициализация подсистем LAN Direct...');
+
+        splashTimeouts.push(setTimeout(function() {
+            if (!splashDismissed) setSplashStep(42, 'Синхронизация с ваттметром RMS...');
+        }, 320));
+
+        splashTimeouts.push(setTimeout(function() {
+            if (!splashDismissed) setSplashStep(72, 'Калибровка термодинамики КРВ...');
+        }, 700));
+
+        splashTimeouts.push(setTimeout(function() {
+            if (!splashDismissed) setSplashStep(90, 'Подключение AI-ядер TypeSafe & Gemini...');
+        }, 1100));
+
+        splashTimeouts.push(setTimeout(function() {
+            if (!splashDismissed) {
+                setSplashStep(100, 'Система готова к работе');
+                playTechBootChime();
+            }
+        }, 1450));
+
+        splashTimeouts.push(setTimeout(function() {
+            if (!splashDismissed) {
+                dismissSplashScreen();
+            }
+        }, 1900));
+    }
+
+    function onInitialDataLoaded() {
+        if (initialDataArrived) return;
+        initialDataArrived = true;
+        if (!splashDismissed) {
+            setSplashStep(100, 'Данные телеметрии синхронизированы');
+            splashTimeouts.push(setTimeout(function() {
+                if (!splashDismissed) dismissSplashScreen();
+            }, 450));
+        }
+    }
+
+    window.showSplashScreen = showSplashScreen;
+    window.dismissSplashScreen = dismissSplashScreen;
+
+    // Close on Escape key or dismiss splash screen
     document.addEventListener('keydown', function(e) {
+        const splashEl = document.getElementById('app-splash-screen');
+        if (splashEl && splashEl.style.display !== 'none' && !splashDismissed) {
+            if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                dismissSplashScreen();
+                return;
+            }
+        }
         if (e.key === 'Escape') {
             closeAboutModal();
             closeArchiveModal();
@@ -1241,6 +1376,9 @@ function toggleFullScreen() {
     updateSoundButtonUI();
     pollStatus();
     updateCyclesTable();
+
+    // Start intro splash screen on entrance
+    showSplashScreen(false);
 
     // Instant wake-up upon screen unlock, tablet wake, or switching back to tab
     document.addEventListener('visibilitychange', function() {
