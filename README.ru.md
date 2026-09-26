@@ -7,7 +7,7 @@
   <a href="README.md">English</a> • <b>Русский</b>
 </p>
 
-[![Релиз: PRO v3.10.0](https://img.shields.io/badge/Релиз-PRO%20v3.10.0-blue.svg)](version.py)
+[![Релиз: PRO v3.10.0](https://img.shields.io/badge/Релиз-PRO%20v3.11.0-blue.svg)](version.py)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Бэкенд-Flask-green.svg?logo=flask)](https://flask.palletsprojects.com/)
 [![SQLite](https://img.shields.io/badge/База%20данных-SQLite-lightgrey.svg?logo=sqlite)](https://sqlite.org/)

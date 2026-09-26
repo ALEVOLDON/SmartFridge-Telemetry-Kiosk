@@ -2449,6 +2449,26 @@ def tariff_api():
         return jsonify({"status": "saved", "tariff": cfg.get("electricity_tariff", 5.0), "currency": cfg.get("currency", "₽")})
     return jsonify({"tariff": cfg.get("electricity_tariff", 5.0), "currency": cfg.get("currency", "₽")})
 
+@app.route("/api/changelog")
+def changelog_api():
+    """Serves structured version history and release notes from changelog.json."""
+    changelog_path = os.path.join(APP_DIR, "changelog.json")
+    if os.path.exists(changelog_path):
+        try:
+            with open(changelog_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return jsonify({
+                "status": "ok",
+                "version": getattr(version, "VERSION", "3.11.0"),
+                "version_string": getattr(version, "VERSION_STRING", "PRO v3.11.0"),
+                "release_title": getattr(version, "RELEASE_TITLE", ""),
+                "release_date": getattr(version, "RELEASE_DATE", ""),
+                "changelog": data
+            })
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+    return jsonify({"status": "error", "message": "changelog.json not found"}), 404
+
 def start_background_services():
     """DB, optional cloud backfill, and Tuya poller. Not run on import (keeps tests clean)."""
     global _poller_thread

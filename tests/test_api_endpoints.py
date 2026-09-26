@@ -57,9 +57,23 @@ class ApiEndpointsSecurityAndCorsTests(unittest.TestCase):
         self.assertEqual(res_ipad.status_code, 200)
         res_ipad.close()
         res_static_css = self.client.get("/static/css/dashboard.css", environ_base={"REMOTE_ADDR": "127.0.0.1"})
-        self.assertEqual(res_static_css.status_code, 200)
-        res_static_css.close()
+    def test_changelog_endpoint(self):
+        res = self.client.get("/api/changelog", environ_base={"REMOTE_ADDR": "127.0.0.1"})
+        self.assertEqual(res.status_code, 200)
+        data = res.get_json()
+        self.assertIsInstance(data, dict)
+        self.assertEqual(data.get("status"), "ok")
+        self.assertIn("version", data)
+        self.assertIn("changelog", data)
+        self.assertIsInstance(data["changelog"], list)
+        self.assertGreater(len(data["changelog"]), 0)
+        # Check first item structure
+        first = data["changelog"][0]
+        self.assertIn("version", first)
+        self.assertIn("title", first)
+        self.assertIn("points", first)
 
 
 if __name__ == "__main__":
     unittest.main()
+

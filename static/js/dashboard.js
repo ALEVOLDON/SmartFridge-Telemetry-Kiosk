@@ -1228,6 +1228,63 @@ function toggleFullScreen() {
         if (modal) modal.style.display = 'none';
     }
 
+    let _changelogLoaded = false;
+    function loadDynamicChangelog(force) {
+        if (_changelogLoaded && !force) return;
+        fetch('/api/changelog')
+            .then(function(res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function(data) {
+                if (!data || !data.changelog || !Array.isArray(data.changelog) || data.changelog.length === 0) return;
+                
+                if (data.version_string) {
+                    document.querySelectorAll('.about-pro-badge').forEach(function(el) {
+                        el.textContent = data.version_string;
+                    });
+                }
+                
+                const container = document.getElementById('tab-changelog');
+                if (!container) return;
+
+                let html = '';
+                data.changelog.forEach(function(item) {
+                    const ver = (item.version || '').replace(/^v/, '');
+                    const parts = ver.split('.');
+                    const major = parseInt(parts[0], 10) || 0;
+                    const minor = parseInt(parts[1], 10) || 0;
+                    const isPro = (major > 3 || (major === 3 && minor >= 5));
+                    const proSuffix = isPro ? ' Pro' : '';
+                    const title = item.title ? (' — ' + item.title) : '';
+                    const header = 'v' + ver + proSuffix + title;
+                    const date = item.date || '';
+
+                    html += '<div class="changelog-card">' +
+                        '<div class="changelog-ver">' +
+                            '<span>' + escapeHTML(header) + '</span>' +
+                            '<span class="changelog-date">' + escapeHTML(date) + '</span>' +
+                        '</div>';
+
+                    (item.points || []).forEach(function(pt) {
+                        const lead = escapeHTML(pt.lead || '');
+                        const desc = escapeHTML(pt.desc || '');
+                        html += '<div class="changelog-point"><strong>' + lead + ':</strong> ' + desc + '</div>';
+                    });
+
+                    html += '</div>';
+                });
+
+                if (html) {
+                    container.innerHTML = html;
+                    _changelogLoaded = true;
+                }
+            })
+            .catch(function(err) {
+                // Silently keep static pre-rendered cards
+            });
+    }
+
     function switchAboutTab(tabId, btn) {
         const tabs = ['tab-about', 'tab-faq', 'tab-changelog', 'tab-specs'];
         tabs.forEach(function(t) {
@@ -1239,6 +1296,10 @@ function toggleFullScreen() {
             b.classList.remove('active');
         });
         if (btn) btn.classList.add('active');
+
+        if (tabId === 'tab-changelog') {
+            loadDynamicChangelog();
+        }
     }
 
     /* ==========================================================================

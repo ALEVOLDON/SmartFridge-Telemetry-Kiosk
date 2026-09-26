@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
     
     <script src="chart.umd.min.js"></script>
-    <link rel="stylesheet" href="css/dashboard.css?v=3.10.1">
+    <link rel="stylesheet" href="css/dashboard.css?v=3.11.0">
 
     <style>
         /* Safeguard style to ensure instant dark splash screen display on load */
@@ -643,7 +643,7 @@
                 </div>
                 <div>
                     <div class="about-title-row">
-                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.10.0</span>
+                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.11.0</span>
                     </div>
                     <div class="about-subtitle">Автономная система энергомониторинга и предиктивной диагностики No-Frost</div>
                 </div>
@@ -778,59 +778,84 @@
             <div id="tab-changelog" style="display:none;">
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v3.9.0 Pro — Dual-Tier AI (Gemini Flash & TypeSafe) & Cycle Resilience</span>
+                        <span>v3.11.0 Pro — Cyberpunk Boot Splash Screen &amp; UI Experience</span>
+                        <span class="changelog-date">26.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Интерактивная неоновая заставка (Cyber Splash Screen):</strong> футуристическая анимация орбитальных колец, круговой радар-сканер и светящаяся эмблема холодильника с живым ЭКГ-пульсом компрессора.</div>
+                    <div class="changelog-point"><strong>Динамический прогресс-бар и этапы инициализации:</strong> пошаговый контроль подсистем LAN Direct, ваттметра RMS, термодинамической модели КРВ и нейросетевых ядер TypeSafe &amp; Gemini.</div>
+                    <div class="changelog-point"><strong>Мягкий звуковой аккорд (Web Audio Chime):</strong> синтезированный мажорный гармонический аккорд запуска прибора (C5–E5–G5–C6) при завершении загрузки.</div>
+                    <div class="changelog-point"><strong>Мгновенный вход и управление показом:</strong> быстрый пропуск по Esc или клику, сохранение выбора в localStorage, кнопки предпросмотра в мобильной шторке, настройках и окне «О программе».</div>
+                    <div class="changelog-point"><strong>Облегченная заставка для iPad Kiosk (/ipad):</strong> выделенная версия на чистом ES5 и аппаратном WebKit CSS3 для планшета на холодильнике (iOS 9–12).</div>
+                    <div class="changelog-point"><strong>Автоматизация версий и деплоя:</strong> централизованный changelog, автообновление истории версий во всех дашбордах и мгновенная синхронизация с сервером H96 Max.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.10.0 Pro — Real-Time Blackout Resilience &amp; Telemetry Calibration</span>
+                        <span class="changelog-date">24.09.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Детекция отключений электросети 220В в реальном времени:</strong> мгновенная фиксация блэкаута, вывод контрастного баннера с секундомером аварии и экстренное оповещение в Telegram.</div>
+                    <div class="changelog-point"><strong>Теплофизическая модель тепловой инерции камер:</strong> программный расчет прогрева камер без физических датчиков (+1.4°C/ч в морозилке, +0.8°C/ч в холодильнике) и прогнозирование кривой охлаждения.</div>
+                    <div class="changelog-point"><strong>Антифриз сокетов (Socket Anti-Stall):</strong> обнаружение «залипших» аппаратных регистров счетчика при ровной нагрузке компрессора, фильтрация сетевых помех и предотвращение разрыва циклов.</div>
+                    <div class="changelog-point"><strong>Непрерывная аппаратная калибровка телеметрии:</strong> сверка локального интеграла энергии каждого цикла со специализированным чипом умной розетки (регистр add_ele в Tuya Cloud) каждый час в XX:05.</div>
+                    <div class="changelog-point"><strong>Полная тестовая валидация:</strong> 58 модульных тестов с покрытием блэкаутов, теплофизики и энергоучёта.</div>
+                </div>
+
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.9.0 Pro — Dual-Tier AI (Gemini Flash &amp; TypeSafe) &amp; Cycle Resilience</span>
                         <span class="changelog-date">21.09.2026</span>
                     </div>
                     <div class="changelog-point"><strong>Диалоговый эксперт Google Gemini Flash (System 2):</strong> подключение сверхбыстрой генеративной языковой модели с глубоким знанием физики Samsung RT34MB и No-Frost, отвечающей на любые открытые вопросы в Telegram с учётом живой телеметрии розетки.</div>
                     <div class="changelog-point"><strong>Двухуровневая AI-архитектура:</strong> мгновенная маршрутизация служебных команд через TypeSafe AI (System 1, 80 мс) и генеративный консалтинг через Gemini Flash (System 2).</div>
                     <div class="changelog-point"><strong>Автовосстановление прерванных циклов (Cycle Resilience):</strong> интеллектуальная защита от зависания таймеров компрессора при аварийных перезапусках демона и автоматическая реконструкция незавершённых циклов из SQLite.</div>
-                    <div class="changelog-point"><strong>Единый источник правды версий (Single Source of Truth):</strong> динамическая трансляция версии из <code>version.py</code> в API, веб-дашборд, киоск iPad и Telegram-бот без ручного дублирования.</div>
+                    <div class="changelog-point"><strong>Единый источник правды версий (Single Source of Truth):</strong> динамическая трансляция версии из version.py в API, веб-дашборд, киоск iPad и Telegram-бот без ручного дублирования.</div>
                     <div class="changelog-point"><strong>Расширенный тестовый набор:</strong> 57 модульных тестов с полным покрытием AI-модулей и алгоритмов детекции циклов.</div>
                 </div>
 
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v3.8.0 Pro — TypeSafe AI (System 1) Co-Pilot & Telegram Bot Ecosystem</span>
+                        <span>v3.8.0 Pro — TypeSafe AI (System 1) Co-Pilot &amp; Telegram Bot Ecosystem</span>
                         <span class="changelog-date">21.09.2026</span>
                     </div>
                     <div class="changelog-point"><strong>Нейросетевой сопроцессор TypeSafe AI (Jev System 1):</strong> автономная классификация интентов и термодинамическая экспертиза холодильника через лёгкий REST-протокол (Zero-Dependency) без тяжеловесных SDK.</div>
                     <div class="changelog-point"><strong>Естественный язык в Telegram-боте:</strong> бот понимает свободные фразы («как дела?», «сколько намотало?», «проверь компрессор», «спасибо») с мгновенным fallback на классические регулярные выражения при отсутствии сети.</div>
-                    <div class="changelog-point"><strong>Диагностика компрессора (AI Health Audit):</strong> глубокий аудит термического равновесия, коэффициента рабочего времени (КРВ) и выявление деградации уплотнителя / испарителя прямо в отчёте <code>/audit</code>.</div>
+                    <div class="changelog-point"><strong>Диагностика компрессора (AI Health Audit):</strong> глубокий аудит термического равновесия, коэффициента рабочего времени (КРВ) и выявление деградации уплотнителя / испарителя прямо в отчёте /audit.</div>
                     <div class="changelog-point"><strong>Автономный локальный SQLite Fallback:</strong> генерация актуальной сводки и расчёта затрат даже при временном разрыве связи с демоном опроса розетки.</div>
                     <div class="changelog-point"><strong>Расширенное тестовое покрытие:</strong> 51 модульный тест (100% прохождение), тестирование интеграции AI-модели и отказоустойчивости сетевого стека.</div>
                 </div>
 
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v3.7.0 Pro — Tuya Cloud Hardware Calibration & Wake-Up Engine</span>
+                        <span>v3.7.0 Pro — Tuya Cloud Hardware Calibration &amp; Wake-Up Engine</span>
                         <span class="changelog-date">18.09.2026</span>
                     </div>
                     <div class="changelog-point"><strong>Аппаратная калибровка энергии (Tuya Cloud Add-Ele):</strong> автоматическая сверка локального интегрального расчёта с аппаратным чипом розетки каждый час в фоновом потоке (XX:05). Подтверждённая точность — 99.9% при расходе всего ~1.4% месячной квоты Tuya.</div>
-                    <div class="changelog-point"><strong>Устранение задержки пробуждения (Wake-Up Engine):</strong> добавлены таймауты запросов через <code>AbortController</code> (2.5 с / 4.0 с), слушатели событий <code>visibilitychange</code> и <code>focus</code> для мгновенного возобновления опроса при включении экрана планшета.</div>
-                    <div class="changelog-point"><strong>Атомарная сохранность конфигов при авариях 220В:</strong> внедрена технология <code>atomic_write</code> для предотвращения повреждения JSON-конфигурации при внезапных отключениях питания.</div>
+                    <div class="changelog-point"><strong>Устранение задержки пробуждения (Wake-Up Engine):</strong> добавлены таймауты запросов через AbortController (2.5 с / 4.0 с), слушатели событий visibilitychange и focus для мгновенного возобновления опроса при включении экрана планшета.</div>
+                    <div class="changelog-point"><strong>Атомарная сохранность конфигов при авариях 220В:</strong> внедрена технология atomic_write для предотвращения повреждения JSON-конфигурации при внезапных отключениях питания.</div>
                     <div class="changelog-point"><strong>Сетевая безопасность и LAN-Guard:</strong> строгая изоляция административных и облачных эндпоинтов (доступ разрешён только из локальной подсети), защита междоменных запросов CORS Origin Whitelist.</div>
-                    <div class="changelog-point"><strong>Модульная архитектура и тесты:</strong> вынос чистой термодинамической логики компрессора в <code>fridge_logic.py</code>, разделение фронтенда и полный тестовый набор из 33 модульных тестов.</div>
+                    <div class="changelog-point"><strong>Модульная архитектура и тесты:</strong> вынос чистой термодинамической логики компрессора в fridge_logic.py, разделение фронтенда и полный тестовый набор из 33 модульных тестов.</div>
                 </div>
 
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v3.6.0 Pro — Energy & Health Analytics Intelligence</span>
+                        <span>v3.6.0 Pro — Energy &amp; Health Analytics Intelligence</span>
                         <span class="changelog-date">12.09.2026</span>
                     </div>
                     <div class="changelog-point"><strong>Аналитический модуль и энергоучёт:</strong> честный интегральный расчёт расхода электроэнергии (кВт·ч) раздельно для компрессора и ТЭНа No Frost, среднесуточный расход и прогноз на месяц.</div>
-                    <div class="changelog-point"><strong>Динамический калькулятор тарифа:</strong> интерактивный пересчёт затрат с сохранением тарифа и поддержкой региональных валют (₽, ₴, $, €, ₸) через эндпоинты <code>/api/analytics</code> и <code>/api/tariff</code>.</div>
+                    <div class="changelog-point"><strong>Динамический калькулятор тарифа:</strong> интерактивный пересчёт затрат с сохранением тарифа и поддержкой региональных валют (₽, ₴, $, €, ₸) через эндпоинты /api/analytics и /api/tariff.</div>
                     <div class="changelog-point"><strong>Индекс здоровья холодильника:</strong> комплексный Health Score (88/100), диагностика циклов оттайки испарителя (длительность ~25 мин, мощность 155 Вт) и выявление просадок электросети ниже 190 В.</div>
                     <div class="changelog-point"><strong>Интерактивные графики Chart.js:</strong> 14-дневная гистограмма расхода кВт·ч с наложением кривой КРВ и 24-часовой суточный профиль активности компрессора с кривой напряжения сети.</div>
                     <div class="changelog-point"><strong>Серверный RAM-кэш и пагинация:</strong> ускорение отдачи API с 998 мс до 11 мс (кэш TTL 10 мин), постраничная загрузка архива по 30 циклов и отдельное модальное окно полного журнала.</div>
-                    <div class="changelog-point"><strong>Стилизованные cyber-dark скроллбары:</strong> неоновый скроллбар с эффектом подсветки и фиксированные заголовки таблиц (<code>position: sticky</code>).</div>
+                    <div class="changelog-point"><strong>Стилизованные cyber-dark скроллбары:</strong> неоновый скроллбар с эффектом подсветки и фиксированные заголовки таблиц (position: sticky).</div>
                 </div>
 
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v3.5.2 Pro — Policy Routing Shield & 7-Day Storage Shield</span>
+                        <span>v3.5.2 Pro — Policy Routing Shield &amp; 7-Day Storage Shield</span>
                         <span class="changelog-date">07.09.2026</span>
                     </div>
-                    <div class="changelog-point"><strong>Изоляция локальной сети от VPN:</strong> интеграция системных правил Linux Policy Routing (<code>pref 9000/9001</code> на <code>eth0</code>) для одновременной работы сторонних VPN-клиентов и домашней телеметрии.</div>
+                    <div class="changelog-point"><strong>Изоляция локальной сети от VPN:</strong> интеграция системных правил Linux Policy Routing (pref 9000/9001 на eth0) для одновременной работы сторонних VPN-клиентов и домашней телеметрии.</div>
                     <div class="changelog-point"><strong>7-дневная автоочистка SQLite:</strong> автоматическая ротация сырых замеров (фиксация размера БД на уровне ~11 МБ) с бессрочным сохранением всех циклов и блэкаутов.</div>
                     <div class="changelog-point"><strong>Интерактивный центр «О программе»:</strong> встроена база знаний (FAQ), диагностические подсказки, технические характеристики и полная история версий с первого релиза.</div>
                     <div class="changelog-point"><strong>Оптимизация сетевых сокетов:</strong> принудительная привязка source IP 192.168.0.103 для исключения коллизий маршрутизации.</div>
@@ -838,7 +863,7 @@
 
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v3.5.0 — Blackout Recovery Intelligence</span>
+                        <span>v3.5.0 Pro — Blackout Recovery Intelligence</span>
                         <span class="changelog-date">06.09.2026</span>
                     </div>
                     <div class="changelog-point"><strong>Детектор отключений 220В:</strong> автоматическая фиксация аварийных отключений электроэнергии с точностью до секунды.</div>
@@ -854,12 +879,12 @@
                     </div>
                     <div class="changelog-point"><strong>Локальный протокол Tuya:</strong> переход на прямое TCP-взаимодействие с розеткой (порт 6668) без расхода месячной квоты Tuya Cloud.</div>
                     <div class="changelog-point"><strong>100% экономия вызовов:</strong> предотвращение блокировки аккаунта разработчика Tuya при 5-секундном интервале опроса.</div>
-                    <div class="changelog-point"><strong>iPad Kiosk Mode:</strong> запуск облегченного веб-интерфейса <code>/ipad</code> для старых планшетов.</div>
+                    <div class="changelog-point"><strong>iPad Kiosk Mode:</strong> запуск облегченного веб-интерфейса /ipad для старых планшетов.</div>
                 </div>
 
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v3.2.0 — Thermal Modeling & Audio Engine</span>
+                        <span>v3.2.0 — Thermal Modeling &amp; Audio Engine</span>
                         <span class="changelog-date">31.08.2026</span>
                     </div>
                     <div class="changelog-point"><strong>Теплофизическая модель:</strong> программная оценка температур в морозилке (-18°C) и холодильнике (+4°C) без монтажа физических термопар.</div>
@@ -877,11 +902,11 @@
 
                 <div class="changelog-card">
                     <div class="changelog-ver">
-                        <span>v2.0.0 — Web Dashboard & SQLite Architecture</span>
+                        <span>v2.0.0 — Web Dashboard &amp; SQLite Architecture</span>
                         <span class="changelog-date">28.08.2026</span>
                     </div>
-                    <div class="changelog-point"><strong>Переход на Web и Flask:</strong> встроенный HTTP веб-сервер, REST API (<code>/api/status</code>, <code>/api/history</code>) и современный дашборд.</div>
-                    <div class="changelog-point"><strong>Реляционная база SQLite:</strong> структурированное хранение замеров и циклов в <code>fridge_data.db</code> вместо временных файлов.</div>
+                    <div class="changelog-point"><strong>Переход на Web и Flask:</strong> встроенный HTTP веб-сервер, REST API (/api/status, /api/history) и современный дашборд.</div>
+                    <div class="changelog-point"><strong>Реляционная база SQLite:</strong> структурированное хранение замеров и циклов в fridge_data.db вместо временных файлов.</div>
                     <div class="changelog-point"><strong>Живые графики:</strong> динамическое построение кривых мощности, напряжения и тока в реальном времени.</div>
                 </div>
 
@@ -974,8 +999,8 @@
     </div>
 </div>
 
-<script src="js/dashboard.js?v=3.10.1"></script>
-<script src="js/analytics.js?v=3.10.0"></script>
+<script src="js/dashboard.js?v=3.11.0"></script>
+<script src="js/analytics.js?v=3.11.0"></script>
 
 
 </body>
