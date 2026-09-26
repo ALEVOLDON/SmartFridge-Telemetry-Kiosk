@@ -100,10 +100,301 @@
         #history-body tr:hover {
             background: rgba(56, 189, 248, 0.08) !important;
         }
+
+        /* iPad Intro Splash Screen */
+        .ipad-splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 99999;
+            background: #070d1a url('bg-cyber.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-transition: opacity 0.5s ease, -webkit-transform 0.5s ease;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            cursor: pointer;
+        }
+        .ipad-splash-screen.splash-fading {
+            opacity: 0;
+            -webkit-transform: scale(1.04);
+            transform: scale(1.04);
+            pointer-events: none;
+        }
+        .ipad-splash-glow {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            margin-left: -200px;
+            width: 400px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .ipad-splash-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+        }
+        .ipad-splash-skip {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .ipad-splash-box {
+            position: relative;
+            z-index: 5;
+            background: rgba(11, 17, 32, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 18px;
+            padding: 28px 24px;
+            max-width: 520px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            cursor: default;
+        }
+        .ipad-splash-emblem {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+        }
+        .ipad-splash-ring-outer {
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(56, 189, 248, 0.45);
+            -webkit-animation: ipadSplashSpin 14s linear infinite;
+            animation: ipadSplashSpin 14s linear infinite;
+        }
+        .ipad-splash-ring-inner {
+            position: absolute;
+            top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border-radius: 50%;
+            border: 1.5px dotted rgba(16, 185, 129, 0.45);
+            -webkit-animation: ipadSplashSpinRev 9s linear infinite;
+            animation: ipadSplashSpinRev 9s linear infinite;
+        }
+        .ipad-splash-core {
+            position: relative;
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-align: center;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+        }
+        .ipad-splash-badge {
+            display: inline-block;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            padding: 4px 14px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #38bdf8;
+            margin-bottom: 10px;
+        }
+        .ipad-splash-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .ipad-splash-title {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #ffffff;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+        .ipad-splash-sub {
+            font-size: 12.5px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+        .ipad-splash-bar-wrap {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 16px;
+        }
+        .ipad-splash-bar-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .ipad-splash-bar {
+            width: 0%;
+            height: 100%;
+            background: #0ea5e9;
+            background: -webkit-linear-gradient(left, #0284c7 0%, #38bdf8 60%, #10b981 100%);
+            background: linear-gradient(90deg, #0284c7 0%, #38bdf8 60%, #10b981 100%);
+            border-radius: 8px;
+            -webkit-transition: width 0.3s ease;
+            transition: width 0.3s ease;
+        }
+        .ipad-splash-status {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: justify;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 11.5px;
+            color: #cbd5e1;
+        }
+        .ipad-splash-tags {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-box-pack: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .ipad-splash-tag {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 3px 9px;
+            font-size: 10.5px;
+            color: #94a3b8;
+            margin: 3px 4px;
+        }
+        .ipad-splash-hint {
+            font-size: 11px;
+            color: #64748b;
+        }
+        @-webkit-keyframes ipadSplashSpin {
+            from { -webkit-transform: rotate(0deg); }
+            to { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes ipadSplashSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @-webkit-keyframes ipadSplashSpinRev {
+            from { -webkit-transform: rotate(0deg); }
+            to { -webkit-transform: rotate(-360deg); }
+        }
+        @keyframes ipadSplashSpinRev {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
     </style>
 </head>
 <body>
     <audio id="ipad-audio-player" preload="auto" src="chime.wav" style="display:none;"></audio>
+
+    <!-- iPad Kiosk Intro Splash Screen (Pure ES5 / CSS3 compatible) -->
+    <div id="ipad-splash-screen" class="ipad-splash-screen" onclick="dismissIpadSplash()">
+        <div class="ipad-splash-glow"></div>
+        <div class="ipad-splash-grid"></div>
+
+        <button type="button" class="ipad-splash-skip" onclick="event.stopPropagation(); dismissIpadSplash();" title="Пропустить">
+            Пропустить ✕
+        </button>
+
+        <div class="ipad-splash-box" onclick="event.stopPropagation();">
+            <div class="ipad-splash-emblem">
+                <div class="ipad-splash-ring-outer"></div>
+                <div class="ipad-splash-ring-inner"></div>
+                <div class="ipad-splash-core">
+                    <svg viewBox="0 0 64 64" width="56" height="56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="14" y="6" width="36" height="52" rx="6" stroke="#38bdf8" stroke-width="2.5" />
+                        <line x1="14" y1="23" x2="50" y2="23" stroke="#38bdf8" stroke-width="2" />
+                        <line x1="18" y1="12" x2="18" y2="18" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+                        <line x1="18" y1="28" x2="18" y2="38" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+                        <path d="M32 10V20M27 15H37M28.5 11.5L35.5 18.5M35.5 11.5L28.5 18.5" stroke="#67e8f9" stroke-width="1.8" stroke-linecap="round" />
+                        <path d="M20 38H25L28 32L32 44L35 35L38 41H44" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="ipad-splash-badge">
+                <span class="ipad-splash-dot"></span>
+                <span>IPAD KIOSK • RETINA ES5</span>
+            </div>
+
+            <h1 class="ipad-splash-title">SAMSUNG <span class="color-cyan">RT34MB</span></h1>
+            <p class="ipad-splash-sub">Телеметрия компрессора &amp; термодинамика No Frost</p>
+
+            <div class="ipad-splash-bar-wrap">
+                <div class="ipad-splash-bar-track">
+                    <div class="ipad-splash-bar" id="ipad-splash-bar"></div>
+                </div>
+                <div class="ipad-splash-status">
+                    <span id="ipad-splash-status-text">Инициализация подсистем LAN Direct...</span>
+                    <span id="ipad-splash-status-pct" style="color:#38bdf8; font-weight:bold; font-family:Courier, monospace;">0%</span>
+                </div>
+            </div>
+
+            <div class="ipad-splash-tags">
+                <span class="ipad-splash-tag">⚡ 220V RMS</span>
+                <span class="ipad-splash-tag">❄️ No Frost</span>
+                <span class="ipad-splash-tag">🧠 Dual AI</span>
+                <span class="ipad-splash-tag">🛡️ Watchdog</span>
+            </div>
+
+            <div class="ipad-splash-hint" onclick="dismissIpadSplash()">Нажмите в любое место для быстрого входа</div>
+        </div>
+    </div>
 
     <div class="header">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -425,6 +716,10 @@
                         <div>• <strong>Клиент:</strong> Легковесный Safari Kiosk интерфейс без внешних библиотек</div>
                         <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI & DEV</div>
                     </div>
+
+                    <button onclick="closeIpadAbout(); showIpadSplash(true);" style="width:100%; margin-top:12px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:9px 14px; border-radius:8px; font-weight:bold; font-size:12.5px; cursor:pointer;">
+                        🎬 Просмотреть заставку при запуске
+                    </button>
                 </div>
 
                 <!-- Tab: FAQ -->
@@ -806,7 +1101,7 @@
         }
 
         function autoDiscoverNewIP() {
-            if (isAutoScanning) return;
+            if (isAutoScanning || window.location.protocol === 'file:') return;
             isAutoScanning = true;
             
             var subEl = document.getElementById('last-sync');
@@ -908,6 +1203,12 @@
                         isAutoScanning = false;
                         try {
                             var data = JSON.parse(xhr.responseText);
+                            if (!ipadSplashDismissed && typeof dismissIpadSplash === 'function') {
+                                setIpadSplashStep(100, 'Данные телеметрии синхронизированы');
+                                ipadSplashTimeouts.push(setTimeout(function() {
+                                    dismissIpadSplash();
+                                }, 350));
+                            }
                             var vVal = (data.voltage !== undefined && data.voltage !== null) ? data.voltage : 0;
                             var isBlackout = (data.current_mode === 'blackout' || data.blackout_active);
                             
@@ -1410,6 +1711,86 @@
                 renderIpadTimer();
             }
         }
+
+        /* iPad Intro Splash Engine (Pure ES5 / iOS 9 Safari Compatible) */
+        var ipadSplashDismissed = false;
+        var ipadSplashTimeouts = [];
+
+        function setIpadSplashStep(pct, msg) {
+            var bar = document.getElementById('ipad-splash-bar');
+            var text = document.getElementById('ipad-splash-status-text');
+            var pctEl = document.getElementById('ipad-splash-status-pct');
+            if (bar) bar.style.width = pct + '%';
+            if (text) text.innerHTML = msg;
+            if (pctEl) pctEl.innerHTML = pct + '%';
+        }
+
+        function dismissIpadSplash() {
+            if (ipadSplashDismissed) return;
+            ipadSplashDismissed = true;
+            for (var i = 0; i < ipadSplashTimeouts.length; i++) {
+                clearTimeout(ipadSplashTimeouts[i]);
+            }
+            ipadSplashTimeouts = [];
+
+            var splashEl = document.getElementById('ipad-splash-screen');
+            if (splashEl) {
+                setIpadSplashStep(100, 'Система готова к работе');
+                splashEl.className = 'ipad-splash-screen splash-fading';
+                setTimeout(function() {
+                    splashEl.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        function showIpadSplash(force) {
+            var splashEl = document.getElementById('ipad-splash-screen');
+            if (!splashEl) return;
+
+            ipadSplashDismissed = false;
+            for (var i = 0; i < ipadSplashTimeouts.length; i++) {
+                clearTimeout(ipadSplashTimeouts[i]);
+            }
+            ipadSplashTimeouts = [];
+
+            splashEl.className = 'ipad-splash-screen';
+            splashEl.style.display = 'block';
+            if (splashEl.style.display !== 'flex') {
+                splashEl.style.display = '-webkit-box';
+            }
+            setIpadSplashStep(15, 'Инициализация подсистем LAN Direct...');
+
+            ipadSplashTimeouts.push(setTimeout(function() {
+                if (!ipadSplashDismissed) setIpadSplashStep(45, 'Синхронизация с ваттметром RMS...');
+            }, 320));
+
+            ipadSplashTimeouts.push(setTimeout(function() {
+                if (!ipadSplashDismissed) setIpadSplashStep(75, 'Калибровка термодинамики КРВ...');
+            }, 700));
+
+            ipadSplashTimeouts.push(setTimeout(function() {
+                if (!ipadSplashDismissed) setIpadSplashStep(92, 'Подключение AI-ядер TypeSafe & Gemini...');
+            }, 1100));
+
+            ipadSplashTimeouts.push(setTimeout(function() {
+                if (!ipadSplashDismissed) {
+                    setIpadSplashStep(100, 'Система готова к работе');
+                }
+            }, 1450));
+
+            ipadSplashTimeouts.push(setTimeout(function() {
+                if (!ipadSplashDismissed) {
+                    dismissIpadSplash();
+                }
+            }, 1900));
+        }
+
+        window.dismissIpadSplash = dismissIpadSplash;
+        window.showIpadSplash = showIpadSplash;
+        window.ipadSplashTimeouts = ipadSplashTimeouts;
+
+        // Auto-start iPad splash screen
+        showIpadSplash(false);
 
         loadStatus();
         loadHistory();
