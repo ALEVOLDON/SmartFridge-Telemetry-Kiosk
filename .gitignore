@@ -14,16 +14,16 @@ data_backups/
 
 # Personal & Generated Documents
 *.docx
+*.tmp
+*.lnk
 *.txt
 !requirements.txt
-ПОЛНАЯ_*.md
-Руководство_*.md
-ПЛАН_*.md
-*Руководство_и_Отчет.docx
-Офлайн_*.html
-*.lnk
 Обложка_*.jpg
 *Авто_Монитор.bat
+Офлайн_*.html
+
+# Allow documentation markdown files
+!docs/*.md
 
 # Python cache
 __pycache__/

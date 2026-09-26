@@ -149,10 +149,14 @@ Samsung_RT34MB_Monitor/
 │   ├── start_monitor.bat       # Windows launcher
 │   └── start_monitor.vbs       # Silent background Windows launcher
 │
-├── 📁 docs/                    # Technical manuals & reports
-│   ├── *.docx                  # Diagnostic audit reports & Word docs
-│   ├── *.md                    # Technical history & release notes
-│   └── *.jpg, *.txt            # Photo references and notes
+├── 📁 docs/                    # Technical manuals & engineering reports
+│   ├── README.md               # Master documentation index & equipment specs
+│   ├── Samsung_RT34MB_Final_Audit_Report.md # 9-day thermodynamic audit (152 cycles, Duty Cycle 0.39-0.40)
+│   ├── Samsung_RT34MB_User_Guide.md         # Hardware specs, No-Frost wiring & thermostat calibration
+│   ├── Samsung_RT34MB_Technical_Journal.md  # Detailed cycle logs, defrost periods & voltage drops
+│   ├── Architecture_and_Deployment.md       # Hardware ecosystem, Termux:Boot supervisor & auto-deploy
+│   ├── API_Reference.md        # REST API specifications (/api/status, /api/history, /api/changelog)
+│   └── Network_and_Host_Security.md         # Linux Policy Routing shield & Wi-Fi hardening
 │
 └── 📁 data_backups/            # Historical SQLite database backups
 ```
@@ -299,7 +303,25 @@ The bot strictly authorizes designated chat IDs and silently ignores unauthorize
 
 ---
 
+## 📚 Technical Documentation & Deep-Dive Reports
+
+Comprehensive engineering reports, hardware wiring diagrams, thermodynamic analyses, and API guides are maintained in the [`docs/`](docs/) directory:
+
+| Document | Topic & Focus Area |
+| :--- | :--- |
+| 📖 [**Documentation Master Index**](docs/README.md) | Central documentation directory, equipment passports, and quick-start links. |
+| 📊 [**9-Day Telemetry Audit Report**](docs/Samsung_RT34MB_Final_Audit_Report.md) | Official diagnostic report covering 111,949 data points, 152 compressor cycles, proving 0.39–0.40 Duty Cycle post-repair. |
+| 📘 [**User Guide & Hardware Manual**](docs/Samsung_RT34MB_User_Guide.md) | Full technical breakdown of Samsung RT34MB, SK170K-T1U compressor, R-134a charging (160g), and thermostat calibration. |
+| 📝 [**Technical Journal & Defrost Logs**](docs/Samsung_RT34MB_Technical_Journal.md) | Cycle-by-cycle operational history, No-Frost heater activations (155–165 W), and mains voltage sag analysis (189.4 V). |
+| 🏗️ [**Architecture & Deployment Guide**](docs/Architecture_and_Deployment.md) | H96 Max TV Box setup, Termux:Boot supervisor, vintage iPad 3 Kiosk mounting, and automated deployment scripts. |
+| 🔌 [**REST API Reference**](docs/API_Reference.md) | Complete documentation of all backend endpoints (`/api/status`, `/api/history`, `/api/analytics`, `/api/changelog`). |
+| 🛡️ [**Network & Host Security**](docs/Network_and_Host_Security.md) | Linux Policy Routing shield (`table eth0 pref 9000`), SSH hardening, and LAN-guard isolation. |
+| 📜 [**Changelog Database**](changelog.json) | Centralized, machine-readable release history from `v1.0.0` to `PRO v3.11.0`. |
+
+---
+
 ## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).
 Feel free to use, modify, and distribute for your own DIY smart home setups!
+
