@@ -152,6 +152,7 @@ Samsung_RT34MB_Monitor/
 ├── 📁 docs/                    # Technical manuals & engineering reports
 │   ├── README.md               # Master documentation index & equipment specs
 │   ├── Samsung_RT34MB_Final_Audit_Report.md # 9-day thermodynamic audit (152 cycles, Duty Cycle 0.39-0.40)
+│   ├── Samsung_RT34MB_Voltage_Stabilizer_Audit.md # Stabilizer audit (КРВ 0.25, 4.2h motor savings, 220V)
 │   ├── Samsung_RT34MB_User_Guide.md         # Hardware specs, No-Frost wiring & thermostat calibration
 │   ├── Samsung_RT34MB_Technical_Journal.md  # Detailed cycle logs, defrost periods & voltage drops
 │   ├── Architecture_and_Deployment.md       # Hardware ecosystem, Termux:Boot supervisor & auto-deploy
@@ -311,6 +312,7 @@ Comprehensive engineering reports, hardware wiring diagrams, thermodynamic analy
 | :--- | :--- |
 | 📖 [**Documentation Master Index**](docs/README.md) | Central documentation directory, equipment passports, and quick-start links. |
 | 📊 [**9-Day Telemetry Audit Report**](docs/Samsung_RT34MB_Final_Audit_Report.md) | Official diagnostic report covering 111,949 data points, 152 compressor cycles, proving 0.39–0.40 Duty Cycle post-repair. |
+| ⚡ [**Voltage Stabilizer Efficiency Audit**](docs/Samsung_RT34MB_Voltage_Stabilizer_Audit.md) | Energy audit (25.09.2026): 220V stabilization results, Duty Cycle drop to 0.25, 4.2h motor savings/day, 25-30% kWh savings. |
 | 📘 [**User Guide & Hardware Manual**](docs/Samsung_RT34MB_User_Guide.md) | Full technical breakdown of Samsung RT34MB, SK170K-T1U compressor, R-134a charging (160g), and thermostat calibration. |
 | 📝 [**Technical Journal & Defrost Logs**](docs/Samsung_RT34MB_Technical_Journal.md) | Cycle-by-cycle operational history, No-Frost heater activations (155–165 W), and mains voltage sag analysis (189.4 V). |
 | 🏗️ [**Architecture & Deployment Guide**](docs/Architecture_and_Deployment.md) | H96 Max TV Box setup, Termux:Boot supervisor, vintage iPad 3 Kiosk mounting, and automated deployment scripts. |
