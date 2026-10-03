@@ -1107,7 +1107,7 @@ def discover_plug_ip(cfg):
         if mac and _norm_mac(hw) == mac and _tcp_open(ip):
             return ip
     now = time.time()
-    if now - _last_ip_scan < 45:
+    if now - _last_ip_scan < 20:
         return saved
     _last_ip_scan = now
     hits = _scan_tuya_port(cfg)
@@ -1199,45 +1199,25 @@ def _cloud_error_text(res):
     return res.get("msg") or res.get("Payload") or res.get("Error") or "Tuya Cloud request error"
 
 def fetch_device_telemetry(cfg):
-    """Local Tuya on the LAN first; Cloud only if the plug socket is down."""
-    global _local_fail_until
-    now = time.time()
-    if now >= _local_fail_until:
-        try:
-            local = _local_status(cfg)
-            if local:
-                _local_fail_until = 0.0
-                return local
-        except Exception:
-            pass
-        _close_local()
-        _local_fail_until = now + 20
-
-    c = get_cloud_client(cfg)
-    res = c.getstatus(cfg.get("device_id", "").strip())
-    record_cloud_call(1)
-    if res and isinstance(res, dict) and "result" in res:
-        p_raw, v_raw, i_raw = 0, 0, 0
-        for item in res.get("result", []):
-            code = item.get("code", "")
-            val = item.get("value", 0)
-            if code in ["cur_power", "cur_power_a", "phase_a_active_power", "active_power"]:
-                p_raw = float(val)
-            elif code in ["cur_voltage", "cur_voltage_a", "voltage"]:
-                v_raw = float(val)
-            elif code in ["cur_current", "cur_current_a", "current"]:
-                i_raw = float(val)
-        return {
-            "ok": True,
-            "source": "tuya_cloud",
-            "p_raw": p_raw,
-            "v_raw": v_raw,
-            "i_raw": i_raw,
-        }
-
+    """Direct Local Tuya via LAN socket (Port 6668).
+    
+    Zero-Cloud architecture: The smart plug operates directly on the local network.
+    When 220V power fails, the plug immediately loses power and drops offline.
+    We deliberately DO NOT fall back to Tuya Cloud for real-time power/voltage, because:
+    1) If 220V is cut, the plug cannot contact the cloud; Tuya Cloud merely returns
+       stale/frozen cached readings from before the blackout, falsely masking power outages.
+    2) Tuya IoT Core cloud trial subscriptions expire (Err 913), polluting the UI with errors.
+    """
+    try:
+        local = _local_status(cfg)
+        if local:
+            return local
+    except Exception:
+        pass
+    _close_local()
     return {
         "ok": False,
-        "msg": _cloud_error_text(res),
+        "msg": "Розетка обесточена или не на связи по Wi-Fi",
     }
 
 def prune_old_measurements(retention_days=7):
