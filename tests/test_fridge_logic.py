@@ -48,6 +48,23 @@ class ClassifyCycleTests(unittest.TestCase):
     def test_no_power_samples_still_defrost_in_band(self):
         self.assertEqual(classify_cycle(165, 900, 5 * 3600), "defrost")
 
+    def test_power_factor_resistive_heater_with_stabilizer_swing_is_defrost(self):
+        # Stabilizer steps from 206V to 226V causing 140W..164W swing (delta > 16W),
+        # but cos(phi) = 158 / (221 * 0.71) = 1.01 >= 0.90 proves resistive heater (ТЭН).
+        powers = [140.5, 161.2, 164.1, 144.8, 158.7, 156.4, 155.5, 157.3]
+        self.assertEqual(
+            classify_cycle(158.0, 2900, 6 * 3600, powers=powers, voltage=221.0, current=0.71),
+            "defrost",
+        )
+
+    def test_power_factor_inductive_motor_in_heater_wattage_band_is_cooling(self):
+        # High-load compressor run at 151W, 220V, 0.93A -> cos(phi) = 0.74 < 0.85 -> cooling
+        powers = [151.0] * 10
+        self.assertEqual(
+            classify_cycle(151.0, 1500, 6 * 3600, powers=powers, voltage=220.0, current=0.93),
+            "cooling",
+        )
+
 
 class DutyAndRestTests(unittest.TestCase):
     def test_duty_cycle_nominal(self):
@@ -140,6 +157,13 @@ class FoodSafetyAndTempModelTests(unittest.TestCase):
         fz_off, fr_off = estimated_chamber_temps(False, 3000)
         self.assertGreater(fz_off, -19.5)
         self.assertGreater(fr_off, 3.6)
+
+    def test_expired_blackout_ignored_in_estimated_temps(self):
+        fz_active, fr_active = estimated_chamber_temps(True, 300, blackout_sec=46944, since_blackout_end_sec=600)
+        fz_expired, fr_expired = estimated_chamber_temps(True, 300, blackout_sec=46944, since_blackout_end_sec=8000)
+        fz_nom, fr_nom = estimated_chamber_temps(True, 300, blackout_sec=0)
+        self.assertGreater(fz_active, -5.0)
+        self.assertEqual((fz_expired, fr_expired), (fz_nom, fr_nom))
 
 
 class LanPolicyTests(unittest.TestCase):

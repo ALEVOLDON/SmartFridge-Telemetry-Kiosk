@@ -254,8 +254,8 @@ class FridgeTelegramBot:
             icon = "⚪"
 
         # Estimated temperatures
-        temp_freezer = st.get("temp_freezer_model", "—")
-        temp_fridge = st.get("temp_fridge_model", "—")
+        temp_freezer = st.get("temp_freezer_model", st.get("temp_freezer", "—"))
+        temp_fridge = st.get("temp_fridge_model", st.get("temp_fridge", "—"))
 
         # Quota & calibration
         reconcile = st.get("last_energy_reconciliation") or {}
@@ -535,8 +535,8 @@ class FridgeTelegramBot:
             ctx["rest_duration_sec"] = int(st.get("rest_duration_sec", 0))
             ctx["today_kwh"] = float(st.get("today_kwh", 0.0))
             ctx["today_cost"] = float(st.get("today_cost", 0.0))
-            ctx["freezer_temp_est"] = float(st.get("freezer_temp_est", -18.5))
-            ctx["fridge_temp_est"] = float(st.get("fridge_temp_est", 4.2))
+            ctx["freezer_temp_est"] = float(st.get("freezer_temp_est", st.get("temp_freezer", -18.5)))
+            ctx["fridge_temp_est"] = float(st.get("fridge_temp_est", st.get("temp_fridge", 4.2)))
             ctx["blackout_duration_min"] = int(st.get("blackout_duration_min", 0))
         elif self.db_connect_fn:
             try:

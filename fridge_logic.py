@@ -5,21 +5,43 @@ from datetime import datetime
 DEFROST_POWER_MIN = 149.0
 DEFROST_POWER_MAX = 188.0
 DEFROST_MIN_SEC = 480
-DEFROST_MAX_SEC = 1860
+DEFROST_MAX_SEC = 3300
 MIN_COOLING_BEFORE_DEFROST_SEC = int(5.0 * 3600)
 MAX_REAL_REST_SEC = 5400
 DEFAULT_LAN_SUBNET = "192.168.0.0/24"
+
+
+def is_resistive_heater_sample(power, voltage, current):
+    """
+    Distinguish resistive No Frost heater (ТЭН, cos phi ~ 1.00, I ~ 0.65-0.77A)
+    from inductive compressor motor (SK170K, cos phi ~ 0.65-0.78, I ~ 0.82-0.98A).
+    Returns True for resistive heater, False for inductive motor, or None if indeterminate.
+    """
+    p = float(power or 0)
+    v = float(voltage or 0)
+    i = float(current or 0)
+    if p < 50.0 or v < 150.0 or i < 0.35:
+        return None
+    pf = p / (v * i)
+    if pf >= 0.90 and p >= 135.0:
+        return True
+    if pf < 0.85:
+        return False
+    return None
 
 
 def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, voltage=None, current=None):
     """
     Classify cycle into 'defrost' (heating element) vs 'cooling' (compressor motor).
     Samsung RT34MB No Frost rules:
-    1. Defrost duration is strictly within [8 min .. 31 min] (480s .. 1860s). Longer is ALWAYS cooling.
+    1. Defrost duration is within [8 min .. 55 min] (480s .. 3300s). Longer is ALWAYS cooling.
     2. Defrost requires cumulative compressor cooling before it can trigger (at least 5.0 hours = 18000s).
-    3. Power curve stability: a pure heating element (ТЭН) has nearly flat power (core delta <= 16W),
-       while a compressor has start-inrush and pressure drops (delta >= 25W).
-    4. Power range: Heater operates at 149W .. 188W (nominal ~160W at 220V, down to ~150W at 214V).
+    3. Electrical Power Factor (cos phi = P / (V * I)): when voltage and current are measured,
+       a resistive heater (ТЭН) has cos phi >= 0.90 (typically 0.98-1.02 at ~0.70A), whereas
+       the inductive compressor motor has cos phi < 0.85 (typically 0.66-0.75 at ~0.85-0.95A).
+    4. Power curve stability fallback (when current is unavailable): a pure heating element has
+       flat power (core delta <= 16W), while a compressor has start-inrush and pressure drops.
+    5. Power range: Heater operates at 149W .. 188W (or >= 135W when verified by cos phi >= 0.90).
     """
     p = float(avg_power or 0)
     dur = int(duration_sec or 0)
@@ -29,6 +51,12 @@ def classify_cycle(avg_power, duration_sec, cooling_since_sec=0, powers=None, vo
         return "cooling"
 
     if acc < MIN_COOLING_BEFORE_DEFROST_SEC:
+        return "cooling"
+
+    heater_flag = is_resistive_heater_sample(p, voltage, current)
+    if heater_flag is True:
+        return "defrost"
+    if heater_flag is False:
         return "cooling"
 
     if powers and len(powers) >= 6:
@@ -152,13 +180,16 @@ def duty_cycle(work_sec, rest_sec):
     return round(float(work_sec or 0) / total, 2)
 
 
-def estimated_chamber_temps(is_running, duration_sec, blackout_sec=0):
+def estimated_chamber_temps(is_running, duration_sec, blackout_sec=0, since_blackout_end_sec=None):
     """
     Thermal inertia model used when no physical probe is connected.
-    If blackout_sec >= 1800, accounts for thermal leakage during the power outage.
+    If blackout_sec >= 1800 and the blackout is still active or ended <= 2h ago,
+    accounts for thermal leakage during the power outage.
     """
     dur = max(0, int(duration_sec or 0))
     b_sec = max(0, int(blackout_sec or 0))
+    if since_blackout_end_sec is not None and float(since_blackout_end_sec) > 7200.0:
+        b_sec = 0
 
     if b_sec >= 1800:
         # Thermal leakage during/after power outage
