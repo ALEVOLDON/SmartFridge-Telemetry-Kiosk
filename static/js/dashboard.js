@@ -1,21 +1,47 @@
+const UI_ICONS = {
+        fsEnter: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
+        fsExit: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>',
+        bellOn: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.18"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+        bellOff: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+        spinner: '<svg class="ui-icon ui-icon-sm ui-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+        check: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        error: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#ef4444;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        bolt: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg>',
+        flame: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg>',
+        snowflake: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>',
+        shield: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg>',
+        warn: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f59e0b;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        chartTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        sensorTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>',
+        lanCard: '<svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.5" fill="currentColor"/></svg>',
+        cloudCard: '<svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" style="color:#f59e0b;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="currentColor" fill-opacity="0.18"/></svg>',
+        healthOk: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.18"/><path d="m9 12 2 2 4-4"/></svg>',
+        healthLoad: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#f59e0b;"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.18"/><polyline points="12 7 12 12 15 15"/></svg>',
+        healthDeep: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#f97316;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="currentColor" fill-opacity="0.18"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+        healthDefrost: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#f97316;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg>',
+        healthAlert: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#ef4444;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        healthRest: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#06b6d4;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.18"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+        healthDeepRest: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#3b82f6;"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.18"/><polyline points="12 7 12 12 15 15"/></svg>'
+    };
+
 function toggleFullScreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(err => {
                 alert('Полноэкранный режим: ' + err.message);
             });
             const btn = document.getElementById('fs-btn');
-            if (btn) btn.innerText = '🗗 Свернуть';
+            if (btn) btn.innerHTML = UI_ICONS.fsExit + ' Свернуть';
         } else {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
                 const btn = document.getElementById('fs-btn');
-                if (btn) btn.innerText = '⛶ На весь экран';
+                if (btn) btn.innerHTML = UI_ICONS.fsEnter + ' На весь экран';
             }
         }
     }
     document.addEventListener('fullscreenchange', () => {
         const btn = document.getElementById('fs-btn');
-        if (btn) btn.innerText = document.fullscreenElement ? '🗗 Свернуть' : '⛶ На весь экран';
+        if (btn) btn.innerHTML = document.fullscreenElement ? (UI_ICONS.fsExit + ' Свернуть') : (UI_ICONS.fsEnter + ' На весь экран');
     });
 
     var splashDismissed = false;
@@ -133,7 +159,7 @@ function toggleFullScreen() {
         if (stEl) {
             stEl.style.display = 'block';
             stEl.style.color = '#38bdf8';
-            stEl.innerText = '⏳ Отправка тестового сообщения...';
+            stEl.innerHTML = UI_ICONS.spinner + ' Отправка тестового сообщения...';
         }
 
         const tgToken = document.getElementById('cfg-tg-token');
@@ -166,16 +192,16 @@ function toggleFullScreen() {
             if (stEl) {
                 if (res.success) {
                     stEl.style.color = '#10b981';
-                    stEl.innerText = '✅ ' + (res.message || 'Сообщение доставлено в Telegram!');
+                    stEl.innerHTML = UI_ICONS.check + ' ' + escapeHTML(res.message || 'Сообщение доставлено в Telegram!');
                 } else {
                     stEl.style.color = '#ef4444';
-                    stEl.innerText = '❌ ' + (res.error || 'Ошибка отправки');
+                    stEl.innerHTML = UI_ICONS.error + ' ' + escapeHTML(res.error || 'Ошибка отправки');
                 }
             }
         }).catch(err => {
             if (stEl) {
                 stEl.style.color = '#ef4444';
-                stEl.innerText = '❌ Ошибка сети: ' + err.message;
+                stEl.innerHTML = UI_ICONS.error + ' Ошибка сети: ' + escapeHTML(err.message);
             }
         });
     }
@@ -188,8 +214,8 @@ function toggleFullScreen() {
         if ('Notification' in window) {
             if (Notification.permission === 'granted') {
                 try {
-                    new Notification('🧊 Авто-Монитор: Samsung RT34MB', {
-                        body: '🔔 Тест связи: Звук и оповещения работают отлично!',
+                    new Notification('Авто-Монитор: Samsung RT34MB', {
+                        body: 'Тест связи: Звук и оповещения работают отлично!',
                         icon: '/static/icon-192.png'
                     });
                 } catch(e) {}
@@ -197,8 +223,8 @@ function toggleFullScreen() {
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                         try {
-                            new Notification('🧊 Авто-Монитор: Samsung RT34MB', {
-                                body: '🔔 Оповещения активированы!',
+                            new Notification('Авто-Монитор: Samsung RT34MB', {
+                                body: 'Оповещения активированы!',
                                 icon: '/static/icon-192.png'
                             });
                         } catch(e) {}
@@ -207,7 +233,7 @@ function toggleFullScreen() {
             }
         }
         
-        alert('🔔 Звуковой сигнал колокольчика и тестовое оповещение успешно воспроизведены!');
+        alert('Звуковой сигнал колокольчика и тестовое оповещение успешно воспроизведены!');
     }
 
     function printReport() {
@@ -285,11 +311,11 @@ function toggleFullScreen() {
         const btn = document.getElementById('pc-sound-btn');
         if (btn) {
             if (soundEnabled) {
-                btn.innerHTML = '🔔 Звук: ВКЛ';
+                btn.innerHTML = UI_ICONS.bellOn + ' Звук: ВКЛ';
                 btn.style.color = '#10b981';
                 btn.style.borderColor = 'rgba(16,185,129,0.4)';
             } else {
-                btn.innerHTML = '🔕 Звук: ВЫКЛ';
+                btn.innerHTML = UI_ICONS.bellOff + ' Звук: ВЫКЛ';
                 btn.style.color = '#94a3b8';
                 btn.style.borderColor = 'rgba(148,163,184,0.3)';
             }
@@ -302,10 +328,10 @@ function toggleFullScreen() {
         const text = document.getElementById('drawer-sound-text');
         if (icon && text) {
             if (soundEnabled) {
-                icon.innerText = '🔔';
+                icon.innerHTML = UI_ICONS.bellOn;
                 text.innerHTML = 'Звуковой сигнал: <strong style="color:#10b981;">ВКЛ</strong>';
             } else {
-                icon.innerText = '🔕';
+                icon.innerHTML = UI_ICONS.bellOff;
                 text.innerHTML = 'Звуковой сигнал: <strong style="color:#94a3b8;">ВЫКЛ</strong>';
             }
         }
@@ -380,7 +406,7 @@ function toggleFullScreen() {
         isAutoScanning = true;
         
         const cloudText = document.getElementById('cloud-text');
-        if (cloudText) cloudText.innerText = '⚡ Потеря связи. Автопоиск нового IP сервера в сети...';
+        if (cloudText) cloudText.innerHTML = UI_ICONS.bolt + ' Потеря связи. Автопоиск нового IP сервера в сети...';
         
         let found = false;
         const currentHost = window.location.hostname;
@@ -639,9 +665,9 @@ function toggleFullScreen() {
         if (qCard && qTitle && qSub) {
             if (isLan) {
                 qCard.style.borderLeftColor = '#10b981';
-                qIcon.innerText = '🏠';
+                qIcon.innerHTML = UI_ICONS.lanCard;
                 qTitle.innerHTML = 'Канал связи: <strong>Прямой локальный Wi-Fi</strong> (без облака)';
-                qSub.innerHTML = `🛡️ Запросов в облако сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || '100% экономия: лимиты не тратятся')}`;
+                qSub.innerHTML = `${UI_ICONS.shield} Запросов в облако сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || '100% экономия: лимиты не тратятся')}`;
                 if (qBadge) {
                     qBadge.innerText = `Квота: ${rem} / ${tot}`;
                     qBadge.style.color = '#10b981';
@@ -654,9 +680,9 @@ function toggleFullScreen() {
                 }
             } else {
                 qCard.style.borderLeftColor = '#f59e0b';
-                qIcon.innerText = '☁️';
+                qIcon.innerHTML = UI_ICONS.cloudCard;
                 qTitle.innerHTML = 'Канал связи: <strong>Tuya Cloud API (Эко-резерв)</strong>';
-                qSub.innerHTML = `⚠️ Запросов сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день')}`;
+                qSub.innerHTML = `${UI_ICONS.warn} Запросов сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день')}`;
                 if (qBadge) {
                     qBadge.innerText = `Остаток квоты: ${rem} / ${tot}`;
                     qBadge.style.color = '#f59e0b';
@@ -706,12 +732,12 @@ function toggleFullScreen() {
         
         if (fTag) {
             if (freezerEst) {
-                fTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
+                fTag.innerHTML = UI_ICONS.chartTag + ' МОДЕЛЬ (ОЦЕНКА)';
                 fTag.style.color = '#38bdf8';
                 fTag.style.background = 'rgba(56,189,248,0.15)';
                 if (fDesc) fDesc.innerText = 'Теплофизическая модель (физический датчик не подключен)';
             } else {
-                fTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
+                fTag.innerHTML = UI_ICONS.sensorTag + ' ТЕЛЕМЕТРИЯ ДАТЧИКА';
                 fTag.style.color = '#10b981';
                 fTag.style.background = 'rgba(16,185,129,0.15)';
                 if (fDesc) fDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
@@ -719,12 +745,12 @@ function toggleFullScreen() {
         }
         if (rTag) {
             if (fridgeEst) {
-                rTag.innerText = '📊 МОДЕЛЬ (ОЦЕНКА)';
+                rTag.innerHTML = UI_ICONS.chartTag + ' МОДЕЛЬ (ОЦЕНКА)';
                 rTag.style.color = '#10b981';
                 rTag.style.background = 'rgba(16,185,129,0.15)';
                 if (rDesc) rDesc.innerText = 'Теплофизическая модель (отдельный датчик камеры не подключен)';
             } else {
-                rTag.innerText = '📡 ТЕЛЕМЕТРИЯ ДАТЧИКА';
+                rTag.innerHTML = UI_ICONS.sensorTag + ' ТЕЛЕМЕТРИЯ ДАТЧИКА';
                 rTag.style.color = '#10b981';
                 rTag.style.background = 'rgba(16,185,129,0.15)';
                 if (rDesc) rDesc.innerText = 'Прямые показания с физического термодатчика Tuya';
@@ -756,16 +782,16 @@ function toggleFullScreen() {
         if (isBlackout) {
             if (bTitle && bSub && bBadge) {
                 const bDur = data.blackout_duration_str || (Math.floor((data.blackout_duration_sec || 0) / 60) + ' мин');
-                bTitle.innerHTML = `⚡ <strong>АВАРИЯ ЭЛЕКТРОСЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО ПРЯМО СЕЙЧАС!</strong>`;
+                bTitle.innerHTML = `${UI_ICONS.bolt} <strong>АВАРИЯ ЭЛЕКТРОСЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО ПРЯМО СЕЙЧАС!</strong>`;
                 bSub.innerHTML = `Длительность: <strong>${escapeHTML(bDur)}</strong>. Розетка обесточена. Холодильник изолирован, продукты удерживают холод.`;
-                bBadge.innerText = '🔴 БЛЭКАУТ: ' + bDur;
+                bBadge.innerHTML = '<span class="led-dot led-red"></span> БЛЭКАУТ: ' + escapeHTML(bDur);
                 bBadge.style.color = '#ef4444';
                 bBadge.style.background = 'rgba(239,68,68,0.2)';
             }
         } else if (data.last_blackout && data.last_blackout.detected) {
             if (bTitle && bSub && bBadge) {
-                bTitle.innerHTML = `⚡ Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
-                bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${escapeHTML(data.last_blackout.food_safety)}`;
+                bTitle.innerHTML = `${UI_ICONS.bolt} Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
+                bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${formatSafetyHTML(data.last_blackout.food_safety)}`;
                 bBadge.innerText = data.last_blackout.duration_str;
                 bBadge.style.color = '#f59e0b';
                 bBadge.style.background = 'rgba(245,158,11,0.15)';
@@ -780,33 +806,33 @@ function toggleFullScreen() {
         lastStatus = data;
         syncLiveTimer(data);
         if (isBlackout) {
-            desc.innerText = '🔴 ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО (БЛЭКАУТ)';
+            desc.innerHTML = '<span class="led-dot led-red"></span> ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО (БЛЭКАУТ)';
             desc.style.color = '#ef4444';
             
-            timerTitle.innerText = '⚡ АКТИВНЫЙ РЕЖИМ: АВАРИЯ ЭЛЕКТРОСЕТИ (БЛЭКАУТ)';
+            timerTitle.innerHTML = UI_ICONS.bolt + ' АКТИВНЫЙ РЕЖИМ: АВАРИЯ ЭЛЕКТРОСЕТИ (БЛЭКАУТ)';
             timerTitle.style.color = '#ef4444';
             timerVal.style.color = '#ef4444';
             const bSec = data.blackout_duration_sec || 0;
             const bMin = Math.floor(bSec / 60);
-            verdictEl.innerHTML = `⚠️ Питание розетки отсутствует! Сеть обесточена (авария длится <strong>${bMin} мин</strong>). Холодильник удерживает накопленный холод.`;
+            verdictEl.innerHTML = `${UI_ICONS.warn} Питание розетки отсутствует! Сеть обесточена (авария длится <strong>${bMin} мин</strong>). Холодильник удерживает накопленный холод.`;
         } else if (data.current_mode === 'defrost') {
-            desc.innerText = '🔥 Автооттайка No Frost (ТЭН)';
+            desc.innerHTML = '<span class="led-dot led-orange"></span> Автооттайка No Frost (ТЭН)';
             desc.style.color = '#f97316';
             
-            timerTitle.innerText = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST (ТЭН)';
+            timerTitle.innerHTML = UI_ICONS.flame + ' АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST (ТЭН)';
             timerTitle.style.color = '#f97316';
             timerVal.style.color = '#f97316';
-            verdictEl.innerHTML = '🔥 Компрессор отключен. Электронагреватель (ТЭН ~165 Вт) растапливает иней на испарителе. Норма: <strong>10–25 минут</strong>.';
+            verdictEl.innerHTML = UI_ICONS.flame + ' Компрессор отключен. Электронагреватель (ТЭН ~165 Вт) растапливает иней на испарителе. Норма: <strong>10–25 минут</strong>.';
         } else if (data.is_running) {
-            desc.innerText = '🟢 Компрессор работает (Охлаждение)';
+            desc.innerHTML = '<span class="led-dot led-green"></span> Компрессор работает (Охлаждение)';
             desc.style.color = '#10b981';
             
-            timerTitle.innerText = '🟢 АКТИВНЫЙ РЕЖИМ: ОХЛАЖДЕНИЕ (КОМПРЕССОР)';
+            timerTitle.innerHTML = '<span class="led-dot led-green"></span> АКТИВНЫЙ РЕЖИМ: ОХЛАЖДЕНИЕ (КОМПРЕССОР)';
             timerTitle.style.color = '#10b981';
             timerVal.style.color = '#10b981';
-            verdictEl.innerHTML = '❄️ Компрессор активно морозит продукты. Штатный цикл <strong>15–45 мин</strong>; при загрузке норма до <strong>3.5–5 ч</strong>.';
+            verdictEl.innerHTML = UI_ICONS.snowflake + ' Компрессор активно морозит продукты. Штатный цикл <strong>15–45 мин</strong>; при загрузке норма до <strong>3.5–5 ч</strong>.';
         } else {
-            desc.innerText = '⚪ Компрессор выключен (Отдых)';
+            desc.innerHTML = '<span class="led-dot led-slate"></span> Компрессор выключен (Отдых)';
             desc.style.color = '#94a3b8';
             
             const restSec = Number(data.rest_duration_sec) || 0;
@@ -814,10 +840,10 @@ function toggleFullScreen() {
             const estRemain = Math.max(0, 45 - restMin);
             const lockout = data.protection_lockout_sec || 0;
             
-            timerTitle.innerText = '⚪ АКТИВНЫЙ РЕЖИМ: ОТДЫХ КОМПРЕССОРА (СТОЯНКА)';
+            timerTitle.innerHTML = '<span class="led-dot led-cyan"></span> АКТИВНЫЙ РЕЖИМ: ОТДЫХ КОМПРЕССОРА (СТОЯНКА)';
             timerTitle.style.color = '#06b6d4';
             timerVal.style.color = '#06b6d4';
-            let restHtml = `🧊 Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
+            let restHtml = `${UI_ICONS.snowflake} Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
             if (data.protection_active && lockout > 0) {
                 restHtml += ` Пауза пуска: <strong>${lockout} с</strong>.`;
             }
@@ -834,8 +860,8 @@ function toggleFullScreen() {
         if (data.current_mode === 'defrost') {
             const durMin = Math.floor(data.cycle_duration_sec / 60);
             healthCard.style.borderLeftColor = '#f97316';
-            healthIcon.innerText = '🔥';
-            healthTitle.innerText = '🔥 Автооттайка испарителя No Frost (ТЭН)';
+            healthIcon.innerHTML = UI_ICONS.healthDefrost;
+            healthTitle.innerHTML = '<span class="led-dot led-orange"></span> Автооттайка испарителя No Frost (ТЭН)';
             healthSubtitle.innerText = `Компрессор спит. Нагреватель растапливает иней уже ${durMin} мин (норма: 10–25 мин). Талая вода уходит в дренаж.`;
             healthBadge.innerText = 'Оттайка: ТЭН 165W';
             healthBadge.style.color = '#f97316';
@@ -844,32 +870,32 @@ function toggleFullScreen() {
             const durMin = Math.floor(data.cycle_duration_sec / 60);
             if (durMin <= 45) {
                 healthCard.style.borderLeftColor = '#10b981';
-                healthIcon.innerText = '🟢';
-                healthTitle.innerText = '🟢 Штатная работа компрессора (15–45 мин)';
+                healthIcon.innerHTML = UI_ICONS.healthOk;
+                healthTitle.innerHTML = '<span class="led-dot led-green"></span> Штатная работа компрессора (15–45 мин)';
                 healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Система No Frost циркулирует холод штатно.`;
                 healthBadge.innerText = 'Режим: Штатный';
                 healthBadge.style.color = '#10b981';
                 healthBadge.style.background = 'rgba(16, 185, 129, 0.15)';
             } else if (durMin <= 150) {
                 healthCard.style.borderLeftColor = '#f59e0b';
-                healthIcon.innerText = '🟡';
-                healthTitle.innerText = '🟡 Повышенная нагрузка (донабор холода)';
+                healthIcon.innerHTML = UI_ICONS.healthLoad;
+                healthTitle.innerHTML = '<span class="led-dot led-amber"></span> Повышенная нагрузка (донабор холода)';
                 healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Норма при открывании дверей или малой загрузке (1.5–2.5 ч).`;
                 healthBadge.innerText = 'Донабор холода / Загрузка';
                 healthBadge.style.color = '#f59e0b';
                 healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
             } else if (durMin <= 420) {
                 healthCard.style.borderLeftColor = '#f97316';
-                healthIcon.innerText = '📦';
-                healthTitle.innerText = '🟠 Глубокая проморозка (загрузка / после блэкаута)';
+                healthIcon.innerHTML = UI_ICONS.healthDeep;
+                healthTitle.innerHTML = '<span class="led-dot led-orange"></span> Глубокая проморозка (загрузка / после блэкаута)';
                 healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Штатно после отключения света или большой загрузки теплых продуктов (норма 3.5–5 ч, запас до 7 ч).`;
                 healthBadge.innerText = 'Загрузка / после блэкаута';
                 healthBadge.style.color = '#f97316';
                 healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
             } else {
                 healthCard.style.borderLeftColor = '#ef4444';
-                healthIcon.innerText = '⚠️';
-                healthTitle.innerText = '🔴 Внимание: Непрерывная работа компрессора (> 7 ч)';
+                healthIcon.innerHTML = UI_ICONS.healthAlert;
+                healthTitle.innerHTML = '<span class="led-dot led-red"></span> Внимание: Непрерывная работа компрессора (> 7 ч)';
                 healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте дверь, уплотнители, термостат и уровень фреона.`;
                 healthBadge.innerText = 'Тревога: Работа > 7ч';
                 healthBadge.style.color = '#ef4444';
@@ -880,24 +906,24 @@ function toggleFullScreen() {
             const restMin = Math.floor(restSec / 60);
             if (restMin <= 60) {
                 healthCard.style.borderLeftColor = '#06b6d4';
-                healthIcon.innerText = '🧊';
-                healthTitle.innerText = '⚪ Штатный отдых (Удержание холода)';
+                healthIcon.innerHTML = UI_ICONS.healthRest;
+                healthTitle.innerHTML = '<span class="led-dot led-cyan"></span> Штатный отдых (Удержание холода)';
                 healthSubtitle.innerText = `Компрессор отдыхает ${restMin} мин (норма: 35–55 мин). Термоизоляция и уплотнители отлично держат мороз.`;
                 healthBadge.innerText = 'Отдых: Норма';
                 healthBadge.style.color = '#06b6d4';
                 healthBadge.style.background = 'rgba(6, 182, 212, 0.15)';
             } else if (restMin <= 95) {
                 healthCard.style.borderLeftColor = '#3b82f6';
-                healthIcon.innerText = '🕒';
-                healthTitle.innerText = '🔵 Глубокий покой (> 1 ч отдыха)';
+                healthIcon.innerHTML = UI_ICONS.healthDeepRest;
+                healthTitle.innerHTML = '<span class="led-dot led-blue"></span> Глубокий покой (> 1 ч отдыха)';
                 healthSubtitle.innerText = `Холодильник отдыхает уже ${restMin} мин. Камера глубоко проморожена, дверь не открывали.`;
                 healthBadge.innerText = 'Глубокий мороз';
                 healthBadge.style.color = '#3b82f6';
                 healthBadge.style.background = 'rgba(59, 130, 246, 0.15)';
             } else {
                 healthCard.style.borderLeftColor = '#f59e0b';
-                healthIcon.innerText = '⚠️';
-                healthTitle.innerText = '🟡 Внимание: Длительный простой (> 1.5 ч)';
+                healthIcon.innerHTML = UI_ICONS.healthLoad;
+                healthTitle.innerHTML = '<span class="led-dot led-amber"></span> Внимание: Длительный простой (> 1.5 ч)';
                 healthSubtitle.innerText = `Холодильник не включается уже ${restMin} мин. Если в морозилке тепло, проверьте терморегулятор или таймер оттайки.`;
                 healthBadge.innerText = 'Длительный простой';
                 healthBadge.style.color = '#f59e0b';
@@ -944,6 +970,29 @@ function toggleFullScreen() {
         });
     }
 
+    function formatSafetyHTML(raw) {
+        if (!raw) return '';
+        let s = String(raw).trim();
+        let prefix = '';
+        if (s.indexOf('🟢') === 0) {
+            prefix = '<span class="led-dot led-green"></span> ';
+            s = s.replace(/^🟢\s*/, '');
+        } else if (s.indexOf('🟡') === 0) {
+            prefix = '<span class="led-dot led-amber"></span> ';
+            s = s.replace(/^🟡\s*/, '');
+        } else if (s.indexOf('🟠') === 0) {
+            prefix = '<span class="led-dot led-orange"></span> ';
+            s = s.replace(/^🟠\s*/, '');
+        } else if (s.indexOf('🔴') === 0) {
+            prefix = '<span class="led-dot led-red"></span> ';
+            s = s.replace(/^🔴\s*/, '');
+        } else if (s.indexOf('⚪') === 0) {
+            prefix = '<span class="led-dot led-slate"></span> ';
+            s = s.replace(/^⚪\s*/, '');
+        }
+        return prefix + escapeHTML(s);
+    }
+
     function loadFullArchive(callback) {
         if (fullArchiveCyclesData) {
             if (callback) callback();
@@ -954,7 +1003,7 @@ function toggleFullScreen() {
 
         const tbody = document.getElementById('archive-body');
         if (tbody && document.getElementById('archive-modal').style.display === 'flex') {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#38bdf8;">⏳ Загрузка полного архива измерений...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:#38bdf8;">' + UI_ICONS.spinner + ' Загрузка полного архива измерений...</td></tr>';
         }
 
         fetch('/api/history?limit=all')
@@ -1000,11 +1049,12 @@ function toggleFullScreen() {
 
     function createCycleRow(c) {
         const mins = Math.floor((c.duration_sec || 0) / 60);
-        let durStr = c.duration_str || formatHm(c.duration_sec);
-        let verdict = '🟢 Заморозка (Компрессор)';
+        const rawDur = c.duration_str || formatHm(c.duration_sec);
+        let durHtml = escapeHTML(rawDur);
+        let verdictHtml = '<span class="led-dot led-green"></span> Заморозка (Компрессор)';
         let color = '#10b981';
         let bgStyle = '';
-        let restDisplay = c.rest_str || '—';
+        let restHtml = escapeHTML(c.rest_str || '—');
         let restFrom = c.rest_start || '—';
         let restTo = c.rest_end || '—';
         let krvDisplay = (c.krv !== undefined && c.krv !== null && c.krv !== '') ? `${c.krv}` : '—';
@@ -1012,35 +1062,35 @@ function toggleFullScreen() {
         
         if (c.live) {
             if (c.cycle_type === 'idle') {
-                verdict = '⚪ Отдых (сейчас)';
+                verdictHtml = '<span class="led-dot led-cyan"></span> Отдых (сейчас)';
                 color = '#06b6d4';
             } else if (c.cycle_type === 'defrost') {
-                verdict = '🔥 Оттайка (сейчас)';
+                verdictHtml = UI_ICONS.flame + ' Оттайка (сейчас)';
                 color = '#f97316';
             } else {
-                verdict = '🟢 Заморозка (сейчас)';
+                verdictHtml = '<span class="led-dot led-green"></span> Заморозка (сейчас)';
                 color = '#10b981';
             }
             bgStyle = 'background: rgba(56,189,248,0.10);';
         } else if (c.cycle_type === 'blackout') {
-            durStr = `⚡ ${c.duration_str || durStr}`;
-            verdict = `⚡ Отключение света (${c.duration_str || durStr})`;
+            durHtml = UI_ICONS.bolt + ' ' + escapeHTML(rawDur);
+            verdictHtml = UI_ICONS.bolt + ' Отключение света (' + escapeHTML(rawDur) + ')';
             color = '#f59e0b';
-            restDisplay = '⚡ Сбой 220V';
+            restHtml = UI_ICONS.bolt + ' Сбой 220V';
             restFrom = '—';
             restTo = '—';
             krvDisplay = '—';
             pwrDisplay = '0 Вт (Сеть)';
             bgStyle = 'background: rgba(245,158,11,0.08);';
         } else if (c.cycle_type === 'defrost') {
-            verdict = '🔥 Автооттайка No Frost (ТЭН)';
+            verdictHtml = UI_ICONS.flame + ' Автооттайка No Frost (ТЭН)';
             color = '#f97316';
             bgStyle = 'background: rgba(249,115,22,0.06);';
         } else if (mins > 360) {
-            verdict = '🔴 Длительная работа (> 6ч)';
+            verdictHtml = '<span class="led-dot led-red"></span> Длительная работа (> 6ч)';
             color = '#ef4444';
         } else if (mins < 5) {
-            verdict = '🟡 Короткий запуск (< 5 мин)';
+            verdictHtml = '<span class="led-dot led-amber"></span> Короткий запуск (< 5 мин)';
             color = '#f59e0b';
         }
         
@@ -1051,13 +1101,13 @@ function toggleFullScreen() {
             <td><span style="color:#94a3b8; font-weight:600;">${escapeHTML(dateStr)}</span></td>
             <td><strong>${escapeHTML(c.start)}</strong></td>
             <td><strong>${escapeHTML(c.end)}</strong></td>
-            <td><span style="color:${color}; font-weight:bold;">${escapeHTML(durStr)}</span></td>
+            <td><span style="color:${color}; font-weight:bold;">${durHtml}</span></td>
             <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restFrom)}</span></td>
             <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restTo)}</span></td>
-            <td><span style="color:#06b6d4; font-weight:600;">${escapeHTML(restDisplay)}</span></td>
+            <td><span style="color:#06b6d4; font-weight:600;">${restHtml}</span></td>
             <td><span style="font-weight:600; color:#f8fafc;">${escapeHTML(krvDisplay)}</span></td>
             <td>${escapeHTML(pwrDisplay)}</td>
-            <td><span style="color:${color}; font-weight:600;">${escapeHTML(verdict)}</span></td>
+            <td><span style="color:${color}; font-weight:600;">${verdictHtml}</span></td>
         `;
         return row;
     }
@@ -1070,7 +1120,7 @@ function toggleFullScreen() {
         if (filterType === 'blackout') {
             thead.innerHTML = '<tr><th>Дата</th><th>Отключение</th><th>Включение</th><th>Длительность</th><th>Сохранность продуктов</th></tr>';
             if (allBlackoutsData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">⚡ Отключений электроэнергии пока не зафиксировано (Сеть стабильна).</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:30px;">' + UI_ICONS.bolt + ' Отключений электроэнергии пока не зафиксировано (Сеть стабильна).</td></tr>';
                 return;
             }
             allBlackoutsData.forEach(b => {
@@ -1081,7 +1131,7 @@ function toggleFullScreen() {
                     <td><span style="color:#ef4444; font-weight:bold;">${escapeHTML(b.start)}</span></td>
                     <td><span style="color:#10b981; font-weight:bold;">${escapeHTML(b.end)}</span></td>
                     <td><span style="color:#f59e0b; font-weight:bold;">${escapeHTML(b.duration_str)}</span></td>
-                    <td><span style="color:#cbd5e1;">${escapeHTML(b.safety)}</span></td>
+                    <td><span style="color:#cbd5e1;">${formatSafetyHTML(b.safety || b.food_safety)}</span></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -1101,7 +1151,7 @@ function toggleFullScreen() {
 
         if (filtered.length === 0) {
             if (isArchiveLoading) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#38bdf8; padding:30px;">⏳ Загрузка полного архива измерений...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#38bdf8; padding:30px;">' + UI_ICONS.spinner + ' Загрузка полного архива измерений...</td></tr>';
             } else {
                 tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#94a3b8; padding:30px;">В этой категории пока нет записей.</td></tr>';
             }
@@ -1179,7 +1229,8 @@ function toggleFullScreen() {
         
         if (data.summary && data.summary.overall_krv) {
             const badge = document.getElementById('krv-badge');
-            if (badge) badge.innerText = `КРВ: ${escapeHTML(data.summary.overall_krv)} (${escapeHTML(data.summary.krv_status)})`;
+            const cleanStatus = String(data.summary.krv_status || '').replace(/^[🟢🟡🟠🔴⚪]\s*/, '');
+            if (badge) badge.innerText = `КРВ: ${escapeHTML(data.summary.overall_krv)} (${escapeHTML(cleanStatus)})`;
         }
 
         const countEl = document.getElementById('total-cycles-btn');

@@ -1298,6 +1298,37 @@
             .nav-logo { font-size: 14.5px; gap: 6px; }
             .nav-logo .badge-pro { font-size: 9.5px; padding: 2px 6px; }
         }
+
+        /* Vector UI Icons & Glowing LED Dots */
+        .ui-icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            vertical-align: -0.15em;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+        .ui-icon-xs { width: 13px; height: 13px; }
+        .ui-icon-sm { width: 15px; height: 15px; }
+        .ui-icon-md { width: 18px; height: 18px; }
+        .ui-icon-lg { width: 22px; height: 22px; }
+        .ui-icon-xl { width: 28px; height: 28px; }
+        .led-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 5px;
+            margin-bottom: 1px;
+        }
+        .led-green  { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.85); }
+        .led-cyan   { background: #06b6d4; box-shadow: 0 0 8px rgba(6, 182, 212, 0.85); }
+        .led-amber  { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.85); }
     </style>
 </head>
 <body>
@@ -1307,7 +1338,7 @@
     <aside class="mobile-drawer" id="mobile-drawer" aria-label="Мобильное меню">
         <div class="drawer-header">
             <div class="nav-logo">
-                <span>🧊</span> Samsung RT34MB
+                <span style="color:#38bdf8; display:inline-flex;"><svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3" fill="currentColor" fill-opacity="0.18"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="8" y1="5" x2="8" y2="7"/><line x1="8" y1="12" x2="8" y2="16"/></svg></span> Samsung RT34MB
                 <span class="badge-pro">PRO v3.11.0</span>
             </div>
             <button class="drawer-close-btn" onclick="toggleMobileDrawer(false)" aria-label="Закрыть меню">✕</button>
@@ -1316,13 +1347,13 @@
             <div>
                 <div class="drawer-section-title">Разделы страницы</div>
                 <ul class="drawer-nav-list">
-                    <li><a href="#features" onclick="toggleMobileDrawer(false)"><span>⚡</span> Возможности комплекса</a></li>
-                    <li><a href="#ai" onclick="toggleMobileDrawer(false)"><span>🧠</span> Двухуровневый AI-копилот</a></li>
-                    <li><a href="#hardware" onclick="toggleMobileDrawer(false)"><span>🔌</span> Железо и iPad-киоск</a></li>
-                    <li><a href="#architecture" onclick="toggleMobileDrawer(false)"><span>📐</span> Топология и сеть</a></li>
-                    <li><a href="#telegram" onclick="toggleMobileDrawer(false)"><span>✈️</span> Telegram-бот</a></li>
-                    <li><a href="#specs" onclick="toggleMobileDrawer(false)"><span>📋</span> Характеристики ТТХ</a></li>
-                    <li><a href="#install" onclick="toggleMobileDrawer(false)"><span>🛠️</span> Установка и запуск</a></li>
+                    <li><a href="#features" onclick="toggleMobileDrawer(false)"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#38bdf8;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> Возможности комплекса</a></li>
+                    <li><a href="#ai" onclick="toggleMobileDrawer(false)"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#a855f7;"><rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg> Двухуровневый AI-копилот</a></li>
+                    <li><a href="#hardware" onclick="toggleMobileDrawer(false)"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#f59e0b;"><rect x="4" y="2" width="16" height="20" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Железо и iPad-киоск</a></li>
+                    <li><a href="#architecture" onclick="toggleMobileDrawer(false)"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#06b6d4;"><rect x="2" y="2" width="20" height="8" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="2" y="14" width="20" height="8" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg> Топология и сеть</a></li>
+                    <li><a href="#telegram" onclick="toggleMobileDrawer(false)"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#38bdf8;"><path d="m22 2-7 20-4-9-9-4Z" fill="currentColor" fill-opacity="0.2"/><path d="M22 2 11 13"/></svg> Telegram-бот</a></li>
+                    <li><a href="#specs" onclick="toggleMobileDrawer(false)"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.2"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Характеристики ТТХ</a></li>
+                    <li><a href="#install" onclick="toggleMobileDrawer(false)"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#f97316;"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg> Установка и запуск</a></li>
                 </ul>
             </div>
 
@@ -1330,13 +1361,16 @@
                 <div class="drawer-section-title">Быстрый доступ к приложениям</div>
                 <div class="drawer-actions">
                     <a href="static/index.html" class="btn btn-primary">
-                        <span>🖥️ Главный дашборд</span>
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <span>Главный дашборд</span>
                     </a>
                     <a href="static/ipad.html" class="btn btn-kiosk">
-                        <span>📟 Режим Киоска iPad (ES5)</span>
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                        <span>Режим Киоска iPad (ES5)</span>
                     </a>
                     <a href="https://t.me/my_fridge_rt34_bot" target="_blank" class="btn btn-telegram">
-                        <span>✈️ Telegram-бот</span>
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z" fill="currentColor" fill-opacity="0.2"/><path d="M22 2 11 13"/></svg>
+                        <span>Telegram-бот</span>
                     </a>
                     <a href="https://github.com/ALEVOLDON/SmartFridge-Telemetry-Kiosk" target="_blank" class="btn btn-secondary">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -1359,7 +1393,7 @@
     <header class="navbar">
         <div class="container nav-content">
             <div class="nav-logo">
-                <span>🧊</span> Samsung RT34MB
+                <span style="color:#38bdf8; display:inline-flex;"><svg class="ui-icon ui-icon-md" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3" fill="currentColor" fill-opacity="0.18"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="8" y1="5" x2="8" y2="7"/><line x1="8" y1="12" x2="8" y2="16"/></svg></span> Samsung RT34MB
                 <span class="badge-pro">PRO v3.11.0</span>
             </div>
             <nav>
@@ -1382,19 +1416,20 @@
                 <!-- Dropdown Menu for Live Demos -->
                 <div class="nav-dropdown">
                     <button class="btn btn-primary nav-dropdown-btn" type="button">
-                        <span>🚀 Демо</span>
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" fill-opacity="0.2"/></svg>
+                        <span>Демо</span>
                         <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </button>
                     <div class="nav-dropdown-menu">
                         <a href="static/index.html" class="nav-dropdown-item">
-                            <span class="dropdown-icon">🖥️</span>
+                            <span class="dropdown-icon" style="color:#38bdf8; display:inline-flex;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
                             <div>
                                 <div class="dropdown-title">Главный дашборд</div>
                                 <div class="dropdown-sub">Графики, аналитика, ПК и смартфон</div>
                             </div>
                         </a>
                         <a href="static/ipad.html" class="nav-dropdown-item">
-                            <span class="dropdown-icon">📟</span>
+                            <span class="dropdown-icon" style="color:#f59e0b; display:inline-flex;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
                             <div>
                                 <div class="dropdown-title">iPad Киоск</div>
                                 <div class="dropdown-sub">Для настенных планшетов (чистый ES5)</div>
@@ -1438,16 +1473,16 @@
 
             <div class="hero-cta">
                 <a href="static/index.html" class="btn btn-primary" style="padding:12px 24px; font-size:14.5px;">
-                    🚀 Открыть Демо Дашборда
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Открыть Демо Дашборда
                 </a>
                 <a href="static/ipad.html" class="btn btn-kiosk" style="padding:12px 22px; font-size:14.5px;">
-                    📟 Режим Киоска iPad
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Режим Киоска iPad
                 </a>
                 <a href="https://t.me/my_fridge_rt34_bot" target="_blank" class="btn btn-telegram" style="padding:12px 22px; font-size:14.5px;">
-                    ✈️ Telegram: @my_fridge_rt34_bot
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z" fill="currentColor" fill-opacity="0.2"/><path d="M22 2 11 13"/></svg> Telegram: @my_fridge_rt34_bot
                 </a>
                 <a href="https://github.com/ALEVOLDON/SmartFridge-Telemetry-Kiosk/releases/tag/v3.11.0" target="_blank" class="btn btn-secondary" style="padding:12px 20px; font-size:14.5px;">
-                    📦 Скачать v3.11.0
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Скачать v3.11.0
                 </a>
             </div>
 
@@ -1465,10 +1500,10 @@
                         </div>
                         <div class="mockup-badges-row">
                             <div class="mockup-badge">
-                                ● 100% LAN СОКЕТ (3 сек)
+                                <span class="led-dot led-green"></span> 100% LAN СОКЕТ (3 сек)
                             </div>
                             <div class="mockup-badge mockup-badge-ai">
-                                🧠 DUAL AI ACTIVE
+                                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg> DUAL AI ACTIVE
                             </div>
                         </div>
                     </div>
@@ -1477,7 +1512,7 @@
                         <div class="stat-box">
                             <div class="stat-label">Текущая мощность</div>
                             <div class="stat-val" style="color:#38bdf8;">124.6 <span style="font-size:16px;">Вт</span></div>
-                            <div class="stat-sub">🟢 Охлаждение (рабочий цикл)</div>
+                            <div class="stat-sub"><span class="led-dot led-green"></span> Охлаждение (рабочий цикл)</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">Напряжение сети</div>
@@ -1487,7 +1522,7 @@
                         <div class="stat-box">
                             <div class="stat-label">КРВ (Duty Cycle)</div>
                             <div class="stat-val" style="color:#a855f7;">0.38 <span style="font-size:16px;">КРВ</span></div>
-                            <div class="stat-sub">🟢 Энергоэффективный режим</div>
+                            <div class="stat-sub"><span class="led-dot led-green"></span> Энергоэффективный режим</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">Морозильная камера</div>
@@ -1497,10 +1532,10 @@
                     </div>
 
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:12px; color:#94a3b8; border-top:1px solid rgba(56, 189, 248, 0.1); padding-top:14px;">
-                        <div>⚡ Расход за сегодня: <strong style="color:#f8fafc;">0.984 кВт⋅ч</strong> (1.91 ₽)</div>
-                        <div>🔥 До цикла оттайки: <strong style="color:#38bdf8;">~3 ч 20 мин</strong></div>
-                        <div>⚖️ Калибровка энергии (XX:05): <strong style="color:#10b981;">99.9% совпадение</strong></div>
-                        <div>🛡️ Socket Anti-Stall: <strong style="color:#38bdf8;">Защита активна</strong></div>
+                        <div><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> Расход за сегодня: <strong style="color:#f8fafc;">0.984 кВт⋅ч</strong> (1.91 ₽)</div>
+                        <div><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f97316;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg> До цикла оттайки: <strong style="color:#38bdf8;">~3 ч 20 мин</strong></div>
+                        <div><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Калибровка энергии (XX:05): <strong style="color:#10b981;">99.9% совпадение</strong></div>
+                        <div><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg> Socket Anti-Stall: <strong style="color:#38bdf8;">Защита активна</strong></div>
                     </div>
                 </div>
             </div>
@@ -1552,7 +1587,7 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">⚡</div>
+                            <div class="feature-icon" style="color:#38bdf8;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg></div>
                             <span class="feature-tag">100% OFFLINE LAN</span>
                         </div>
                         <h3 class="feature-title">100% Локальный LAN-режим</h3>
@@ -1565,7 +1600,7 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">🧠</div>
+                            <div class="feature-icon" style="color:#a855f7;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg></div>
                             <span class="feature-tag">GEMINI + TYPESAFE</span>
                         </div>
                         <h3 class="feature-title">Двухуровневый AI-копилот</h3>
@@ -1578,10 +1613,10 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">🛡️</div>
+                            <div class="feature-icon" style="color:#10b981;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/><path d="m9 12 2 2 4-4"/></svg></div>
                             <span class="feature-tag">BLACKOUT GUARD</span>
                         </div>
-                        <h3 class="feature-title">Контроль блэкаутов & Пауза</h3>
+                        <h3 class="feature-title">Контроль блэкаутов &amp; Пауза</h3>
                         <p class="feature-desc">
                             Мгновенное обнаружение аварий 220В, расчет прогрева камер во время отключения (+1.4°C/ч в морозилке, +0.8°C/ч в холодильном отделении) и обязательная 5-минутная задержка пуска против гидроудара.
                         </p>
@@ -1591,10 +1626,10 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">⚖️</div>
+                            <div class="feature-icon" style="color:#06b6d4;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.18"/><path d="m9 12 2 2 4-4"/></svg></div>
                             <span class="feature-tag">XX:05 RECONCILE</span>
                         </div>
-                        <h3 class="feature-title">Аппаратная калибровка & Anti-Stall</h3>
+                        <h3 class="feature-title">Аппаратная калибровка &amp; Anti-Stall</h3>
                         <p class="feature-desc">
                             Непрерывная автоподстройка телеметрии через ежечасную сверку в XX:05 с аппаратным чипом розетки (<code>add_ele</code>). Защита сокетов Anti-Stall исключает зависание счетчиков при стабильной нагрузке.
                         </p>
@@ -1604,7 +1639,7 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">🔥</div>
+                            <div class="feature-icon" style="color:#f97316;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg></div>
                             <span class="feature-tag">NO-FROST SENSING</span>
                         </div>
                         <h3 class="feature-title">Диагностика No-Frost оттайки</h3>
@@ -1617,7 +1652,7 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">🍏</div>
+                            <div class="feature-icon" style="color:#f59e0b;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
                             <span class="feature-tag">ES5 RETRO KIOSK</span>
                         </div>
                         <h3 class="feature-title">Киоск для старых iPad (iOS 8–12)</h3>
@@ -1630,7 +1665,7 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">🤖</div>
+                            <div class="feature-icon" style="color:#38bdf8;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z" fill="currentColor" fill-opacity="0.2"/><path d="M22 2 11 13"/></svg></div>
                             <span class="feature-tag">REALTIME ALERTS</span>
                         </div>
                         <h3 class="feature-title">Telegram Watchdog 24/7</h3>
@@ -1643,7 +1678,7 @@
                 <div class="feature-card">
                     <div>
                         <div class="feature-top">
-                            <div class="feature-icon">🖨️</div>
+                            <div class="feature-icon" style="color:#10b981;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" fill="currentColor" fill-opacity="0.18"/><rect x="6" y="14" width="12" height="8"/></svg></div>
                             <span class="feature-tag">INK-FRIENDLY PDF</span>
                         </div>
                         <h3 class="feature-title">Экспорт и печать PDF-отчётов</h3>
@@ -1673,7 +1708,7 @@
             <div class="ai-card">
                 <div>
                     <span class="ai-badge ai-badge-system1">СИСТЕМА 1 • DETERMINISTIC NLP</span>
-                    <h3 class="ai-card-title">⚡ TypeSafe AI Jev</h3>
+                    <h3 class="ai-card-title"><svg class="ui-icon ui-icon-md" viewBox="0 0 24 24" style="color:#c084fc;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> TypeSafe AI Jev</h3>
                     <p style="font-size:14px; color:var(--text-muted); line-height:1.6;">
                         Сверхбыстрое (~80 мс) локальное распознавание намерений пользователя и математический скоринг термодинамики без внешних тяжелых библиотек.
                     </p>
@@ -1685,14 +1720,14 @@
                     </ul>
                 </div>
                 <div style="font-size:12px; color:#c084fc; font-weight:700; border-top:1px solid rgba(168,85,247,0.25); padding-top:12px; margin-top:14px;">
-                    ⚡ Скорость отклика: ~80 мс • Надежность 100%
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> Скорость отклика: ~80 мс • Надежность 100%
                 </div>
             </div>
 
             <div class="ai-card">
                 <div>
                     <span class="ai-badge ai-badge-system2">СИСТЕМА 2 • REFRIGERATION EXPERT</span>
-                    <h3 class="ai-card-title">🤖 Google Gemini Flash</h3>
+                    <h3 class="ai-card-title"><svg class="ui-icon ui-icon-md" viewBox="0 0 24 24" style="color:#fbbf24;"><rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg> Google Gemini Flash</h3>
                     <p style="font-size:14px; color:var(--text-muted); line-height:1.6;">
                         Инженер-консультант по холоду, обученный паспорту Samsung RT34MB и подключенный к живой телеметрии с каскадным переключением между 5 моделями.
                     </p>
@@ -1704,7 +1739,7 @@
                     </ul>
                 </div>
                 <div style="font-size:12px; color:#fbbf24; font-weight:700; border-top:1px solid rgba(245,158,11,0.25); padding-top:12px; margin-top:14px;">
-                    🛡️ Резервирование: 5 моделей • Каскадный Fallback
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg> Резервирование: 5 моделей • Каскадный Fallback
                 </div>
             </div>
         </div>
@@ -1744,10 +1779,10 @@
 
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <a href="static/ipad.html" class="btn btn-kiosk" style="padding:10px 20px;">
-                        📟 Открыть Kiosk iPad
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> Открыть Kiosk iPad
                     </a>
                     <a href="static/index.html" class="btn btn-secondary" style="padding:10px 18px;">
-                        🖥️ Открыть ПК-Дашборд
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Открыть ПК-Дашборд
                     </a>
                 </div>
             </div>
@@ -1768,35 +1803,35 @@
             <div class="flow-diagram">
                 <div class="flow-step">
                     <span class="flow-step-num">ШАГ 1</span>
-                    <div class="flow-step-icon">🧊</div>
+                    <div class="flow-step-icon" style="color:#38bdf8;"><svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3" fill="currentColor" fill-opacity="0.18"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="8" y1="5" x2="8" y2="7"/><line x1="8" y1="12" x2="8" y2="16"/></svg></div>
                     <div class="flow-step-title">Холодильник Samsung</div>
                     <div class="flow-step-sub">RT34MBTS • SK170K-T1U R-134a • Мощность 120–160 Вт</div>
                 </div>
 
                 <div class="flow-step">
                     <span class="flow-step-num">ШАГ 2</span>
-                    <div class="flow-step-icon">🔌</div>
+                    <div class="flow-step-icon" style="color:#10b981;"><svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg></div>
                     <div class="flow-step-title">Умная розетка Tuya</div>
                     <div class="flow-step-sub">16A Smart Plug • TinyTuya v3.5 • Локальный Wi-Fi сокет 6668</div>
                 </div>
 
                 <div class="flow-step">
                     <span class="flow-step-num">ШАГ 3</span>
-                    <div class="flow-step-icon">🖥️</div>
+                    <div class="flow-step-icon" style="color:#a855f7;"><svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="2" y="14" width="20" height="8" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
                     <div class="flow-step-title">ТВ-бокс H96 (Сервер)</div>
                     <div class="flow-step-sub">Rockchip RK3318 Cortex-A53 • Termux + Python 3.12 + SQLite</div>
                 </div>
 
                 <div class="flow-step">
                     <span class="flow-step-num">ШАГ 4</span>
-                    <div class="flow-step-icon">📱</div>
+                    <div class="flow-step-icon" style="color:#f59e0b;"><svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
                     <div class="flow-step-title">Клиенты и Telegram</div>
                     <div class="flow-step-sub">Настенный iPad (iOS 8–12) • ПК-дашборд • @my_fridge_rt34_bot</div>
                 </div>
             </div>
 
             <div style="background:rgba(15, 23, 42, 0.6); border-radius:12px; padding:18px 22px; font-size:13.5px; color:#cbd5e1; line-height:1.7;">
-                <strong style="color:#38bdf8;">🛡️ Сетевая изоляция (Policy Routing):</strong>
+                <strong style="color:#38bdf8;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg> Сетевая изоляция (Policy Routing):</strong>
                 В ядре Linux ТВ-бокса настроена системная маршрутизация — локальная подсеть роутера (<code>192.168.0.0/24</code>) закреплена за физическим интерфейсом <code>eth0</code>. Это гарантирует непрерывную связь с розеткой холодильника с нулевым джиттером, даже если на медиаприставке запущен общесистемный VPN/Byedpi.
             </div>
         </div>
@@ -1810,32 +1845,32 @@
                 <div class="tg-bot-name">Samsung Fridge Monitor</div>
                 <div class="tg-bot-username">@my_fridge_rt34_bot</div>
                 <a href="https://t.me/my_fridge_rt34_bot" target="_blank" class="btn btn-telegram" style="width:100%; max-width:240px;">
-                    ✈️ Открыть в Telegram
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z" fill="currentColor" fill-opacity="0.2"/><path d="M22 2 11 13"/></svg> Открыть в Telegram
                 </a>
             </div>
 
             <div class="tg-chat-mockup">
                 <div style="font-size:12px; font-weight:700; color:#38bdf8; margin-bottom:12px;">
-                    🔔 ПРИМЕР СИСТЕМНОГО ОПОВЕЩЕНИЯ О БЛЭКАУТЕ
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.2"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> ПРИМЕР СИСТЕМНОГО ОПОВЕЩЕНИЯ О БЛЭКАУТЕ
                 </div>
 
                 <div class="tg-message">
-                    ⚡ <b>ПИТАНИЕ 220В ВОССТАНОВЛЕНО!</b><br><br>
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#f59e0b;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> <b>ПИТАНИЕ 220В ВОССТАНОВЛЕНО!</b><br><br>
                     • Начало сбоя: <code>17:12</code><br>
                     • Конец сбоя: <code>22:49</code><br>
                     • Длительность блэкаута: <b>5 ч 38 мин</b> (20267 сек)<br>
-                    • Оценка заморозки: <b>🟡 Морозилка поднялась до ~-10°C</b><br><br>
+                    • Оценка заморозки: <b><span class="led-dot led-amber"></span> Морозилка поднялась до ~-10°C</b><br><br>
                     <i>Автоматика выдержала паузу пуска и возобновила штатный мониторинг.</i>
                 </div>
 
                 <div style="font-size:11.5px; color:#94a3b8; margin-bottom:8px;">Интерактивное меню бота:</div>
                 <div class="tg-buttons-grid">
-                    <div class="tg-mock-btn">🟢 Статус</div>
-                    <div class="tg-mock-btn">📊 Отчёт за неделю</div>
-                    <div class="tg-mock-btn">⚡ За сегодня</div>
-                    <div class="tg-mock-btn">⚖️ Сверить счётчик</div>
-                    <div class="tg-mock-btn">🧠 Аудит</div>
-                    <div class="tg-mock-btn">❓ Помощь</div>
+                    <div class="tg-mock-btn"><span class="led-dot led-green"></span> Статус</div>
+                    <div class="tg-mock-btn"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Отчёт за неделю</div>
+                    <div class="tg-mock-btn"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f59e0b;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> За сегодня</div>
+                    <div class="tg-mock-btn"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Сверить счётчик</div>
+                    <div class="tg-mock-btn"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#a855f7;"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg> Аудит</div>
+                    <div class="tg-mock-btn"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#94a3b8;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> Помощь</div>
                 </div>
             </div>
         </div>
@@ -1942,10 +1977,10 @@ bash scripts/h96_start_fridge.sh
                 <div style="font-weight:700; color:#f8fafc; margin-bottom:4px;">
                     Samsung RT34MB Intelligent Energy Monitor • Pro Edition v3.11.0
                 </div>
-                <div>Разработчик: <strong>ALEVOLDON LABS // AI & DEV</strong> • Open Source (MIT License)</div>
+                <div>Разработчик: <strong>ALEVOLDON LABS // AI &amp; DEV</strong> • Open Source (MIT License)</div>
             </div>
             <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
-                <a href="index.en.html">English Version 🇬🇧</a>
+                <a href="index.en.html"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> English Version</a>
                 <a href="static/index.html">Дашборд</a>
                 <a href="static/ipad.html">iPad Киоск</a>
                 <a href="https://t.me/my_fridge_rt34_bot" target="_blank">Telegram-бот</a>

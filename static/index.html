@@ -104,11 +104,11 @@
 
         <!-- System Architecture Pill Tags -->
         <div class="splash-tags">
-            <span class="splash-tag"><span>⚡</span> 220V RMS</span>
-            <span class="splash-tag"><span>❄️</span> No Frost</span>
-            <span class="splash-tag"><span>🧠</span> Dual AI</span>
-            <span class="splash-tag"><span>🛡️</span> Watchdog</span>
-            <span class="splash-tag"><span>🍏</span> iPad Kiosk</span>
+            <span class="splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 220V RMS</span>
+            <span class="splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg> No Frost</span>
+            <span class="splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg> Dual AI</span>
+            <span class="splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Watchdog</span>
+            <span class="splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg> iPad Kiosk</span>
         </div>
 
         <!-- Bottom Tap / Click Hint -->
@@ -121,8 +121,9 @@
 <div class="drawer-content" id="drawer-content">
     <div class="drawer-header">
         <div>
-            <div style="font-weight: 700; font-size: 15.5px; color: #f8fafc; display:flex; align-items:center; gap:6px;">
-                🧊 <span>Samsung RT34MB</span>
+            <div style="font-weight: 700; font-size: 15.5px; color: #f8fafc; display:flex; align-items:center; gap:7px;">
+                <svg class="ui-icon ui-icon-lg" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="8" y1="6" x2="8" y2="7"/><line x1="8" y1="13" x2="8" y2="16"/></svg>
+                <span>Samsung RT34MB</span>
             </div>
             <div style="font-size: 11.5px; color: #94a3b8; margin-top: 2px;">Мобильное меню</div>
         </div>
@@ -132,61 +133,61 @@
     </div>
 
     <!-- Section 1: Screens -->
-    <div class="drawer-section-title">📂 Разделы</div>
+    <div class="drawer-section-title"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg> Разделы</div>
     <button class="drawer-item" onclick="closeMobileDrawer(); window.scrollTo({top:0, behavior:'smooth'});">
-        <span>🏠</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
         <span>Главный дашборд</span>
     </button>
     <button class="drawer-item" onclick="closeMobileDrawer(); openAnalyticsModal();">
-        <span>📊</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#06b6d4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
         <span>Аналитика и энергоучёт</span>
     </button>
     <button class="drawer-item" onclick="closeMobileDrawer(); openArchiveModal();">
-        <span>📜</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#a855f7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <span>Полный архив циклов</span>
     </button>
     <button class="drawer-item" onclick="closeMobileDrawer(); openAboutModal();">
-        <span>ℹ️</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
         <span>О программе, FAQ и версии</span>
     </button>
     <a class="drawer-item" href="ipad.html">
-        <span>📟</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#f59e0b;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
         <span>Режим Киоска iPad / Планшет</span>
     </a>
     <a class="drawer-item" href="../index.html" id="drawer-landing-btn" style="display:none;">
-        <span>🌐</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#10b981;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
         <span>На страницу презентации</span>
     </a>
 
     <!-- Section 2: Controls & Audio -->
-    <div class="drawer-section-title">⚙️ Управление и звук</div>
+    <div class="drawer-section-title"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Управление и звук</div>
     <button class="drawer-item" onclick="togglePcSound(); syncDrawerSoundUI();">
-        <span id="drawer-sound-icon">🔔</span>
+        <span id="drawer-sound-icon"><svg class="ui-icon ui-icon-md" style="color:#10b981;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
         <span id="drawer-sound-text">Звуковой сигнал: ВКЛ</span>
     </button>
     <button class="drawer-item" onclick="closeMobileDrawer(); showSplashScreen(true);">
-        <span>🎬</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
         <span>Заставка при входе</span>
     </button>
     <button class="drawer-item" onclick="toggleFullScreen(); closeMobileDrawer();">
-        <span>⛶</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#cbd5e1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></span>
         <span>Полноэкранный режим</span>
     </button>
     <button class="drawer-item" onclick="testNotification(); closeMobileDrawer();">
-        <span>🔔</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#f59e0b;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>
         <span>Тест оповещения</span>
     </button>
     <button class="drawer-item" onclick="openSettings(); closeMobileDrawer();">
-        <span>⚙️</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#94a3b8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
         <span>Настройки Tuya API</span>
     </button>
     <button class="drawer-item" onclick="printReport();">
-        <span>🖨</span>
+        <span><svg class="ui-icon ui-icon-md" style="color:#cbd5e1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span>
         <span>Печать отчета</span>
     </button>
 
     <!-- Section 3: Status Info -->
-    <div class="drawer-section-title">🛡️ Инфо о системе</div>
+    <div class="drawer-section-title"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Инфо о системе</div>
     <div style="padding: 12px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6; background: rgba(15,23,42,0.6); margin: 6px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
         <div>Сервер: <strong style="color:#f8fafc;" id="drawer-server-ip">Локальная сеть</strong></div>
         <div id="drawer-channel-info">Канал: <strong style="color:#10b981;">LAN (без облака)</strong></div>
@@ -198,23 +199,23 @@
     <!-- Header -->
     <div class="header">
         <div class="title-group">
-            <h1>🧊 Авто-Монитор: Samsung RT34MB</h1>
+            <h1><svg class="ui-icon ui-icon-xl" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="8" y1="6" x2="8" y2="7"/><line x1="8" y1="13" x2="8" y2="16"/></svg> Авто-Монитор: Samsung RT34MB</h1>
             <p>Автоматический опрос умной розетки через Tuya Cloud каждые 5 сек</p>
         </div>
         <!-- Desktop Action Buttons -->
         <div class="btn-group desktop-btn-group">
-            <button class="btn btn-secondary" onclick="openAnalyticsModal()" style="color:#38bdf8; border-color:rgba(56,189,248,0.4); font-weight:700;">📊 Аналитика</button>
-            <button class="btn btn-secondary" onclick="togglePcSound()" id="pc-sound-btn" style="color:#10b981; border-color:rgba(16,185,129,0.4);">🔔 Звук: ВКЛ</button>
-            <button class="btn btn-secondary" onclick="toggleFullScreen()" id="fs-btn">⛶ На весь экран</button>
-            <button class="btn btn-secondary" onclick="testNotification()">🔔 Тест оповещения</button>
-            <button class="btn btn-secondary" onclick="openAboutModal()" style="color:#38bdf8; border-color:rgba(56,189,248,0.4);">ℹ️ О программе & FAQ</button>
-            <button class="btn btn-secondary" onclick="openSettings()">⚙️ Настройки API</button>
-            <button class="btn btn-secondary" onclick="printReport()">🖨 Печать отчета</button>
+            <button class="btn btn-secondary" onclick="openAnalyticsModal()" style="color:#38bdf8; border-color:rgba(56,189,248,0.4); font-weight:700;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Аналитика</button>
+            <button class="btn btn-secondary" onclick="togglePcSound()" id="pc-sound-btn" style="color:#10b981; border-color:rgba(16,185,129,0.4);"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Звук: ВКЛ</button>
+            <button class="btn btn-secondary" onclick="toggleFullScreen()" id="fs-btn"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> На весь экран</button>
+            <button class="btn btn-secondary" onclick="testNotification()"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg> Тест оповещения</button>
+            <button class="btn btn-secondary" onclick="openAboutModal()" style="color:#38bdf8; border-color:rgba(56,189,248,0.4);"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> О программе &amp; FAQ</button>
+            <button class="btn btn-secondary" onclick="openSettings()"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Настройки API</button>
+            <button class="btn btn-secondary" onclick="printReport()"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Печать отчета</button>
             <a class="btn btn-secondary" href="../index.html" id="desktop-landing-btn" style="display:none; color:#f8fafc; border-color:rgba(255,255,255,0.25);">← Презентация</a>
         </div>
         <!-- Mobile Menu Hamburger Trigger -->
         <button class="mobile-menu-btn" onclick="openMobileDrawer()" id="mobile-menu-toggle">
-            ☰ Меню
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg> Меню
         </button>
     </div>
 
@@ -230,11 +231,11 @@
     <!-- Network Channel & Cloud Quota Card -->
     <div id="channel-quota-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #10b981; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(15, 23, 42, 0.85);">
         <div style="display:flex; align-items:center; gap:14px;">
-            <span id="channel-icon" style="font-size:26px;">🏠</span>
+            <span id="channel-icon" style="display:inline-flex; align-items:center; justify-content:center; color:#10b981;"><svg class="ui-icon ui-icon-2xl" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1.5" fill="currentColor"/></svg></span>
             <div>
                 <div style="font-size:14.5px; font-weight:700; color:#f8fafc;" id="channel-title">Канал связи: Прямой локальный Wi-Fi (без облака)</div>
                 <div style="font-size:13px; color:#cbd5e1; margin-top:2px;" id="channel-subtitle">
-                    🛡️ Запросов в облако сегодня: <strong>0</strong> | 100% экономия: лимиты не тратятся
+                    <svg class="ui-icon ui-icon-xs" style="color:#10b981;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Запросов в облако сегодня: <strong>0</strong> | 100% экономия: лимиты не тратятся
                 </div>
             </div>
         </div>
@@ -251,9 +252,9 @@
     <!-- Blackout Monitoring Banner -->
     <div id="blackout-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #f59e0b; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(15, 23, 42, 0.75);">
         <div style="display:flex; align-items:center; gap:14px;">
-            <span style="font-size:24px;">⚡</span>
+            <span style="display:inline-flex; align-items:center; justify-content:center; color:#f59e0b;"><svg class="ui-icon ui-icon-2xl" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
             <div>
-                <div style="font-size:14.5px; font-weight:700; color:#f8fafc;" id="blackout-title">⚡ Монитор отключений электросети</div>
+                <div style="font-size:14.5px; font-weight:700; color:#f8fafc;" id="blackout-title"><svg class="ui-icon ui-icon-sm" style="color:#f59e0b;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Монитор отключений электросети</div>
                 <div style="font-size:13px; color:#cbd5e1; margin-top:2px;" id="blackout-subtitle">Анализ стабильности питания 220V...</div>
             </div>
         </div>
@@ -265,19 +266,19 @@
     <!-- Live Cards: Row 1 (Power & Grid) -->
     <div class="grid-3">
         <div class="card">
-            <div class="card-header"><span class="card-title">Текущая мощность</span><span style="color:var(--accent-blue); font-size:12px; font-weight:bold;">LIVE</span></div>
+            <div class="card-header"><span class="card-title"><svg class="ui-icon ui-icon-sm" style="color:var(--accent-blue);" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Текущая мощность</span><span style="color:var(--accent-blue); font-size:12px; font-weight:bold;">LIVE</span></div>
             <div class="main-stat" id="live-power">0.0 <span class="unit">Вт</span></div>
             <div style="font-size: 14px; margin-top: 10px; color: var(--text-muted);" id="live-state-desc">Компрессор выключен (Отдых)</div>
         </div>
 
         <div class="card">
-            <div class="card-header"><span class="card-title">Напряжение в сети</span><span style="color:var(--accent-cyan); font-size:12px; font-weight:bold;">VOLT</span></div>
+            <div class="card-header"><span class="card-title"><svg class="ui-icon ui-icon-sm" style="color:var(--accent-cyan);" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Напряжение в сети</span><span style="color:var(--accent-cyan); font-size:12px; font-weight:bold;">VOLT</span></div>
             <div class="main-stat" id="live-voltage">--- <span class="unit">В</span></div>
             <div style="font-size: 14px; margin-top: 10px; color: var(--accent-cyan);" id="live-volt-desc">Штатная норма компрессора (200-220V)</div>
         </div>
 
         <div class="card">
-            <div class="card-header"><span class="card-title">Сила тока</span><span style="color:var(--accent-green); font-size:12px; font-weight:bold;">AMPERE</span></div>
+            <div class="card-header"><span class="card-title"><svg class="ui-icon ui-icon-sm" style="color:var(--accent-green);" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Сила тока</span><span style="color:var(--accent-green); font-size:12px; font-weight:bold;">AMPERE</span></div>
             <div class="main-stat" id="live-current">0.00 <span class="unit">А</span></div>
             <div style="font-size: 14px; margin-top: 10px; color: var(--text-muted);">Паспорт: 0.70 А</div>
         </div>
@@ -287,8 +288,8 @@
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 24px;">
         <div class="card" style="border-top: 3px solid #38bdf8;">
             <div class="card-header">
-                <span class="card-title">❄️ Морозильная камера</span>
-                <span id="freezer-tag" style="color:#38bdf8; font-size:11px; font-weight:700; background:rgba(56,189,248,0.15); padding:3px 8px; border-radius:6px;">📊 МОДЕЛЬ (ОЦЕНКА)</span>
+                <span class="card-title"><svg class="ui-icon ui-icon-md" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg> Морозильная камера</span>
+                <span id="freezer-tag" style="color:#38bdf8; font-size:11px; font-weight:700; background:rgba(56,189,248,0.15); padding:3px 8px; border-radius:6px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> МОДЕЛЬ (ОЦЕНКА)</span>
             </div>
             <div class="main-stat" id="temp-freezer-val" style="color:#38bdf8;">≈ -18.2 <span class="unit">°C</span></div>
             <div style="font-size: 13px; margin-top: 8px; color: var(--text-muted);" id="freezer-desc">Теплофизическая модель (физический датчик не подключен)</div>
@@ -296,8 +297,8 @@
 
         <div class="card" style="border-top: 3px solid #10b981;">
             <div class="card-header">
-                <span class="card-title">🥗 Холодильное отделение</span>
-                <span id="fridge-tag" style="color:#10b981; font-size:11px; font-weight:700; background:rgba(16,185,129,0.15); padding:3px 8px; border-radius:6px;">📊 МОДЕЛЬ (ОЦЕНКА)</span>
+                <span class="card-title"><svg class="ui-icon ui-icon-md" style="color:#10b981;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg> Холодильное отделение</span>
+                <span id="fridge-tag" style="color:#10b981; font-size:11px; font-weight:700; background:rgba(16,185,129,0.15); padding:3px 8px; border-radius:6px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> МОДЕЛЬ (ОЦЕНКА)</span>
             </div>
             <div class="main-stat" id="temp-fridge-val" style="color:#10b981;">≈ +4.1 <span class="unit">°C</span></div>
             <div style="font-size: 13px; margin-top: 8px; color: var(--text-muted);" id="fridge-desc">Теплофизическая модель (физический датчик не подключен)</div>
@@ -307,11 +308,11 @@
     <!-- Auto Cycle Box -->
     <div class="cycle-box">
         <div>
-            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px; font-weight:600;" id="timer-title">⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px; font-weight:600;" id="timer-title"><span class="led-dot led-cyan"></span>АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
             <div class="timer-val" id="auto-timer" style="color: #06b6d4;">00:00:00</div>
         </div>
         <div style="max-width: 450px; font-size: 13.5px; color: #cbd5e1; line-height: 1.5;" id="cycle-verdict">
-            🧊 Холодильник удерживает набранный мороз. Ожидаемый запуск компрессора через ~15–25 мин.
+            <svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Холодильник удерживает набранный мороз. Ожидаемый запуск компрессора через ~15–25 мин.
         </div>
     </div>
 
@@ -319,7 +320,7 @@
     <div id="health-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #06b6d4; transition: all 0.3s ease; padding: 16px 20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:14px;">
-                <span id="health-icon" style="font-size:26px;">🧊</span>
+                <span id="health-icon" style="display:inline-flex; align-items:center; justify-content:center; color:#06b6d4;"><svg class="ui-icon ui-icon-2xl" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>
                 <div>
                     <div id="health-title" style="font-size:15px; font-weight:700; color:#f8fafc;">Диагностика цикла: Штатный отдых</div>
                     <div id="health-subtitle" style="font-size:13px; color:#94a3b8; margin-top:3px;">Холодильник отдыхает в пределах нормы (35–55 мин). Уплотнители держат мороз.</div>
@@ -365,13 +366,13 @@
         </div>
         <div style="margin-top: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px; display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
             <button class="btn-archive" onclick="openArchiveModal()" style="flex: 1 1 210px; max-width: 250px; height: 42px; padding: 0 16px; justify-content: center;">
-                📜 Полный журнал (<span id="total-cycles-btn">0</span>)
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Полный журнал (<span id="total-cycles-btn">0</span>)
             </button>
             <button class="btn btn-secondary" onclick="openAnalyticsModal()" style="flex: 1 1 210px; max-width: 250px; height: 42px; padding: 0 16px; justify-content: center; font-size: 13.5px; border-radius: 10px; white-space: nowrap; color:#38bdf8; border-color:rgba(56,189,248,0.4); font-weight:700;">
-                📊 Аналитика и энергоучёт
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Аналитика и энергоучёт
             </button>
             <button class="btn btn-secondary" onclick="printReport()" style="flex: 1 1 210px; max-width: 250px; height: 42px; padding: 0 16px; justify-content: center; font-size: 13.5px; border-radius: 10px; white-space: nowrap;">
-                🖨 Печать в PDF
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Печать в PDF
             </button>
         </div>
     </div>
@@ -383,7 +384,7 @@
         <!-- Header -->
         <div style="padding:16px 22px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(15,23,42,0.9); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #0284c7, #06b6d4); display:flex; align-items:center; justify-content:center; font-size:20px; box-shadow:0 0 15px rgba(6,182,212,0.4);">📊</div>
+                <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #0284c7, #06b6d4); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 0 15px rgba(6,182,212,0.4);"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
                 <div>
                     <div style="font-weight:800; font-size:17px; color:#f8fafc; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                         Аналитика и Здоровье Холодильника
@@ -401,37 +402,37 @@
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; margin-bottom:18px;">
                 <!-- Card 1: Daily kWh -->
                 <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
-                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">⚡ Расход в сутки</div>
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;"><svg class="ui-icon ui-icon-xs" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Расход в сутки</div>
                     <div style="font-size:22px; font-weight:800; color:#38bdf8; margin-top:4px;" id="an-daily-kwh">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">кВт·ч</span></div>
                     <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Прогноз: <span id="an-monthly-kwh" style="color:#f8fafc; font-weight:600;">-- кВт·ч</span>/мес</div>
                 </div>
                 <!-- Card 2: Cost -->
                 <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
-                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">💰 Стоимость в месяц</div>
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;"><svg class="ui-icon ui-icon-xs" style="color:#10b981;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg> Стоимость в месяц</div>
                     <div style="font-size:22px; font-weight:800; color:#10b981; margin-top:4px;"><span id="an-monthly-cost">--</span> <span style="font-size:13px; font-weight:500; color:#94a3b8;" id="an-currency">₽</span></div>
                     <div style="font-size:11px; color:#cbd5e1; margin-top:2px;"><span id="an-daily-cost" style="color:#f8fafc; font-weight:600;">-- ₽</span> в сутки</div>
                 </div>
                 <!-- Card 3: Defrost share -->
                 <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
-                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">🔥 Доля ТЭНа No Frost</div>
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;"><svg class="ui-icon ui-icon-xs" style="color:#f97316;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Доля ТЭНа No Frost</div>
                     <div style="font-size:22px; font-weight:800; color:#f97316; margin-top:4px;" id="an-defrost-share">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">%</span></div>
                     <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Мотор: <span id="an-compressor-share" style="color:#f8fafc; font-weight:600;">--%</span></div>
                 </div>
                 <!-- Card 4: Voltage red hours -->
                 <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
-                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">⚠️ Зона риска (&lt;190V)</div>
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;"><svg class="ui-icon ui-icon-xs" style="color:#f59e0b;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Зона риска (&lt;190V)</div>
                     <div style="font-size:22px; font-weight:800; color:#f59e0b; margin-top:4px;" id="an-red-hours">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">ч</span></div>
                     <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Норма 205V+: <span id="an-norm-pct" style="color:#10b981; font-weight:600;">--%</span></div>
                 </div>
                 <!-- Card 5: Defrost timer interval -->
                 <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
-                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">❄️ Автооттайка No Frost</div>
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;"><svg class="ui-icon ui-icon-xs" style="color:#06b6d4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg> Автооттайка No Frost</div>
                     <div style="font-size:22px; font-weight:800; color:#06b6d4; margin-top:4px;" id="an-defrost-dur">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">мин</span></div>
-                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Всего: <span id="an-defrost-count" style="color:#f8fafc; font-weight:600;">--</span> оттаек (🟢)</div>
+                    <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">Всего: <span id="an-defrost-count" style="color:#f8fafc; font-weight:600;">--</span> оттаек <span class="led-dot led-green" style="width:6px; height:6px; margin-left:3px;"></span></div>
                 </div>
                 <!-- Card 6: Total monitored kWh -->
                 <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px;">
-                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;">📊 Всего намотал</div>
+                    <div style="font-size:11px; color:#94a3b8; font-weight:600; text-transform:uppercase;"><svg class="ui-icon ui-icon-xs" style="color:#a855f7;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Всего намотал</div>
                     <div style="font-size:22px; font-weight:800; color:#a855f7; margin-top:4px;" id="an-total-kwh">-- <span style="font-size:13px; font-weight:500; color:#94a3b8;">кВт·ч</span></div>
                     <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">За <span id="an-days-count" style="color:#f8fafc; font-weight:600;">--</span> дней</div>
                 </div>
@@ -440,7 +441,7 @@
             <!-- Tariff Input Bar -->
             <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div style="font-size:13px; color:#cbd5e1; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span>⚙️ Тариф за 1 кВт·ч:</span>
+                    <span><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Тариф за 1 кВт·ч:</span>
                     <input type="number" id="analytics-tariff-input" step="0.1" min="0" value="5.0" style="width:75px; background:#0b1120; border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-weight:bold; padding:4px 8px; border-radius:6px; font-size:13px; text-align:center;">
                     <select id="analytics-currency-select" style="background:#0b1120; border:1px solid rgba(255,255,255,0.15); color:#f8fafc; padding:4px 8px; border-radius:6px; font-size:13px;">
                         <option value="₽">₽ (руб)</option>
@@ -452,14 +453,14 @@
                     <button onclick="saveAndApplyTariff()" style="background:#0284c7; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">Пересчитать и сохранить</button>
                 </div>
                 <div style="font-size:12px; color:#94a3b8;">
-                    💡 Расчёт ведётся по честной интегральной мощности каждого цикла
+                    <svg class="ui-icon ui-icon-xs" style="color:#f59e0b;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg> Расчёт ведётся по честной интегральной мощности каждого цикла
                 </div>
             </div>
 
             <!-- Tuya Cloud Energy Calibration Banner -->
             <div id="an-reconcile-box" style="background:rgba(15,23,42,0.8); border:1px solid rgba(16,185,129,0.3); border-left:4px solid #10b981; border-radius:12px; padding:12px 16px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="font-size:24px;">🛡️</span>
+                    <span style="display:inline-flex; align-items:center; color:#10b981;"><svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>
                     <div>
                         <div style="font-weight:700; font-size:14px; color:#f8fafc; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                             Аппаратная калибровка Tuya Cloud
@@ -473,7 +474,7 @@
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="font-size:11px; color:#64748b;" id="an-rec-time">Авто: каждый час</span>
                     <button id="an-rec-btn" onclick="triggerEnergyReconciliation()" style="background:#0284c7; border:none; color:#fff; font-size:12px; font-weight:700; padding:6px 14px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:0.2s;">
-                        <span>🔄</span> Сверить сейчас
+                        <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Сверить сейчас
                     </button>
                 </div>
             </div>
@@ -481,7 +482,7 @@
             <!-- Chart 1: Daily Timeline (кВт·ч + КРВ) -->
             <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:18px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                    <div style="font-size:14px; font-weight:700; color:#f8fafc;">📈 Динамика электропотребления и КРВ по дням</div>
+                    <div style="font-size:14px; font-weight:700; color:#f8fafc;"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Динамика электропотребления и КРВ по дням</div>
                     <div style="font-size:11.5px; color:#94a3b8;">Столбцы: кВт·ч (слева) | Линия: КРВ (справа)</div>
                 </div>
                 <div style="position:relative; height:240px; width:100%;">
@@ -492,7 +493,7 @@
             <!-- Chart 2: 24h Hourly Profile (Activity % & Voltage) -->
             <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:18px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                    <div style="font-size:14px; font-weight:700; color:#f8fafc;">🕒 Суточный профиль активности компрессора (00:00 — 23:00)</div>
+                    <div style="font-size:14px; font-weight:700; color:#f8fafc;"><svg class="ui-icon ui-icon-sm" style="color:#06b6d4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Суточный профиль активности компрессора (00:00 — 23:00)</div>
                     <div style="font-size:11.5px; color:#94a3b8;">Столбцы: % времени работы | Линия: Напряжение (В)</div>
                 </div>
                 <div style="position:relative; height:240px; width:100%;">
@@ -502,22 +503,22 @@
 
             <!-- Diagnostic Insights & Summary -->
             <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px;">
-                <div style="font-size:14px; font-weight:700; color:#f8fafc; margin-bottom:12px;">🩺 Экспертное заключение по телеметрии</div>
+                <div style="font-size:14px; font-weight:700; color:#f8fafc; margin-bottom:12px;"><svg class="ui-icon ui-icon-sm" style="color:#10b981;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Экспертное заключение по телеметрии</div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
                     <div style="background:rgba(30,41,59,0.5); padding:12px; border-radius:10px; border-left:3px solid #10b981;">
-                        <div style="font-weight:bold; font-size:12.5px; color:#10b981;">🟢 Компрессор и теплоизоляция</div>
+                        <div style="font-weight:bold; font-size:12.5px; color:#10b981;"><span class="led-dot led-green"></span>Компрессор и теплоизоляция</div>
                         <div style="font-size:12px; color:#cbd5e1; margin-top:4px;" id="insight-compressor">
                             КРВ в диапазоне 0.31–0.42 (норма до 0.50). Холодильник отлично удерживает температуру. Время отдыха стабильно превышает 45 минут.
                         </div>
                     </div>
                     <div style="background:rgba(30,41,59,0.5); padding:12px; border-radius:10px; border-left:3px solid #f97316;">
-                        <div style="font-weight:bold; font-size:12.5px; color:#f97316;">🔥 Система оттайки No Frost</div>
+                        <div style="font-weight:bold; font-size:12.5px; color:#f97316;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Система оттайки No Frost</div>
                         <div style="font-size:12px; color:#cbd5e1; margin-top:4px;" id="insight-defrost">
                             Автооттайка срабатывает стабильно. Среднее время нагрева 25 мин при мощности ТЭНа 155 Вт. Шуба на испарителе отсутствует.
                         </div>
                     </div>
                     <div style="background:rgba(30,41,59,0.5); padding:12px; border-radius:10px; border-left:3px solid #f59e0b;">
-                        <div style="font-weight:bold; font-size:12.5px; color:#f59e0b;">⚠️ Качество электросети</div>
+                        <div style="font-weight:bold; font-size:12.5px; color:#f59e0b;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Качество электросети</div>
                         <div style="font-size:12px; color:#cbd5e1; margin-top:4px;" id="insight-voltage">
                             Зафиксированы просадки до 164 В в вечернее время. Для продления ресурса мотора рекомендуется использовать стабилизатор напряжения.
                         </div>
@@ -535,7 +536,7 @@
         <div style="padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(15,23,42,0.8);">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                 <div>
-                    <h3 style="margin:0; font-size:16.5px; color:#f8fafc; font-weight:700;">📜 Полный архив циклов холодильника</h3>
+                    <h3 style="margin:0; font-size:16.5px; color:#f8fafc; font-weight:700;"><svg class="ui-icon ui-icon-md" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Полный архив циклов холодильника</h3>
                     <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Вся зафиксированная история работы компрессора и автооттайки No Frost</div>
                 </div>
                 <button onclick="closeArchiveModal()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:34px; height:34px; border-radius:50%; font-size:18px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -545,9 +546,9 @@
             <!-- Filters -->
             <div style="display:flex; align-items:center; gap:6px; margin-top:12px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px;">
                 <button onclick="filterArchive('all')" class="filter-btn active" id="filter-all">Все</button>
-                <button onclick="filterArchive('cooling')" class="filter-btn" id="filter-cooling" style="white-space:nowrap;">🟢 Заморозка</button>
-                <button onclick="filterArchive('defrost')" class="filter-btn" id="filter-defrost" style="white-space:nowrap;">🔥 Оттайка</button>
-                <button onclick="filterArchive('blackout')" class="filter-btn" id="filter-blackout" style="color:#f59e0b; border-color:rgba(245,158,11,0.4); white-space:nowrap;">⚡ Отключения света</button>
+                <button onclick="filterArchive('cooling')" class="filter-btn" id="filter-cooling" style="white-space:nowrap;"><span class="led-dot led-green"></span>Заморозка</button>
+                <button onclick="filterArchive('defrost')" class="filter-btn" id="filter-defrost" style="white-space:nowrap;"><svg class="ui-icon ui-icon-xs" style="color:#f97316;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Оттайка</button>
+                <button onclick="filterArchive('blackout')" class="filter-btn" id="filter-blackout" style="color:#f59e0b; border-color:rgba(245,158,11,0.4); white-space:nowrap;"><svg class="ui-icon ui-icon-xs" style="color:#f59e0b;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Отключения света</button>
             </div>
         </div>
         <!-- Scrollable Body Table with horizontal touch scroll -->
@@ -566,7 +567,7 @@
 <div class="modal" id="settings-modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>⚙️ Настройки Tuya Cloud API</h3>
+            <h3><svg class="ui-icon ui-icon-md" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Настройки Tuya Cloud API</h3>
             <span style="cursor:pointer; font-size:20px;" onclick="closeSettings()">&times;</span>
         </div>
         <div class="form-group">
@@ -594,7 +595,7 @@
         </div>
         <div style="margin: 18px 0 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;">
             <div style="font-weight: 700; color: #38bdf8; font-size: 13.5px; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
-                <span>✈️</span> Оповещения в Telegram &amp; Бот
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Оповещения в Telegram &amp; Бот
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                 <input type="checkbox" id="cfg-tg-enabled" style="width:18px; height:18px; cursor:pointer;">
@@ -609,7 +610,7 @@
                 <input type="text" id="cfg-tg-chat-id" placeholder="Напр. 123456789 или 123456789, 987654321">
             </div>
             <button type="button" class="btn btn-secondary" style="width:100%; margin-top:4px; font-size:12.5px; padding:7px 12px; background:rgba(14,165,233,0.15); border-color:#0284c7; color:#38bdf8;" onclick="testTelegram()">
-                🔔 Отправить тест в Telegram
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Отправить тест в Telegram
             </button>
             <div id="tg-test-status" style="display:none; font-size:11.5px; margin-top:6px; text-align:center;"></div>
         </div>
@@ -617,18 +618,18 @@
         <!-- Splash Screen Settings -->
         <div style="margin: 14px 0 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;">
             <div style="font-weight: 700; color: #38bdf8; font-size: 13.5px; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
-                <span>🎬</span> Заставка при входе
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Заставка при входе
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                 <label for="cfg-splash-enabled" style="margin:0; font-size:13px; color:#f8fafc; cursor:pointer;">Красивая заставка при запуске приложения</label>
                 <input type="checkbox" id="cfg-splash-enabled" style="width:18px; height:18px; cursor:pointer;" checked>
             </div>
             <button type="button" class="btn btn-secondary" style="width:100%; margin-top:8px; font-size:12.5px; padding:7px 12px; background:rgba(56,189,248,0.12); border-color:rgba(56,189,248,0.3); color:#38bdf8;" onclick="closeSettings(); showSplashScreen(true);">
-                ▶️ Просмотреть заставку сейчас
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Просмотреть заставку сейчас
             </button>
         </div>
 
-        <button class="btn" style="width:100%;" onclick="saveSettings()">💾 Сохранить и подключиться</button>
+        <button class="btn" style="width:100%;" onclick="saveSettings()"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Сохранить и подключиться</button>
     </div>
 </div>
 
@@ -638,8 +639,8 @@
         <!-- Header -->
         <div class="about-header">
             <div class="about-header-left">
-                <div class="about-icon">
-                    🧊
+                <div class="about-icon" style="color:#fff;">
+                    <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="8" y1="6" x2="8" y2="7"/><line x1="8" y1="13" x2="8" y2="16"/></svg>
                 </div>
                 <div>
                     <div class="about-title-row">
@@ -654,16 +655,16 @@
         <!-- Navigation Tabs -->
         <div class="about-tabs-bar">
             <button class="about-tab-btn active" id="tab-btn-about" onclick="switchAboutTab('tab-about', this)">
-                <span>ℹ️</span> <span class="tab-label-full">О программе</span><span class="tab-label-short">Инфо</span>
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <span class="tab-label-full">О программе</span><span class="tab-label-short">Инфо</span>
             </button>
             <button class="about-tab-btn" id="tab-btn-faq" onclick="switchAboutTab('tab-faq', this)">
-                <span>❓</span> <span class="tab-label-full">База знаний & FAQ</span><span class="tab-label-short">FAQ</span>
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span class="tab-label-full">База знаний &amp; FAQ</span><span class="tab-label-short">FAQ</span>
             </button>
             <button class="about-tab-btn" id="tab-btn-changelog" onclick="switchAboutTab('tab-changelog', this)">
-                <span>📜</span> <span class="tab-label-full">История версий</span><span class="tab-label-short">Релизы</span>
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span class="tab-label-full">История версий</span><span class="tab-label-short">Релизы</span>
             </button>
             <button class="about-tab-btn" id="tab-btn-specs" onclick="switchAboutTab('tab-specs', this)">
-                <span>🔬</span> <span class="tab-label-full">Характеристики & ТТХ</span><span class="tab-label-short">ТТХ</span>
+                <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg> <span class="tab-label-full">Характеристики &amp; ТТХ</span><span class="tab-label-short">ТТХ</span>
             </button>
         </div>
 
@@ -679,7 +680,7 @@
                             <div style="font-size:12.5px; color:#38bdf8; font-weight:600; margin-top:2px;">Pro Edition • Edge Autonomous Host</div>
                         </div>
                         <div style="font-size:11.5px; font-weight:700; background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4); padding:4px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;">
-                            <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981;"></span> 100% LAN Mode • Zero Cloud
+                            <span class="led-dot led-green" style="margin-right:2px;"></span> 100% LAN Mode • Zero Cloud
                         </div>
                     </div>
                     <p style="font-size:13.5px; color:#cbd5e1; line-height:1.6; margin-top:10px;">
@@ -689,35 +690,35 @@
 
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:18px;">
                     <div class="faq-item" style="margin-bottom:0;">
-                        <div class="faq-q"><span>⚡</span> Прямой локальный опрос</div>
+                        <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Прямой локальный опрос</div>
                         <div class="faq-a">Прямой TCP-сокет (порт 6668) с розеткой Tuya по домашней Wi-Fi сети с пингом ~10 мс. Нулевой расход квот Tuya Cloud.</div>
                     </div>
                     <div class="faq-item" style="margin-bottom:0;">
-                        <div class="faq-q"><span>🛡️</span> Защита Policy Routing</div>
+                        <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#10b981;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Защита Policy Routing</div>
                         <div class="faq-a">Системные правила ядра Linux закрепляют настроенную LAN-подсеть (по умолчанию <code>192.168.0.0/24</code>, поле <code>lan_subnet</code>) за <code>eth0</code>, даже если на приставке включен VPN.</div>
                     </div>
                     <div class="faq-item" style="margin-bottom:0;">
-                        <div class="faq-q"><span>🧊</span> Теплофизическая модель</div>
+                        <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#06b6d4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg> Теплофизическая модель</div>
                         <div class="faq-a">Расчет текущей температуры морозильной и холодильной камер на базе динамики теплоемкости и теплопотерь.</div>
                     </div>
                     <div class="faq-item" style="margin-bottom:0;">
-                        <div class="faq-q"><span>⚡</span> Контроль блэкаутов</div>
+                        <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#f59e0b;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Контроль блэкаутов</div>
                         <div class="faq-a">Мониторинг аварийных отключений 220В, оценка безопасности заморозки продуктов и защита компрессора от повторного пуска.</div>
                     </div>
                 </div>
 
                 <div class="faq-item" style="border-left:4px solid #10b981; margin-bottom:0;">
-                    <div class="faq-q" style="color:#10b981;"><span>💻</span> Среда выполнения и архитектура</div>
+                    <div class="faq-q" style="color:#10b981;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Среда выполнения и архитектура</div>
                     <div style="font-size:13px; color:#94a3b8; line-height:1.6; margin-top:4px;">
                         <div>• <strong>Хост-устройство:</strong> ТВ-приставка H96 Max (Rockchip RK3318 Cortex-A53 64-bit, Android OS)</div>
                         <div>• <strong>Серверный стек:</strong> Termux Linux Environment + Python 3.12 (Flask Async Server + TinyTuya)</div>
                         <div>• <strong>База данных:</strong> Локальная реляционная СУБД SQLite3 (свыше 140 000 записей телеметрии)</div>
                         <div>• <strong>Клиентские интерфейсы:</strong> Главный Cyber-дашборд + Облегченный Kiosk Mode для iPad (iOS 9–12)</div>
-                        <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI & DEV</div>
+                        <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI &amp; DEV</div>
                     </div>
 
                     <button type="button" class="btn btn-secondary" onclick="closeAboutModal(); showSplashScreen(true);" style="width:100%; margin-top:14px; background:rgba(56,189,248,0.15); border-color:rgba(56,189,248,0.35); color:#38bdf8; justify-content:center; font-size:13px; padding:10px;">
-                        🎬 Просмотреть заставку при запуске
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Просмотреть заставку при запуске
                     </button>
                 </div>
             </div>
@@ -725,49 +726,49 @@
             <!-- Tab 2: FAQ -->
             <div id="tab-faq" style="display:none;">
                 <div class="faq-item">
-                    <div class="faq-q"><span>❓</span> Почему компрессор отдыхает 35–55 минут? Это нормально?</div>
+                    <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Почему компрессор отдыхает 35–55 минут? Это нормально?</div>
                     <div class="faq-a">
                         <strong>Да, это идеальный показатель!</strong> У компрессора Samsung SK170K-T1U нормативный коэффициент рабочего времени (КРВ) составляет <strong>0.30–0.45</strong>. При стандартном рабочем цикле 20–25 минут нормальный отдых должен длиться от 35 до 55 минут. Длительный отдых означает, что уплотнители дверей герметичны, испаритель не забит льдом, а система эффективно держит набранный холод.
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-q"><span>❓</span> Как система понимает, что включилась оттайка (Defrost)?</div>
+                    <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Как система понимает, что включилась оттайка (Defrost)?</div>
                     <div class="faq-a">
                         Система распознает оттайку по характерному профилю потребления: включается ТЭН оттайки испарителя мощностью <strong>150–165 Вт</strong> чисто активной нагрузки (cos φ ≈ 1.0) без пускового скачка компрессора. После нагрева следует «пауза каплепадения» (drip time) 7–12 минут при мощности 0 Вт, после чего компрессор возобновляет цикл заморозки.
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-q"><span>❓</span> Что происходит при отключении электричества (блэкауте)?</div>
+                    <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Что происходит при отключении электричества (блэкауте)?</div>
                     <div class="faq-a">
                         Монитор засекает точный момент потери связи с розеткой и время возврата 220В. Продолжительность блэкаута рассчитывается отдельно, предотвращая появление ложного сверхдлинного «цикла отдыха». Программа сопоставляет длительность отключения с теплоемкостью морозилки и выводит оценку безопасности продуктов (до 8–10 часов мороз остается безопасным).
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-q"><span>❓</span> Что такое «Пауза пуска» (Защита компрессора)?</div>
+                    <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Что такое «Пауза пуска» (Защита компрессора)?</div>
                     <div class="faq-a">
                         Если компрессор только что выключился или свет моргнул на пару секунд, в контуре хладагента сохраняется высокое давление конденсации. Повторный пуск под давлением перегружает пусковую обмотку и может сжечь позисторное реле. Система активирует блокировку пуска минимум на <strong>5 минут</strong> для полного выравнивания давления хладагента.
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-q"><span>❓</span> Тратятся ли облачные запросы Tuya Cloud?</div>
+                    <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Тратятся ли облачные запросы Tuya Cloud?</div>
                     <div class="faq-a">
                         <strong>Нет, запросы равны 0!</strong> Монитор работает по прямому протоколу Local Wi-Fi (порт 6668), опрашивая розетку напрямую в домашней сети. Это экономит весь месячный лимит (50 000 вызовов Tuya Cloud), обеспечивая работу даже при полном отсутствии внешнего интернета.
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-q"><span>❓</span> Работает ли программа, если на приставке включен VPN?</div>
+                    <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Работает ли программа, если на приставке включен VPN?</div>
                     <div class="faq-a">
                         <strong>Да, полностью совместима!</strong> В системе настроена изоляция Policy Routing ядра Linux. Трафик домашней сети <code>192.168.0.0/24</code> и веб-сервера <code>8088</code> принудительно направляется через физический сетевой кабель <code>eth0</code>, поэтому любые включенные VPN-клиенты (RedLink/AWG) не блокируют доступ к розетке и веб-интерфейсу на iPad.
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <div class="faq-q"><span>❓</span> Как открыть режим для старых планшетов iPad?</div>
+                    <div class="faq-q"><svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Как открыть режим для старых планшетов iPad?</div>
                     <div class="faq-a">
                         Откройте в браузере Safari адрес: <code>http://192.168.0.103:8088/ipad</code>. Этот экран оптимизирован специально под мобильные процессоры Apple и старые версии iOS (включая iOS 9–12), потребляет минимум памяти и работает без лишних скриптов.
                     </div>
@@ -924,7 +925,7 @@
             <!-- Tab 4: Specs -->
             <div id="tab-specs" style="display:none;">
                 <div style="font-size:14px; font-weight:700; color:#38bdf8; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                    <span>🧊</span> Паспортные данные холодильника Samsung RT34MB
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.2" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="8" y1="6" x2="8" y2="7"/><line x1="8" y1="13" x2="8" y2="16"/></svg> Паспортные данные холодильника Samsung RT34MB
                 </div>
                 <div class="spec-grid" style="margin-bottom:18px;">
                     <div class="spec-box">
@@ -962,7 +963,7 @@
                 </div>
 
                 <div style="font-size:14px; font-weight:700; color:#10b981; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
-                    <span>📊</span> Пороги программной детекции телеметрии
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Пороги программной детекции телеметрии
                 </div>
                 <div class="spec-grid">
                     <div class="spec-box">
@@ -992,7 +993,7 @@
                 © 2026 ALEVOLDON LABS // Проект домашней телеметрии Samsung RT34MB
             </div>
             <div style="display:flex; align-items:center; gap:12px;">
-                <span style="color:#10b981; display:flex; align-items:center; gap:5px; font-weight:600;">● <span>Служба активна</span></span>
+                <span style="color:#10b981; display:flex; align-items:center; gap:5px; font-weight:600;"><span class="led-dot led-green"></span><span>Служба активна</span></span>
                 <button onclick="closeAboutModal()" class="btn btn-secondary" style="padding:5px 14px; font-size:12px; border-radius:6px;">Закрыть</button>
             </div>
         </div>

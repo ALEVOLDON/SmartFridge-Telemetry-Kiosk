@@ -337,6 +337,45 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(-360deg); }
         }
+
+        /* Vector UI Icons & Glowing LED Dots (iOS 9+ Safari Compatible) */
+        .ui-icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            vertical-align: -0.15em;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .ui-icon-xs { width: 13px; height: 13px; }
+        .ui-icon-sm { width: 15px; height: 15px; }
+        .ui-icon-md { width: 18px; height: 18px; }
+        .ui-icon-lg { width: 22px; height: 22px; }
+        .ui-spin {
+            -webkit-animation: ipadSplashSpin 1.1s linear infinite;
+            animation: ipadSplashSpin 1.1s linear infinite;
+        }
+        .led-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 5px;
+            margin-bottom: 1px;
+        }
+        .led-green  { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.85); }
+        .led-cyan   { background: #06b6d4; box-shadow: 0 0 8px rgba(6, 182, 212, 0.85); }
+        .led-blue   { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.85); }
+        .led-orange { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.85); }
+        .led-amber  { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.85); }
+        .led-red    { background: #ef4444; box-shadow: 0 0 9px rgba(239, 68, 68, 0.9); }
+        .led-slate  { background: #94a3b8; box-shadow: 0 0 5px rgba(148, 163, 184, 0.45); }
+        .color-orange { color: #f97316; }
+        .color-red { color: #ef4444; }
     </style>
 </head>
 <body>
@@ -386,10 +425,10 @@
             </div>
 
             <div class="ipad-splash-tags">
-                <span class="ipad-splash-tag">⚡ 220V RMS</span>
-                <span class="ipad-splash-tag">❄️ No Frost</span>
-                <span class="ipad-splash-tag">🧠 Dual AI</span>
-                <span class="ipad-splash-tag">🛡️ Watchdog</span>
+                <span class="ipad-splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f59e0b;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> 220V RMS</span>
+                <span class="ipad-splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg> No Frost</span>
+                <span class="ipad-splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#a855f7;"><rect x="4" y="4" width="16" height="16" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg> Dual AI</span>
+                <span class="ipad-splash-tag"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg> Watchdog</span>
             </div>
 
             <div class="ipad-splash-hint" onclick="dismissIpadSplash()">Нажмите в любое место для быстрого входа</div>
@@ -404,16 +443,16 @@
             </div>
             <div style="display:flex; align-items:center;">
                 <button onclick="openIpadAnalytics()" style="background: rgba(15,23,42,0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
-                    📊 Аналитика
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Аналитика
                 </button>
                 <button onclick="openIpadAbout()" style="background: rgba(15,23,42,0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
-                    ℹ️ О программе
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.18"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> О программе
                 </button>
                 <button onclick="toggleIpadSound()" id="ipad-sound-btn" style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.4); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; margin-right: 6px;">
-                    🔔 Звук: ВКЛ
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.18"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Звук: ВКЛ
                 </button>
                 <button onclick="toggleIpadFS()" id="ipad-fs-btn" style="background: rgba(15,23,42,0.8); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 6px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">
-                    ⛶ Экран
+                    <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg> Экран
                 </button>
             </div>
         </div>
@@ -422,8 +461,8 @@
     <!-- Network Channel & Cloud Quota Card for iPad -->
     <div id="ipad-quota-card" style="background: rgba(15, 23, 42, 0.88); border-radius: 12px; padding: 10px 14px; border: 1px solid #10b981; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <div style="font-weight:bold; font-size:12.5px; color:#f8fafc;" id="ipad-channel-title">🏠 Канал: Прямой локальный Wi-Fi (без облака)</div>
-            <div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;" id="ipad-quota-sub">🛡️ Расход облака: 0/день | 100% экономия квоты</div>
+            <div style="font-weight:bold; font-size:12.5px; color:#f8fafc;" id="ipad-channel-title"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.5" fill="currentColor"/></svg> Канал: Прямой локальный Wi-Fi (без облака)</div>
+            <div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;" id="ipad-quota-sub"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg> Расход облака: 0/день | 100% экономия квоты</div>
         </div>
         <div id="ipad-quota-badge" style="font-size:11px; font-weight:bold; color:#10b981; background:rgba(16,185,129,0.2); padding:4px 10px; border-radius:6px;">
             50 000 / 50 000
@@ -433,7 +472,7 @@
     <!-- Blackout Monitoring Card for iPad -->
     <div id="ipad-blackout-card" style="background: rgba(15, 23, 42, 0.82); border-radius: 12px; padding: 10px 14px; border: 1px solid rgba(245,158,11,0.3); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <div style="font-weight:bold; font-size:12.5px; color:#f8fafc;" id="ipad-blackout-title">⚡ Сеть 220V: Питание активно</div>
+            <div style="font-weight:bold; font-size:12.5px; color:#f8fafc;" id="ipad-blackout-title"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#f59e0b;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> Сеть 220V: Питание активно</div>
             <div style="font-size:11.5px; color:#cbd5e1; margin-top:2px;" id="ipad-blackout-sub">Отключений света не зафиксировано</div>
         </div>
         <div id="ipad-blackout-badge" style="font-size:11px; font-weight:bold; color:#10b981; background:rgba(16,185,129,0.2); padding:3px 8px; border-radius:6px;">
@@ -447,7 +486,7 @@
             <div class="dial-card">
                 <div class="dial-label">Мощность</div>
                 <div class="dial-val color-blue" id="power-val">0.0 <span class="dial-unit">Вт</span></div>
-                <div class="dial-status color-gray" id="power-status">Отдых</div>
+                <div class="dial-status color-gray" id="power-status"><span class="led-dot led-slate"></span> Отдых</div>
             </div>
         </div>
         <div class="dial-cell">
@@ -470,23 +509,23 @@
     <div class="dials-row" style="margin-bottom: 16px;">
         <div class="dial-cell" style="width: 50%;">
             <div class="dial-card" style="border-top: 3px solid #38bdf8;">
-                <div class="dial-label" style="color: #38bdf8;">❄️ Морозилка</div>
+                <div class="dial-label" style="color: #38bdf8;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg> Морозилка</div>
                 <div class="dial-val color-blue" id="ipad-temp-freezer">≈ -18.2 <span class="dial-unit">°C</span></div>
-                <div class="dial-status" id="ipad-freezer-status" style="color: #38bdf8;">📊 Модель (оценка)</div>
+                <div class="dial-status" id="ipad-freezer-status" style="color: #38bdf8;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Модель (оценка)</div>
             </div>
         </div>
         <div class="dial-cell" style="width: 50%;">
             <div class="dial-card" style="border-top: 3px solid #10b981;">
-                <div class="dial-label" style="color: #10b981;">🥗 Холодильник</div>
+                <div class="dial-label" style="color: #10b981;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" fill="currentColor" fill-opacity="0.2"/><path d="M12 18a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" fill="currentColor"/></svg> Холодильник</div>
                 <div class="dial-val color-green" id="ipad-temp-fridge">≈ +4.1 <span class="dial-unit">°C</span></div>
-                <div class="dial-status" id="ipad-fridge-status" style="color: #10b981;">📊 Модель (оценка)</div>
+                <div class="dial-status" id="ipad-fridge-status" style="color: #10b981;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Модель (оценка)</div>
             </div>
         </div>
     </div>
 
     <!-- Dual Mode Timer Box -->
     <div class="timer-card" id="timer-box">
-        <div class="timer-mode color-cyan" id="timer-mode">⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
+        <div class="timer-mode color-cyan" id="timer-mode"><span class="led-dot led-cyan"></span> АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
         <div class="timer-num color-cyan" id="timer-val">00:00:00</div>
         <div class="timer-hint" id="timer-hint">Холодильник удерживает мороз. Загрузка данных...</div>
     </div>
@@ -512,10 +551,10 @@
         </div>
         <div style="margin-top: 14px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
             <button onclick="openIpadAnalytics()" style="background: #0f172a; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;">
-                📊 Аналитика и энергоучёт
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Аналитика и энергоучёт
             </button>
             <button onclick="openIpadArchive()" style="background: #0f172a; color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;">
-                📜 Открыть весь архив (<span id="ipad-total-count">0</span> циклов)
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" fill="currentColor" fill-opacity="0.2"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg> Открыть весь архив (<span id="ipad-total-count">0</span> циклов)
             </button>
         </div>
     </div>
@@ -526,7 +565,7 @@
             <!-- Modal Header -->
             <div style="padding:12px 16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; background:#0f172a; flex-shrink:0;">
                 <div style="display:flex; align-items:center;">
-                    <span style="font-size:22px; margin-right:8px;">📊</span>
+                    <span style="margin-right:10px; color:#38bdf8; display:inline-flex;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.18"/><line x1="16" y1="16" x2="16" y2="10"/><line x1="12" y1="16" x2="12" y2="7"/><line x1="8" y1="16" x2="8" y2="13"/></svg></span>
                     <div>
                         <div style="font-weight:bold; font-size:15px; color:#f8fafc; display:flex; align-items:center; gap:6px;">
                             Аналитика и Здоровье
@@ -545,32 +584,32 @@
                 <!-- KPI Grid -->
                 <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
                     <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
-                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">⚡ РАСХОД В СУТКИ</div>
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg> РАСХОД В СУТКИ</div>
                         <div style="font-size:18px; font-weight:bold; color:#38bdf8; margin-top:2px;" id="ipad-an-daily-kwh">-- <span style="font-size:11px; color:#94a3b8;">кВт·ч</span></div>
                         <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Прогноз: <span id="ipad-an-monthly-kwh">--</span></div>
                     </div>
                     <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
-                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">💰 В МЕСЯЦ</div>
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><rect x="2" y="6" width="20" height="12" rx="2" fill="currentColor" fill-opacity="0.2"/><circle cx="12" cy="12" r="2"/></svg> В МЕСЯЦ</div>
                         <div style="font-size:18px; font-weight:bold; color:#10b981; margin-top:2px;"><span id="ipad-an-monthly-cost">--</span> <span style="font-size:11px; color:#94a3b8;" id="ipad-an-curr">₽</span></div>
                         <div style="font-size:10px; color:#cbd5e1; margin-top:1px;"><span id="ipad-an-daily-cost">--</span> в сутки</div>
                     </div>
                     <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
-                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">🔥 ДОЛЯ ТЭНА</div>
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f97316;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg> ДОЛЯ ТЭНА</div>
                         <div style="font-size:18px; font-weight:bold; color:#f97316; margin-top:2px;" id="ipad-an-defrost-share">-- <span style="font-size:11px; color:#94a3b8;">%</span></div>
                         <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Мотор: <span id="ipad-an-motor-share">--</span></div>
                     </div>
                     <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
-                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">⚠️ РИСК (&lt;190V)</div>
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f59e0b;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> РИСК (&lt;190V)</div>
                         <div style="font-size:18px; font-weight:bold; color:#f59e0b; margin-top:2px;" id="ipad-an-red-hours">-- <span style="font-size:11px; color:#94a3b8;">ч</span></div>
                         <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Норма 205V+: <span id="ipad-an-norm-pct">--</span></div>
                     </div>
                     <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
-                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">❄️ ОТТАЙКА NO FROST</div>
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#06b6d4;"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg> ОТТАЙКА NO FROST</div>
                         <div style="font-size:18px; font-weight:bold; color:#06b6d4; margin-top:2px;" id="ipad-an-defrost-dur">-- <span style="font-size:11px; color:#94a3b8;">мин</span></div>
-                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Всего: <span id="ipad-an-defrost-count">--</span> оттаек (🟢)</div>
+                        <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">Всего: <span id="ipad-an-defrost-count">--</span> оттаек (<span class="led-dot led-green"></span>)</div>
                     </div>
                     <div style="flex:1 1 140px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px;">
-                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;">📊 ВСЕГО НАМОТАЛ</div>
+                        <div style="font-size:10.5px; color:#94a3b8; font-weight:bold;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#a855f7;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> ВСЕГО НАМОТАЛ</div>
                         <div style="font-size:18px; font-weight:bold; color:#a855f7; margin-top:2px;" id="ipad-an-total-kwh">-- <span style="font-size:11px; color:#94a3b8;">кВт·ч</span></div>
                         <div style="font-size:10px; color:#cbd5e1; margin-top:1px;">За <span id="ipad-an-days">--</span> дн.</div>
                     </div>
@@ -579,7 +618,7 @@
                 <!-- Tariff Input -->
                 <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px 12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                        <span style="font-size:12px; color:#cbd5e1;">⚙️ Тариф 1 кВт·ч:</span>
+                        <span style="font-size:12px; color:#cbd5e1;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Тариф 1 кВт·ч:</span>
                         <input type="number" id="ipad-an-tariff" step="0.1" min="0" value="5.0" style="width:65px; background:#1e293b; border:1px solid #38bdf8; color:#38bdf8; font-weight:bold; padding:4px 6px; border-radius:6px; font-size:12px; text-align:center;">
                         <select id="ipad-an-currency" style="background:#1e293b; border:1px solid #334155; color:#f8fafc; padding:4px 6px; border-radius:6px; font-size:12px;">
                             <option value="₽">₽</option>
@@ -596,7 +635,7 @@
                 <div style="background:#0f172a; border:1px solid rgba(16,185,129,0.3); border-left:4px solid #10b981; border-radius:10px; padding:10px 12px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div>
                         <div style="font-weight:bold; font-size:12px; color:#f8fafc; display:flex; align-items:center; gap:6px;">
-                            🛡️ Калибровка Tuya: <span id="ipad-rec-badge" style="color:#10b981; background:rgba(16,185,129,0.2); padding:1px 6px; border-radius:4px;">99.2% точности</span>
+                            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg> Калибровка Tuya: <span id="ipad-rec-badge" style="color:#10b981; background:rgba(16,185,129,0.2); padding:1px 6px; border-radius:4px;">99.2% точности</span>
                         </div>
                         <div style="font-size:11px; color:#94a3b8; margin-top:2px;" id="ipad-rec-desc">
                             Сегодня: локально <span style="color:#38bdf8;" id="ipad-rec-local">--</span> кВт·ч / чип <span style="color:#10b981;" id="ipad-rec-cloud">--</span> кВт·ч (Δ <span id="ipad-rec-delta" style="color:#cbd5e1;">--</span>)
@@ -607,7 +646,7 @@
 
                 <!-- Daily Breakdown Table -->
                 <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; margin-bottom:14px;">
-                    <div style="font-weight:bold; font-size:13px; color:#f8fafc; margin-bottom:8px;">📈 Посуточный расход и КРВ (последние 14 дней)</div>
+                    <div style="font-weight:bold; font-size:13px; color:#f8fafc; margin-bottom:8px;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#38bdf8;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Посуточный расход и КРВ (последние 14 дней)</div>
                     <div style="overflow-x:auto;">
                         <table style="width:100%; border-collapse:collapse; font-size:11.5px; text-align:left;">
                             <thead>
@@ -626,11 +665,11 @@
 
                 <!-- Insights -->
                 <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px;">
-                    <div style="font-weight:bold; font-size:13px; color:#f8fafc; margin-bottom:8px;">🩺 Диагностические выводы</div>
+                    <div style="font-weight:bold; font-size:13px; color:#f8fafc; margin-bottom:8px;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/><path d="m9 12 2 2 4-4"/></svg> Диагностические выводы</div>
                     <div style="font-size:12px; line-height:1.5; color:#cbd5e1;">
-                        <div style="margin-bottom:6px;"><strong style="color:#10b981;">🟢 Компрессор:</strong> КРВ 0.31–0.42 (норма). Уплотнители держат холод отлично.</div>
-                        <div style="margin-bottom:6px;"><strong style="color:#f97316;">🔥 No Frost:</strong> 16 автооттаек, средняя длительность 25 мин (ТЭН 155 Вт). Шубы нет.</div>
-                        <div><strong style="color:#f59e0b;">⚠️ Электросеть:</strong> В вечернее время напряжение падает до 164 В. Рекомендуется стабилизатор.</div>
+                        <div style="margin-bottom:6px;"><strong style="color:#10b981;"><span class="led-dot led-green"></span> Компрессор:</strong> КРВ 0.31–0.42 (норма). Уплотнители держат холод отлично.</div>
+                        <div style="margin-bottom:6px;"><strong style="color:#f97316;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg> No Frost:</strong> 16 автооттаек, средняя длительность 25 мин (ТЭН 155 Вт). Шубы нет.</div>
+                        <div><strong style="color:#f59e0b;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Электросеть:</strong> В вечернее время напряжение падает до 164 В. Рекомендуется стабилизатор.</div>
                     </div>
                 </div>
             </div>
@@ -642,7 +681,7 @@
         <div style="background:#1e293b; border:1px solid #334155; border-radius:14px; width:100%; max-width:760px; height:84vh; max-height:84vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.8);">
             <div style="padding:12px 16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; background:#0f172a; flex-shrink:0;">
                 <div>
-                    <div style="font-weight:bold; font-size:15px; color:#f8fafc;">📜 Полный архив всех циклов</div>
+                    <div style="font-weight:bold; font-size:15px; color:#f8fafc;"><svg class="ui-icon ui-icon-md" viewBox="0 0 24 24" style="color:#38bdf8;"><ellipse cx="12" cy="5" rx="9" ry="3" fill="currentColor" fill-opacity="0.2"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg> Полный архив всех циклов</div>
                     <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Все сохраненные циклы с 27 августа</div>
                 </div>
                 <div>
@@ -672,7 +711,7 @@
             <!-- Modal Header -->
             <div style="padding:12px 16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; background:#0f172a; flex-shrink:0;">
                 <div style="display:flex; align-items:center;">
-                    <span style="font-size:20px; margin-right:8px;">🧊</span>
+                    <span style="margin-right:10px; color:#38bdf8; display:inline-flex;"><svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3" fill="currentColor" fill-opacity="0.18"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="8" y1="5" x2="8" y2="7"/><line x1="8" y1="12" x2="8" y2="16"/></svg></span>
                     <div>
                         <div style="font-weight:bold; font-size:15px; color:#f8fafc;">
                             Samsung RT34MB Monitor <span id="ipad-version-badge" style="font-size:10px; background:#0284c7; color:#fff; padding:1px 6px; border-radius:4px;">PRO v3.11.0</span>
@@ -687,10 +726,10 @@
 
             <!-- Tab Buttons -->
             <div style="display:flex; background:#0b1120; border-bottom:1px solid #334155; flex-shrink:0; overflow-x:auto;">
-                <button id="ipad-btn-about" onclick="switchIpadTab('about')" style="flex:1; padding:10px 8px; background:#1e293b; color:#38bdf8; border:none; border-bottom:2px solid #38bdf8; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">ℹ️ О программе</button>
-                <button id="ipad-btn-faq" onclick="switchIpadTab('faq')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">❓ База знаний (FAQ)</button>
-                <button id="ipad-btn-ver" onclick="switchIpadTab('ver')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">📜 История версий</button>
-                <button id="ipad-btn-specs" onclick="switchIpadTab('specs')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;">🔬 Спецификации</button>
+                <button id="ipad-btn-about" onclick="switchIpadTab('about')" style="flex:1; padding:10px 8px; background:#1e293b; color:#38bdf8; border:none; border-bottom:2px solid #38bdf8; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> О программе</button>
+                <button id="ipad-btn-faq" onclick="switchIpadTab('faq')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> База знаний (FAQ)</button>
+                <button id="ipad-btn-ver" onclick="switchIpadTab('ver')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> История версий</button>
+                <button id="ipad-btn-specs" onclick="switchIpadTab('specs')" style="flex:1; padding:10px 8px; background:transparent; color:#94a3b8; border:none; border-bottom:2px solid transparent; font-weight:bold; font-size:12px; cursor:pointer; white-space:nowrap;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg> Спецификации</button>
             </div>
 
             <!-- Tab Contents (Scrollable) -->
@@ -704,43 +743,43 @@
                     </div>
 
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:12px;">
-                        <div style="font-weight:bold; color:#10b981; margin-bottom:6px;">🛡️ Локальная автономность (Zero-Cloud Mode)</div>
+                        <div style="font-weight:bold; color:#10b981; margin-bottom:6px;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg> Локальная автономность (Zero-Cloud Mode)</div>
                         <div>Система работает без посредников: ТВ-приставка опрашивает розетку напрямую через локальный Wi-Fi (порт 6668). Даже при отключении интернета монитор продолжает записывать каждый цикл и транслировать статус на планшет. Облачные квоты Tuya Cloud не расходуются (0 вызовов/день).</div>
                     </div>
 
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155;">
-                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:6px;">💻 Системный стек</div>
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:6px;"><svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#38bdf8;"><rect x="2" y="2" width="20" height="8" rx="2" fill="currentColor" fill-opacity="0.2"/><rect x="2" y="14" width="20" height="8" rx="2" fill="currentColor" fill-opacity="0.2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg> Системный стек</div>
                         <div>• <strong>Сервер:</strong> Android TV Box H96 Max (Rockchip RK3318 Cortex-A53 ARM64)</div>
                         <div>• <strong>Среда:</strong> Termux Linux + Python Flask Async + SQLite3</div>
                         <div>• <strong>Сетевая изоляция:</strong> Linux Policy Routing Shield (eth0 priority)</div>
                         <div>• <strong>Клиент:</strong> Легковесный Safari Kiosk интерфейс без внешних библиотек</div>
-                        <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI & DEV</div>
+                        <div>• <strong>Разработчик:</strong> ALEVOLDON LABS // AI &amp; DEV</div>
                     </div>
 
                     <button onclick="closeIpadAbout(); showIpadSplash(true);" style="width:100%; margin-top:12px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); padding:9px 14px; border-radius:8px; font-weight:bold; font-size:12.5px; cursor:pointer;">
-                        🎬 Просмотреть заставку при запуске
+                        <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" fill-opacity="0.2"/></svg> Просмотреть заставку при запуске
                     </button>
                 </div>
 
                 <!-- Tab: FAQ -->
                 <div id="ipad-tab-faq" style="display:none;">
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
-                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Почему компрессор отдыхает 35–55 минут?</div>
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> Почему компрессор отдыхает 35–55 минут?</div>
                         <div>Это норма! Исправный компрессор Samsung SK170K-T1U имеет КРВ в пределах 0.30–0.45. При цикле работы 20–25 минут нормальный отдых составляет 35–55 минут. Чем дольше отдых, тем лучше уплотнители держат холод.</div>
                     </div>
 
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
-                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Как определяется оттайка испарителя No-Frost?</div>
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> Как определяется оттайка испарителя No-Frost?</div>
                         <div>Включается нагреватель (ТЭН) испарителя мощностью 150–165 Вт активной нагрузки (без пускового броска тока компрессора). После нагрева следует пауза стекания конденсата 7–12 мин, затем компрессор снова включается.</div>
                     </div>
 
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155; margin-bottom:10px;">
-                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Что происходит при отключении света (блэкауте)?</div>
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> Что происходит при отключении света (блэкауте)?</div>
                         <div>Монитор определяет обрыв питания, засекает время блэкаута и рассчитывает безопасность продуктов по кривой теплоемкости морозильной камеры (до 8–10 часов холод удерживается безопасно).</div>
                     </div>
 
                     <div style="background:#0f172a; border-radius:10px; padding:12px; border:1px solid #334155;">
-                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;">❓ Что такое «Пауза пуска» (Защита компрессора)?</div>
+                        <div style="font-weight:bold; color:#f8fafc; margin-bottom:4px;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#38bdf8;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg> Что такое «Пауза пуска» (Защита компрессора)?</div>
                         <div>Защитная пауза минимум 5 минут после остановки компрессора или сбоя 220В. Необходима для выравнивания давления хладагента в контуре во избежание гидроудара и перегрузки пускового реле.</div>
                     </div>
                 </div>
@@ -1127,16 +1166,54 @@
             } catch(e) {}
         }
 
+        var IPAD_ICONS = {
+            bellOn: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.18"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+            bellOff: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+            bolt: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg>',
+            warn: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f59e0b;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+            shield: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg>',
+            lan: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.5" fill="currentColor"/></svg>',
+            cloud: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#f59e0b;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="currentColor" fill-opacity="0.18"/></svg>',
+            chartTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+            sensorTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>',
+            flame: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg>',
+            snowflake: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>',
+            spinner: '<svg class="ui-icon ui-icon-sm ui-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+        };
+
+        function formatIpadSafetyHTML(raw) {
+            if (!raw) return '';
+            var s = String(raw).replace(/^\s+|\s+$/g, '');
+            var prefix = '';
+            if (s.indexOf('🟢') === 0) {
+                prefix = '<span class="led-dot led-green"></span> ';
+                s = s.replace(/^🟢\s*/, '');
+            } else if (s.indexOf('🟡') === 0) {
+                prefix = '<span class="led-dot led-amber"></span> ';
+                s = s.replace(/^🟡\s*/, '');
+            } else if (s.indexOf('🟠') === 0) {
+                prefix = '<span class="led-dot led-orange"></span> ';
+                s = s.replace(/^🟠\s*/, '');
+            } else if (s.indexOf('🔴') === 0) {
+                prefix = '<span class="led-dot led-red"></span> ';
+                s = s.replace(/^🔴\s*/, '');
+            } else if (s.indexOf('⚪') === 0) {
+                prefix = '<span class="led-dot led-slate"></span> ';
+                s = s.replace(/^⚪\s*/, '');
+            }
+            return prefix + escapeHTML(s);
+        }
+
         function updateSoundButtonUI() {
             var btn = document.getElementById('ipad-sound-btn');
             if (!btn) return;
             if (soundEnabled) {
-                btn.innerHTML = '🔔 Звук: ВКЛ';
+                btn.innerHTML = IPAD_ICONS.bellOn + ' Звук: ВКЛ';
                 btn.style.color = '#10b981';
                 btn.style.borderColor = 'rgba(16,185,129,0.4)';
                 btn.style.background = 'rgba(16,185,129,0.15)';
             } else {
-                btn.innerHTML = '🔕 Звук: ВЫКЛ';
+                btn.innerHTML = IPAD_ICONS.bellOff + ' Звук: ВЫКЛ';
                 btn.style.color = '#94a3b8';
                 btn.style.borderColor = 'rgba(148,163,184,0.3)';
                 btn.style.background = 'rgba(15,23,42,0.8)';
@@ -1192,7 +1269,7 @@
             isAutoScanning = true;
             
             var subEl = document.getElementById('last-sync');
-            if (subEl) subEl.innerHTML = '⚡ Связь потеряна. Автопоиск нового IP в сети...';
+            if (subEl) subEl.innerHTML = IPAD_ICONS.bolt + ' Связь потеряна. Автопоиск нового IP в сети...';
             
             var found = false;
             var currentHost = window.location.hostname;
@@ -1304,7 +1381,7 @@
                                 document.getElementById('power-val').innerHTML = '0.0 <span class="dial-unit">Вт</span>';
                                 document.getElementById('volt-val').innerHTML = '<span style="color:#ef4444;">0.0</span> <span class="dial-unit" style="color:#ef4444;">В (НЕТ СЕТИ)</span>';
                                 document.getElementById('curr-val').innerHTML = '0.00 <span class="dial-unit">А</span>';
-                                document.getElementById('last-sync').innerHTML = '⚠️ <strong>АВАРИЯ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО</strong> | ' + (data.last_update || '--:--:--');
+                                document.getElementById('last-sync').innerHTML = IPAD_ICONS.warn + ' <strong>АВАРИЯ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО</strong> | ' + (data.last_update || '--:--:--');
                             } else {
                                 document.getElementById('power-val').innerHTML = (data.power || 0).toFixed(1) + ' <span class="dial-unit">Вт</span>';
                                 document.getElementById('volt-val').innerHTML = vVal.toFixed(1) + ' <span class="dial-unit">В</span>';
@@ -1320,10 +1397,10 @@
                             var fStatus = document.getElementById('ipad-freezer-status');
                             var rStatus = document.getElementById('ipad-fridge-status');
                             if (fStatus) {
-                                fStatus.innerHTML = freezerEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
+                                fStatus.innerHTML = freezerEst ? (IPAD_ICONS.chartTag + ' Модель (оценка)') : (IPAD_ICONS.sensorTag + ' Датчик Tuya');
                             }
                             if (rStatus) {
-                                rStatus.innerHTML = fridgeEst ? '📊 Модель (оценка)' : '📡 Датчик Tuya';
+                                rStatus.innerHTML = fridgeEst ? (IPAD_ICONS.chartTag + ' Модель (оценка)') : (IPAD_ICONS.sensorTag + ' Датчик Tuya');
                             }
 
                             if (data.temp_freezer !== undefined) {
@@ -1353,8 +1430,8 @@
                             if (qCard && qTitle && qSub) {
                                 if (isLan) {
                                     qCard.style.borderColor = '#10b981';
-                                    qTitle.innerHTML = '🏠 Канал: <strong>Прямой локальный Wi-Fi</strong>';
-                                    qSub.innerHTML = '🛡️ Запросов в облако сегодня: <strong>' + todayUsed + '</strong> (100% экономия)';
+                                    qTitle.innerHTML = IPAD_ICONS.lan + ' Канал: <strong>Прямой локальный Wi-Fi</strong>';
+                                    qSub.innerHTML = IPAD_ICONS.shield + ' Запросов в облако сегодня: <strong>' + todayUsed + '</strong> (100% экономия)';
                                     if (qBadge) {
                                         qBadge.innerText = 'Квота: ' + rem + ' / ' + tot;
                                         qBadge.style.color = '#10b981';
@@ -1362,8 +1439,8 @@
                                     }
                                 } else {
                                     qCard.style.borderColor = '#f59e0b';
-                                    qTitle.innerHTML = '☁️ Канал: <strong>Tuya Cloud (Эко-резерв)</strong>';
-                                    qSub.innerHTML = '⚠️ Запросов сегодня: <strong>' + todayUsed + '</strong> | ' + escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день');
+                                    qTitle.innerHTML = IPAD_ICONS.cloud + ' Канал: <strong>Tuya Cloud (Эко-резерв)</strong>';
+                                    qSub.innerHTML = IPAD_ICONS.warn + ' Запросов сегодня: <strong>' + todayUsed + '</strong> | ' + escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день');
                                     if (qBadge) {
                                         qBadge.innerText = 'Квота: ' + rem + ' / ' + tot;
                                         qBadge.style.color = '#f59e0b';
@@ -1378,15 +1455,15 @@
                             var bBadge = document.getElementById('ipad-blackout-badge');
                             if (isBlackout) {
                                 var bDur = data.blackout_duration_str || (Math.floor((data.blackout_duration_sec || 0) / 60) + ' мин');
-                                if (bTitle) bTitle.innerHTML = '⚡ <strong>Авария электросети: Электричество отключено прямо сейчас!</strong>';
+                                if (bTitle) bTitle.innerHTML = IPAD_ICONS.bolt + ' <strong>Авария электросети: Электричество отключено прямо сейчас!</strong>';
                                 if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(bDur) + '</strong>. Розетка обесточена. Продукты удерживают холод.';
                                 if (bBadge) {
-                                    bBadge.innerText = '🔴 БЛЭКАУТ: ' + bDur;
+                                    bBadge.innerHTML = '<span class="led-dot led-red"></span> БЛЭКАУТ: ' + escapeHTML(bDur);
                                     bBadge.style.color = '#ef4444';
                                 }
                             } else if (data.last_blackout && data.last_blackout.detected) {
-                                if (bTitle) bTitle.innerHTML = '⚡ Отключение света: ' + escapeHTML(data.last_blackout.date) + ' (' + escapeHTML(data.last_blackout.start) + ' → ' + escapeHTML(data.last_blackout.end) + ')';
-                                if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(data.last_blackout.duration_str) + '</strong> (' + escapeHTML(data.last_blackout.food_safety) + ')';
+                                if (bTitle) bTitle.innerHTML = IPAD_ICONS.bolt + ' Отключение света: ' + escapeHTML(data.last_blackout.date) + ' (' + escapeHTML(data.last_blackout.start) + ' → ' + escapeHTML(data.last_blackout.end) + ')';
+                                if (bSub) bSub.innerHTML = 'Длительность: <strong>' + escapeHTML(data.last_blackout.duration_str) + '</strong> (' + formatIpadSafetyHTML(data.last_blackout.food_safety) + ')';
                                 if (bBadge) {
                                     bBadge.innerText = data.last_blackout.duration_str;
                                     bBadge.style.color = '#f59e0b';
@@ -1406,35 +1483,35 @@
                             
                             lastStatus = data;
                             if (isBlackout) {
-                                pStatus.innerHTML = '🔴 Нет сети';
+                                pStatus.innerHTML = '<span class="led-dot led-red"></span> Нет сети';
                                 pStatus.className = 'dial-status color-red';
                                 
                                 timerBox.style.borderColor = '#ef4444';
-                                timerMode.innerHTML = '⚡ АВАРИЯ СЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО';
+                                timerMode.innerHTML = IPAD_ICONS.bolt + ' АВАРИЯ СЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО';
                                 timerMode.className = 'timer-mode color-red';
                                 timerVal.className = 'timer-num color-red';
                                 var bMin = Math.floor((data.blackout_duration_sec || 0) / 60);
-                                timerHint.innerHTML = '⚠️ Питание розетки отсутствует! Сеть обесточена (' + bMin + ' мин). Холодильник изолирован, идёт удержание холода.';
+                                timerHint.innerHTML = IPAD_ICONS.warn + ' Питание розетки отсутствует! Сеть обесточена (' + bMin + ' мин). Холодильник изолирован, идёт удержание холода.';
                             } else if (data.current_mode === 'defrost') {
-                                pStatus.innerHTML = '🔥 Оттайка (ТЭН)';
+                                pStatus.innerHTML = IPAD_ICONS.flame + ' Оттайка (ТЭН)';
                                 pStatus.className = 'dial-status color-orange';
                                 
                                 timerBox.style.borderColor = '#f97316';
-                                timerMode.innerHTML = '🔥 АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST';
+                                timerMode.innerHTML = IPAD_ICONS.flame + ' АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST';
                                 timerMode.className = 'timer-mode color-orange';
                                 timerVal.className = 'timer-num color-orange';
-                                timerHint.innerHTML = '🔥 Компрессор отключен. ТЭН (~165 Вт) растапливает иней на испарителе.';
+                                timerHint.innerHTML = IPAD_ICONS.flame + ' Компрессор отключен. ТЭН (~165 Вт) растапливает иней на испарителе.';
                             } else if (data.is_running) {
-                                pStatus.innerHTML = '🟢 Морозит';
+                                pStatus.innerHTML = '<span class="led-dot led-green"></span> Морозит';
                                 pStatus.className = 'dial-status color-green';
                                 
                                 timerBox.style.borderColor = '#10b981';
-                                timerMode.innerHTML = '🟢 АКТИВНЫЙ ЦИКЛ: ОХЛАЖДЕНИЕ (РАБОТА)';
+                                timerMode.innerHTML = '<span class="led-dot led-green"></span> АКТИВНЫЙ ЦИКЛ: ОХЛАЖДЕНИЕ (РАБОТА)';
                                 timerMode.className = 'timer-mode color-green';
                                 timerVal.className = 'timer-num color-green';
-                                timerHint.innerHTML = '❄️ Компрессор морозит продукты. Штатно 15–45 мин; при загрузке норма до 3.5–5 ч, тревога после 7 ч.';
+                                timerHint.innerHTML = IPAD_ICONS.snowflake + ' Компрессор морозит продукты. Штатно 15–45 мин; при загрузке норма до 3.5–5 ч, тревога после 7 ч.';
                             } else {
-                                pStatus.innerHTML = '⚪ Отдых';
+                                pStatus.innerHTML = '<span class="led-dot led-slate"></span> Отдых';
                                 pStatus.className = 'dial-status color-gray';
                                 
                                 var rSec = Number(data.rest_duration_sec) || 0;
@@ -1443,10 +1520,10 @@
                                 var lockout = data.protection_lockout_sec || 0;
                                 
                                 timerBox.style.borderColor = '#06b6d4';
-                                timerMode.innerHTML = '⚪ АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА';
+                                timerMode.innerHTML = '<span class="led-dot led-cyan"></span> АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА';
                                 timerMode.className = 'timer-mode color-cyan';
                                 timerVal.className = 'timer-num color-cyan';
-                                var restHint = '🧊 Холодильник держит мороз. Отдых: <strong>' + rMin + ' мин</strong> (норма 35–55 мин). Запуск через ~<strong>' + est + ' мин</strong>.';
+                                var restHint = IPAD_ICONS.snowflake + ' Холодильник держит мороз. Отдых: <strong>' + rMin + ' мин</strong> (норма 35–55 мин). Запуск через ~<strong>' + est + ' мин</strong>.';
                                 if (data.protection_active && lockout > 0) {
                                     restHint += ' Пауза пуска: <strong>' + lockout + ' с</strong>.';
                                 }
@@ -1505,7 +1582,7 @@
 
             var tbody = document.getElementById('ipad-archive-body');
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#38bdf8; padding:25px;">⏳ Загрузка полного архива...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#38bdf8; padding:25px;">' + IPAD_ICONS.spinner + ' Загрузка полного архива...</td></tr>';
             }
 
             var xhr = new XMLHttpRequest();
@@ -1553,22 +1630,22 @@
             var restTo = c.rest_end || '—';
             var workColor = '#10b981';
             var restColor = '#06b6d4';
-            var modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка</span>';
+            var modeBadge = '<span style="color:#10b981; font-weight:bold;"><span class="led-dot led-green"></span> Заморозка</span>';
             var pwrStr = (c.avg_power || 0) + ' Вт';
             var dateStr = c.date_short || c.date || '';
             
             if (c.live) {
                 if (c.cycle_type === 'idle') {
-                    modeBadge = '<span style="color:#06b6d4; font-weight:bold;">⚪ Отдых (сейчас)</span>';
+                    modeBadge = '<span style="color:#06b6d4; font-weight:bold;"><span class="led-dot led-cyan"></span> Отдых (сейчас)</span>';
                     workColor = '#94a3b8';
                 } else if (c.cycle_type === 'defrost') {
-                    modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка (сейчас)</span>';
+                    modeBadge = '<span style="color:#f97316; font-weight:bold;">' + IPAD_ICONS.flame + ' Оттайка (сейчас)</span>';
                     workColor = '#f97316';
                 } else {
-                    modeBadge = '<span style="color:#10b981; font-weight:bold;">🟢 Заморозка (сейчас)</span>';
+                    modeBadge = '<span style="color:#10b981; font-weight:bold;"><span class="led-dot led-green"></span> Заморозка (сейчас)</span>';
                 }
             } else if (c.cycle_type === 'blackout') {
-                modeBadge = '<span style="color:#f59e0b; font-weight:bold;">⚡ Свет</span>';
+                modeBadge = '<span style="color:#f59e0b; font-weight:bold;">' + IPAD_ICONS.bolt + ' Свет</span>';
                 durStr = c.duration_str || durStr;
                 restStr = 'сеть 0V';
                 restFrom = '—';
@@ -1576,7 +1653,7 @@
                 pwrStr = '0 Вт';
                 workColor = '#f59e0b';
             } else if (c.cycle_type === 'defrost') {
-                modeBadge = '<span style="color:#f97316; font-weight:bold;">🔥 Оттайка</span>';
+                modeBadge = '<span style="color:#f97316; font-weight:bold;">' + IPAD_ICONS.flame + ' Оттайка</span>';
                 workColor = '#f97316';
             }
 
@@ -1598,7 +1675,7 @@
             var source = ipadFullArchive || ipadAllCycles;
             if (source.length === 0) {
                 if (isIpadArchiveLoading) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#38bdf8; padding:25px;">⏳ Загрузка полного архива...</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#38bdf8; padding:25px;">' + IPAD_ICONS.spinner + ' Загрузка полного архива...</td></tr>';
                 } else {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">Архив пуст.</td></tr>';
                 }

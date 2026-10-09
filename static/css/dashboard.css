@@ -1177,3 +1177,39 @@
             .splash-tags { gap: 6px; }
             .splash-tag { font-size: 10px; padding: 3px 8px; }
         }
+
+        /* Vector SVG Icon System & Glowing LED Indicators */
+        .ui-icon {
+            display: inline-block;
+            vertical-align: -0.18em;
+            flex-shrink: 0;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .ui-icon-xs { width: 13px; height: 13px; }
+        .ui-icon-sm { width: 15px; height: 15px; }
+        .ui-icon-md { width: 17px; height: 17px; }
+        .ui-icon-lg { width: 20px; height: 20px; }
+        .ui-icon-xl { width: 24px; height: 24px; }
+        .ui-icon-2xl { width: 28px; height: 28px; }
+        .ui-spin {
+            animation: splashSpin 1.1s linear infinite;
+        }
+
+        .led-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 5px;
+            flex-shrink: 0;
+        }
+        .led-green { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.85); }
+        .led-cyan { background: #06b6d4; box-shadow: 0 0 8px rgba(6, 182, 212, 0.85); }
+        .led-blue { background: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.85); }
+        .led-orange { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.85); }
+        .led-amber { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.85); }
+        .led-red { background: #ef4444; box-shadow: 0 0 9px rgba(239, 68, 68, 0.95); }
+        .led-slate { background: #94a3b8; box-shadow: 0 0 6px rgba(148, 163, 184, 0.55); }
+

@@ -165,16 +165,18 @@
     }
 
     function triggerEnergyReconciliation() {
+        const refreshSvg = '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
+        const spinSvg = '<svg class="ui-icon ui-icon-xs ui-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
         const btn = document.getElementById('an-rec-btn');
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span>⏳</span> Сверка...';
+            btn.innerHTML = spinSvg + ' Сверка...';
         }
         if (isGhPagesAnalytics) {
             setTimeout(function() {
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<span>🔄</span> Сверить сейчас';
+                    btn.innerHTML = refreshSvg + ' Сверить сейчас';
                 }
                 loadAnalytics(true);
             }, 600);
@@ -200,7 +202,7 @@
         .then(function() {
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<span>🔄</span> Сверить сейчас';
+                btn.innerHTML = refreshSvg + ' Сверить сейчас';
             }
         });
     }
