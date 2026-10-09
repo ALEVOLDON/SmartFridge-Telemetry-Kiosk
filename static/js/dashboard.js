@@ -1348,6 +1348,9 @@ function toggleFullScreen() {
         });
         if (btn) btn.classList.add('active');
 
+        const tabBody = document.querySelector('.about-tab-body');
+        if (tabBody) tabBody.scrollTop = 0;
+
         if (tabId === 'tab-changelog') {
             loadDynamicChangelog();
         }
