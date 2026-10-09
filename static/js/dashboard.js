@@ -810,9 +810,13 @@ function toggleFullScreen() {
         }
 
         const desc = document.getElementById('live-state-desc');
+        const cycleBox = document.getElementById('cycle-box-card');
         const timerTitle = document.getElementById('timer-title');
         const timerVal = document.getElementById('auto-timer');
         const verdictEl = document.getElementById('cycle-verdict');
+        const progLabel = document.getElementById('cycle-progress-label');
+        const progPct = document.getElementById('cycle-progress-pct');
+        const progFill = document.getElementById('cycle-progress-fill');
         
         lastStatus = data;
         syncLiveTimer(data);
@@ -823,9 +827,22 @@ function toggleFullScreen() {
             timerTitle.innerHTML = UI_ICONS.bolt + ' АКТИВНЫЙ РЕЖИМ: АВАРИЯ ЭЛЕКТРОСЕТИ (БЛЭКАУТ)';
             timerTitle.style.color = '#ef4444';
             timerVal.style.color = '#ef4444';
-            const bSec = data.blackout_duration_sec || 0;
+            timerVal.style.background = 'rgba(239, 68, 68, 0.14)';
+            timerVal.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+            timerVal.style.textShadow = '0 0 12px rgba(239, 68, 68, 0.35)';
+            if (cycleBox) cycleBox.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+
+            const bSec = Number(data.blackout_duration_sec) || 0;
             const bMin = Math.floor(bSec / 60);
-            verdictEl.innerHTML = `${UI_ICONS.warn} Питание розетки отсутствует! Сеть обесточена (авария длится <strong>${bMin} мин</strong>). Холодильник удерживает накопленный холод.`;
+            const pct = Math.min(100, Math.round((bSec / (240 * 60)) * 100));
+            verdictEl.innerHTML = `${UI_ICONS.warn} Питание розетки отсутствует! Сеть обесточена (авария длится <strong>${bMin} мин</strong>). Холодильник изолирован и удерживает накопленный холод.`;
+            if (progLabel) progLabel.innerText = `Автономное удержание холода: ${bMin} мин (безопасный запас до 240 мин)`;
+            if (progPct) { progPct.innerText = `${pct}%`; progPct.style.color = '#ef4444'; }
+            if (progFill) {
+                progFill.style.width = `${pct}%`;
+                progFill.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+                progFill.style.boxShadow = '0 0 10px rgba(239,68,68,0.5)';
+            }
         } else if (data.current_mode === 'defrost') {
             desc.innerHTML = '<span class="led-dot led-orange"></span> Автооттайка No Frost (ТЭН)';
             desc.style.color = '#f97316';
@@ -833,7 +850,22 @@ function toggleFullScreen() {
             timerTitle.innerHTML = UI_ICONS.flame + ' АКТИВНЫЙ РЕЖИМ: АВТООТТАЙКА NO FROST (ТЭН)';
             timerTitle.style.color = '#f97316';
             timerVal.style.color = '#f97316';
+            timerVal.style.background = 'rgba(249, 115, 22, 0.14)';
+            timerVal.style.borderColor = 'rgba(249, 115, 22, 0.45)';
+            timerVal.style.textShadow = '0 0 12px rgba(249, 115, 22, 0.35)';
+            if (cycleBox) cycleBox.style.borderColor = 'rgba(249, 115, 22, 0.35)';
+
+            const cSec = Number(data.cycle_duration_sec) || 0;
+            const cMin = Math.floor(cSec / 60);
+            const pct = Math.min(100, Math.round((cSec / (25 * 60)) * 100));
             verdictEl.innerHTML = UI_ICONS.flame + ' Компрессор отключен. Электронагреватель (ТЭН ~165 Вт) растапливает иней на испарителе. Норма: <strong>10–25 минут</strong>.';
+            if (progLabel) progLabel.innerText = `Фаза автооттайки испарителя: ${cMin} мин из ~25 мин (норма ТЭНа 10–25 мин)`;
+            if (progPct) { progPct.innerText = `${pct}%`; progPct.style.color = '#f97316'; }
+            if (progFill) {
+                progFill.style.width = `${pct}%`;
+                progFill.style.background = 'linear-gradient(90deg, #f97316, #fb923c)';
+                progFill.style.boxShadow = '0 0 10px rgba(249,115,22,0.5)';
+            }
         } else if (data.is_running) {
             desc.innerHTML = '<span class="led-dot led-green"></span> Компрессор работает (Охлаждение)';
             desc.style.color = '#10b981';
@@ -841,7 +873,27 @@ function toggleFullScreen() {
             timerTitle.innerHTML = '<span class="led-dot led-green"></span> АКТИВНЫЙ РЕЖИМ: ОХЛАЖДЕНИЕ (КОМПРЕССОР)';
             timerTitle.style.color = '#10b981';
             timerVal.style.color = '#10b981';
+            timerVal.style.background = 'rgba(16, 185, 129, 0.14)';
+            timerVal.style.borderColor = 'rgba(16, 185, 129, 0.45)';
+            timerVal.style.textShadow = '0 0 12px rgba(16, 185, 129, 0.35)';
+            if (cycleBox) cycleBox.style.borderColor = 'rgba(16, 185, 129, 0.32)';
+
+            const cSec = Number(data.cycle_duration_sec) || 0;
+            const cMin = Math.floor(cSec / 60);
+            const targetSec = cMin <= 45 ? (45 * 60) : (240 * 60);
+            const pct = Math.min(100, Math.round((cSec / targetSec) * 100));
             verdictEl.innerHTML = UI_ICONS.snowflake + ' Компрессор активно морозит продукты. Штатный цикл <strong>15–45 мин</strong>; при загрузке норма до <strong>3.5–5 ч</strong>.';
+            if (progLabel) {
+                progLabel.innerText = cMin <= 45
+                    ? `Прогресс цикла заморозки: ${cMin} мин из ~45 мин (штатная норма 15–45 мин)`
+                    : `Интенсивный набор холода: ${cMin} мин (при загрузке продуктов норма до 210–300 мин)`;
+            }
+            if (progPct) { progPct.innerText = `${pct}%`; progPct.style.color = '#10b981'; }
+            if (progFill) {
+                progFill.style.width = `${pct}%`;
+                progFill.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                progFill.style.boxShadow = '0 0 10px rgba(16,185,129,0.5)';
+            }
         } else {
             desc.innerHTML = '<span class="led-dot led-slate"></span> Компрессор выключен (Отдых)';
             desc.style.color = '#94a3b8';
@@ -850,15 +902,28 @@ function toggleFullScreen() {
             const restMin = Math.floor(restSec / 60);
             const estRemain = Math.max(0, 45 - restMin);
             const lockout = data.protection_lockout_sec || 0;
+            const pct = Math.min(100, Math.round((restSec / (45 * 60)) * 100));
             
             timerTitle.innerHTML = '<span class="led-dot led-cyan"></span> АКТИВНЫЙ РЕЖИМ: ОТДЫХ КОМПРЕССОРА (СТОЯНКА)';
             timerTitle.style.color = '#06b6d4';
             timerVal.style.color = '#06b6d4';
+            timerVal.style.background = 'rgba(6, 182, 212, 0.12)';
+            timerVal.style.borderColor = 'rgba(6, 182, 212, 0.35)';
+            timerVal.style.textShadow = '0 0 10px rgba(6, 182, 212, 0.3)';
+            if (cycleBox) cycleBox.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+
             let restHtml = `${UI_ICONS.snowflake} Корпус удерживает мороз. Отдых длится <strong>${restMin} мин</strong> (норма: 35–55 мин). Ожидаемый запуск через ~<strong>${estRemain} мин</strong>.`;
             if (data.protection_active && lockout > 0) {
                 restHtml += ` Пауза пуска: <strong>${lockout} с</strong>.`;
             }
             verdictEl.innerHTML = restHtml;
+            if (progLabel) progLabel.innerText = `Прогресс отдыха: ${restMin} мин из ~45 мин (штатная норма 35–55 мин)`;
+            if (progPct) { progPct.innerText = `${pct}%`; progPct.style.color = '#06b6d4'; }
+            if (progFill) {
+                progFill.style.width = `${pct}%`;
+                progFill.style.background = 'linear-gradient(90deg, #06b6d4, #38bdf8)';
+                progFill.style.boxShadow = '0 0 10px rgba(6,182,212,0.5)';
+            }
         }
 
         // Health & Anomaly Diagnostics Banner Update

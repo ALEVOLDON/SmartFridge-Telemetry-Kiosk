@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
     
     <script src="chart.umd.min.js"></script>
-    <link rel="stylesheet" href="css/dashboard.css?v=3.12.0.2">
+    <link rel="stylesheet" href="css/dashboard.css?v=3.12.0.3">
 
     <style>
         /* Safeguard style to ensure instant dark splash screen display on load */
@@ -306,13 +306,30 @@
     </div>
 
     <!-- Auto Cycle Box -->
-    <div class="cycle-box">
-        <div>
-            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px; font-weight:600;" id="timer-title"><span class="led-dot led-cyan"></span>АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
+    <div class="cycle-box" id="cycle-box-card">
+        <div class="cycle-timer-col">
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight:700; letter-spacing: 0.3px;" id="timer-title"><span class="led-dot led-cyan"></span>АКТИВНЫЙ ЦИКЛ: ОТДЫХ КОМПРЕССОРА</div>
             <div class="timer-val" id="auto-timer" style="color: #06b6d4;">00:00:00</div>
         </div>
-        <div style="max-width: 450px; font-size: 13.5px; color: #cbd5e1; line-height: 1.5;" id="cycle-verdict">
-            <svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Холодильник удерживает набранный мороз. Ожидаемый запуск компрессора через ~15–25 мин.
+        <div class="cycle-details-col">
+            <div class="cycle-verdict-text" id="cycle-verdict">
+                <svg class="ui-icon ui-icon-sm" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Холодильник удерживает набранный мороз. Ожидаемый запуск компрессора через ~15–25 мин.
+            </div>
+            <div class="cycle-progress-wrap">
+                <div class="cycle-progress-meta">
+                    <span id="cycle-progress-label">Прогресс отдыха: 0 мин из ~45 мин (норма 35–55 мин)</span>
+                    <span id="cycle-progress-pct" style="color:#06b6d4; font-weight:700;">0%</span>
+                </div>
+                <div class="cycle-progress-track">
+                    <div class="cycle-progress-fill" id="cycle-progress-fill" style="width: 0%; background: linear-gradient(90deg, #06b6d4, #38bdf8); box-shadow: 0 0 10px rgba(6,182,212,0.5);"></div>
+                </div>
+            </div>
+            <div class="cycle-norm-pills">
+                <span class="cycle-norm-pill"><span class="led-dot led-green"></span>Заморозка: <strong>15–45 мин</strong></span>
+                <span class="cycle-norm-pill"><span class="led-dot led-cyan"></span>Отдых: <strong>35–55 мин</strong></span>
+                <span class="cycle-norm-pill"><span class="led-dot led-orange"></span>Оттайка ТЭН: <strong>10–25 мин</strong></span>
+                <span class="cycle-norm-pill">Эталон КРВ: <strong>0.35–0.42</strong></span>
+            </div>
         </div>
     </div>
 
@@ -1012,8 +1029,8 @@
     </div>
 </div>
 
-<script src="js/dashboard.js?v=3.12.0.2"></script>
-<script src="js/analytics.js?v=3.12.0.2"></script>
+<script src="js/dashboard.js?v=3.12.0.3"></script>
+<script src="js/analytics.js?v=3.12.0.3"></script>
 
 
 </body>
