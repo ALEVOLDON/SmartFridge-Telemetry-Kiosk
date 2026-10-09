@@ -670,14 +670,14 @@ function toggleFullScreen() {
                     qIcon.innerHTML = UI_ICONS.lanCard;
                 }
                 qTitle.innerHTML = 'Канал связи: <strong>Прямой локальный Wi-Fi</strong> (без облака)';
-                qSub.innerHTML = `${UI_ICONS.shield} Запросов в облако сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || '100% экономия: лимиты не тратятся')}`;
+                qSub.innerHTML = `${UI_ICONS.shield} Прямой локальный опрос розетки по Wi-Fi (протокол v3.5) | Полная независимость от интернета и серверов Tuya`;
                 if (qBadge) {
-                    qBadge.innerText = `Квота: ${rem} / ${tot}`;
+                    qBadge.innerText = 'Автономный LAN: 100%';
                     qBadge.style.color = '#10b981';
                     qBadge.style.background = 'rgba(16,185,129,0.15)';
                 }
                 if (cBadge) {
-                    cBadge.innerText = 'LAN: 0 запросов';
+                    cBadge.innerText = 'Опрос розетки: 4 сек';
                     cBadge.style.color = '#38bdf8';
                     cBadge.style.background = 'rgba(56,189,248,0.15)';
                 }
@@ -709,10 +709,12 @@ function toggleFullScreen() {
             dSrv.innerText = (window.location.hostname || 'localhost') + (window.location.port ? ':' + window.location.port : '');
         }
         if (dChan) {
-            dChan.innerHTML = isLan ? 'Канал: <strong style="color:#10b981;">Прямой LAN Wi-Fi (0 обл.)</strong>' : 'Канал: <strong style="color:#f59e0b;">Tuya Cloud API</strong>';
+            dChan.innerHTML = isLan ? 'Канал: <strong style="color:#10b981;">Прямой LAN Wi-Fi (v3.5)</strong>' : 'Канал: <strong style="color:#f59e0b;">Tuya Cloud API</strong>';
         }
         if (dQuota) {
-            dQuota.innerHTML = `Квота: <strong style="color:#10b981;">${rem} / ${tot}</strong>`;
+            dQuota.innerHTML = isLan
+                ? 'Режим: <strong style="color:#10b981;">100% Автономный (без облака)</strong>'
+                : `Квота: <strong style="color:#f59e0b;">${rem} / ${tot}</strong>`;
         }
 
         const isBlackout = (data.current_mode === 'blackout' || data.blackout_active);

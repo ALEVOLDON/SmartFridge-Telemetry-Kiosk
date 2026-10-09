@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
     
     <script src="chart.umd.min.js"></script>
-    <link rel="stylesheet" href="css/dashboard.css?v=3.12.0.3">
+    <link rel="stylesheet" href="css/dashboard.css?v=3.12.0.4">
 
     <style>
         /* Safeguard style to ensure instant dark splash screen display on load */
@@ -190,8 +190,8 @@
     <div class="drawer-section-title"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Инфо о системе</div>
     <div style="padding: 12px 16px; font-size: 12px; color: #94a3b8; line-height: 1.6; background: rgba(15,23,42,0.6); margin: 6px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
         <div>Сервер: <strong style="color:#f8fafc;" id="drawer-server-ip">Локальная сеть</strong></div>
-        <div id="drawer-channel-info">Канал: <strong style="color:#10b981;">LAN (без облака)</strong></div>
-        <div id="drawer-quota-info">Квота: <strong style="color:#10b981;">50 000 / 50 000</strong></div>
+        <div id="drawer-channel-info">Канал: <strong style="color:#10b981;">Прямой LAN Wi-Fi (v3.5)</strong></div>
+        <div id="drawer-quota-info">Режим: <strong style="color:#10b981;">100% Автономный (без облака)</strong></div>
     </div>
 </div>
 
@@ -200,7 +200,7 @@
     <div class="header">
         <div class="title-group">
             <h1><svg class="ui-icon ui-icon-xl" style="color:#38bdf8;" viewBox="0 0 24 24" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="5" y1="10" x2="19" y2="10"/><line x1="8" y1="6" x2="8" y2="7"/><line x1="8" y1="13" x2="8" y2="16"/></svg> Авто-Монитор: Samsung RT34MB</h1>
-            <p>Автоматический опрос умной розетки через Tuya Cloud каждые 5 сек</p>
+            <p>Автоматический локальный опрос умной розетки по Wi-Fi (LAN v3.5) каждые 4 сек</p>
         </div>
         <!-- Desktop Action Buttons -->
         <div class="btn-group desktop-btn-group">
@@ -223,28 +223,28 @@
     <div class="cloud-banner">
         <div class="status-tag" id="cloud-status">
             <span class="dot dot-red" id="cloud-dot"></span>
-            <span id="cloud-text">Ожидание подключения к Tuya Cloud...</span>
+            <span id="cloud-text">Ожидание подключения к умной розетке по LAN...</span>
         </div>
         <div style="font-size: 13px; color: var(--text-muted);" id="last-sync">Обновление: --:--:--</div>
     </div>
 
-    <!-- Network Channel & Cloud Quota Card -->
+    <!-- Network Channel & Autonomous LAN Card -->
     <div id="channel-quota-card" class="card" style="margin-bottom: 24px; border-left: 5px solid #10b981; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: rgba(15, 23, 42, 0.85);">
         <div style="display:flex; align-items:center; gap:14px;">
             <span id="channel-icon" class="banner-icon-badge banner-icon-green"><svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.8" fill="currentColor" stroke="none"/></svg></span>
             <div>
                 <div style="font-size:14.5px; font-weight:700; color:#f8fafc;" id="channel-title">Канал связи: Прямой локальный Wi-Fi (без облака)</div>
                 <div style="font-size:13px; color:#cbd5e1; margin-top:2px;" id="channel-subtitle">
-                    <svg class="ui-icon ui-icon-sm" style="color:#10b981;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.22"/><path d="m9 12 2 2 4-4"/></svg> Запросов в облако сегодня: <strong>0</strong> | 100% экономия: лимиты не тратятся
+                    <svg class="ui-icon ui-icon-sm" style="color:#10b981;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.22"/><path d="m9 12 2 2 4-4"/></svg> Прямой локальный опрос розетки по Wi-Fi (протокол v3.5) | Полная независимость от интернета и серверов Tuya
                 </div>
             </div>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
             <div id="quota-badge" style="font-size:12px; font-weight:700; padding:6px 14px; border-radius:12px; background:rgba(16,185,129,0.15); color:#10b981; letter-spacing:0.3px;">
-                Квота: 50 000 / 50 000
+                Автономный LAN: 100%
             </div>
             <div id="channel-badge" style="font-size:12px; font-weight:700; padding:6px 14px; border-radius:12px; background:rgba(56,189,248,0.15); color:#38bdf8; letter-spacing:0.3px;">
-                LAN: 0 запросов
+                Опрос розетки: 4 сек
             </div>
         </div>
     </div>
@@ -1029,8 +1029,8 @@
     </div>
 </div>
 
-<script src="js/dashboard.js?v=3.12.0.3"></script>
-<script src="js/analytics.js?v=3.12.0.3"></script>
+<script src="js/dashboard.js?v=3.12.0.4"></script>
+<script src="js/analytics.js?v=3.12.0.4"></script>
 
 
 </body>
