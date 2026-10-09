@@ -1192,8 +1192,14 @@
             display: inline-block;
             vertical-align: -0.18em;
             flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
+        }
+        .ui-icon[fill="currentColor"] {
+            fill: currentColor;
         }
         .ui-icon-xs { width: 13px; height: 13px; }
         .ui-icon-sm { width: 15px; height: 15px; }
@@ -1203,6 +1209,60 @@
         .ui-icon-2xl { width: 28px; height: 28px; }
         .ui-spin {
             animation: splashSpin 1.1s linear infinite;
+        }
+
+        .banner-icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.25s ease;
+        }
+        .banner-icon-green {
+            color: #10b981;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 182, 212, 0.10));
+            border: 1px solid rgba(16, 185, 129, 0.45);
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.22);
+        }
+        .banner-icon-amber {
+            color: #f59e0b;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(249, 115, 22, 0.10));
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.22);
+        }
+        .banner-icon-cyan {
+            color: #06b6d4;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.22), rgba(56, 189, 248, 0.10));
+            border: 1px solid rgba(6, 182, 212, 0.45);
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.22);
+        }
+        .banner-icon-orange {
+            color: #f97316;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.22), rgba(234, 88, 12, 0.10));
+            border: 1px solid rgba(249, 115, 22, 0.45);
+            box-shadow: 0 0 16px rgba(249, 115, 22, 0.22);
+        }
+        .banner-icon-red {
+            color: #ef4444;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(220, 38, 38, 0.12));
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 18px rgba(239, 68, 68, 0.25);
+        }
+        .banner-icon-blue {
+            color: #3b82f6;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.10));
+            border: 1px solid rgba(59, 130, 246, 0.45);
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.22);
+        }
+        @media (max-width: 600px) {
+            .banner-icon-badge {
+                width: 38px;
+                height: 38px;
+                border-radius: 10px;
+            }
         }
 
         .led-dot {

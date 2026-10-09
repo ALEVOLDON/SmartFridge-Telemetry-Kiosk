@@ -1,27 +1,27 @@
 const UI_ICONS = {
-        fsEnter: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
-        fsExit: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>',
-        bellOn: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.18"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
-        bellOff: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
-        spinner: '<svg class="ui-icon ui-icon-sm ui-spin" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
-        check: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-        error: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="color:#ef4444;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-        bolt: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.2"/></svg>',
-        flame: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg>',
-        snowflake: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>',
-        shield: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.2"/></svg>',
-        warn: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color:#f59e0b;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-        chartTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
-        sensorTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>',
-        lanCard: '<svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.5" fill="currentColor"/></svg>',
-        cloudCard: '<svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" style="color:#f59e0b;"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="currentColor" fill-opacity="0.18"/></svg>',
-        healthOk: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.18"/><path d="m9 12 2 2 4-4"/></svg>',
-        healthLoad: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#f59e0b;"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.18"/><polyline points="12 7 12 12 15 15"/></svg>',
-        healthDeep: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#f97316;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="currentColor" fill-opacity="0.18"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
-        healthDefrost: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#f97316;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.2"/></svg>',
-        healthAlert: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#ef4444;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.2"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-        healthRest: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#06b6d4;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.18"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
-        healthDeepRest: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="color:#3b82f6;"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.18"/><polyline points="12 7 12 12 15 15"/></svg>'
+        fsEnter: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
+        fsExit: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>',
+        bellOn: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.2"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+        bellOff: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+        spinner: '<svg class="ui-icon ui-icon-sm ui-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',
+        check: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#10b981;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        error: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#ef4444;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        bolt: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor" fill-opacity="0.25"/></svg>',
+        flame: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.25"/></svg>',
+        snowflake: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg>',
+        shield: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.22"/><path d="m9 12 2 2 4-4"/></svg>',
+        warn: '<svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:#f59e0b;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.22"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        chartTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        sensorTag: '<svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1.3" fill="currentColor" stroke="none"/></svg>',
+        lanCard: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.86a10 10 0 0 1 14 0"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1.8" fill="currentColor" stroke="none"/></svg>',
+        cloudCard: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" fill="currentColor" fill-opacity="0.22"/></svg>',
+        healthOk: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.22"/><path d="m9 12 2 2 4-4"/></svg>',
+        healthLoad: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.22"/><polyline points="12 7 12 12 15 15"/></svg>',
+        healthDeep: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="currentColor" fill-opacity="0.22"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+        healthDefrost: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="currentColor" fill-opacity="0.25"/></svg>',
+        healthAlert: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="currentColor" fill-opacity="0.25"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        healthRest: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.22"/><polyline points="9 12 11 14 15 10"/></svg>',
+        healthDeepRest: '<svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.22"/><polyline points="12 7 12 12 15 15"/></svg>'
     };
 
 function toggleFullScreen() {
@@ -665,7 +665,10 @@ function toggleFullScreen() {
         if (qCard && qTitle && qSub) {
             if (isLan) {
                 qCard.style.borderLeftColor = '#10b981';
-                qIcon.innerHTML = UI_ICONS.lanCard;
+                if (qIcon) {
+                    qIcon.className = 'banner-icon-badge banner-icon-green';
+                    qIcon.innerHTML = UI_ICONS.lanCard;
+                }
                 qTitle.innerHTML = 'Канал связи: <strong>Прямой локальный Wi-Fi</strong> (без облака)';
                 qSub.innerHTML = `${UI_ICONS.shield} Запросов в облако сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || '100% экономия: лимиты не тратятся')}`;
                 if (qBadge) {
@@ -680,7 +683,10 @@ function toggleFullScreen() {
                 }
             } else {
                 qCard.style.borderLeftColor = '#f59e0b';
-                qIcon.innerHTML = UI_ICONS.cloudCard;
+                if (qIcon) {
+                    qIcon.className = 'banner-icon-badge banner-icon-amber';
+                    qIcon.innerHTML = UI_ICONS.cloudCard;
+                }
                 qTitle.innerHTML = 'Канал связи: <strong>Tuya Cloud API (Эко-резерв)</strong>';
                 qSub.innerHTML = `${UI_ICONS.warn} Запросов сегодня: <strong>${todayUsed}</strong> | ${escapeHTML(quota.forecast_text || 'Эко-режим: ~1400/день')}`;
                 if (qBadge) {
@@ -776,21 +782,26 @@ function toggleFullScreen() {
 
         // Update Blackout Status Banner
         const bCard = document.getElementById('blackout-card');
+        const bIcon = document.getElementById('blackout-icon');
         const bTitle = document.getElementById('blackout-title');
         const bSub = document.getElementById('blackout-subtitle');
         const bBadge = document.getElementById('blackout-badge');
         if (isBlackout) {
+            if (bCard) bCard.style.borderLeftColor = '#ef4444';
+            if (bIcon) bIcon.className = 'banner-icon-badge banner-icon-red';
             if (bTitle && bSub && bBadge) {
                 const bDur = data.blackout_duration_str || (Math.floor((data.blackout_duration_sec || 0) / 60) + ' мин');
-                bTitle.innerHTML = `${UI_ICONS.bolt} <strong>АВАРИЯ ЭЛЕКТРОСЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО ПРЯМО СЕЙЧАС!</strong>`;
+                bTitle.innerHTML = `<span style="color:#ef4444;">${UI_ICONS.bolt}</span> <strong>АВАРИЯ ЭЛЕКТРОСЕТИ: ЭЛЕКТРИЧЕСТВО ОТКЛЮЧЕНО ПРЯМО СЕЙЧАС!</strong>`;
                 bSub.innerHTML = `Длительность: <strong>${escapeHTML(bDur)}</strong>. Розетка обесточена. Холодильник изолирован, продукты удерживают холод.`;
                 bBadge.innerHTML = '<span class="led-dot led-red"></span> БЛЭКАУТ: ' + escapeHTML(bDur);
                 bBadge.style.color = '#ef4444';
                 bBadge.style.background = 'rgba(239,68,68,0.2)';
             }
         } else if (data.last_blackout && data.last_blackout.detected) {
+            if (bCard) bCard.style.borderLeftColor = '#f59e0b';
+            if (bIcon) bIcon.className = 'banner-icon-badge banner-icon-amber';
             if (bTitle && bSub && bBadge) {
-                bTitle.innerHTML = `${UI_ICONS.bolt} Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
+                bTitle.innerHTML = `<span style="color:#f59e0b;">${UI_ICONS.bolt}</span> Отключение света: <strong>${escapeHTML(data.last_blackout.date)} (${escapeHTML(data.last_blackout.start)} → ${escapeHTML(data.last_blackout.end)})</strong>`;
                 bSub.innerHTML = `Длительность: <strong>${escapeHTML(data.last_blackout.duration_str)}</strong>. ${formatSafetyHTML(data.last_blackout.food_safety)}`;
                 bBadge.innerText = data.last_blackout.duration_str;
                 bBadge.style.color = '#f59e0b';
@@ -860,6 +871,7 @@ function toggleFullScreen() {
         if (data.current_mode === 'defrost') {
             const durMin = Math.floor(data.cycle_duration_sec / 60);
             healthCard.style.borderLeftColor = '#f97316';
+            healthIcon.className = 'banner-icon-badge banner-icon-orange';
             healthIcon.innerHTML = UI_ICONS.healthDefrost;
             healthTitle.innerHTML = '<span class="led-dot led-orange"></span> Автооттайка испарителя No Frost (ТЭН)';
             healthSubtitle.innerText = `Компрессор спит. Нагреватель растапливает иней уже ${durMin} мин (норма: 10–25 мин). Талая вода уходит в дренаж.`;
@@ -870,6 +882,7 @@ function toggleFullScreen() {
             const durMin = Math.floor(data.cycle_duration_sec / 60);
             if (durMin <= 45) {
                 healthCard.style.borderLeftColor = '#10b981';
+                healthIcon.className = 'banner-icon-badge banner-icon-green';
                 healthIcon.innerHTML = UI_ICONS.healthOk;
                 healthTitle.innerHTML = '<span class="led-dot led-green"></span> Штатная работа компрессора (15–45 мин)';
                 healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Система No Frost циркулирует холод штатно.`;
@@ -878,6 +891,7 @@ function toggleFullScreen() {
                 healthBadge.style.background = 'rgba(16, 185, 129, 0.15)';
             } else if (durMin <= 150) {
                 healthCard.style.borderLeftColor = '#f59e0b';
+                healthIcon.className = 'banner-icon-badge banner-icon-amber';
                 healthIcon.innerHTML = UI_ICONS.healthLoad;
                 healthTitle.innerHTML = '<span class="led-dot led-amber"></span> Повышенная нагрузка (донабор холода)';
                 healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Норма при открывании дверей или малой загрузке (1.5–2.5 ч).`;
@@ -886,6 +900,7 @@ function toggleFullScreen() {
                 healthBadge.style.background = 'rgba(245, 158, 11, 0.15)';
             } else if (durMin <= 420) {
                 healthCard.style.borderLeftColor = '#f97316';
+                healthIcon.className = 'banner-icon-badge banner-icon-orange';
                 healthIcon.innerHTML = UI_ICONS.healthDeep;
                 healthTitle.innerHTML = '<span class="led-dot led-orange"></span> Глубокая проморозка (загрузка / после блэкаута)';
                 healthSubtitle.innerText = `Компрессор работает ${durMin} мин. Штатно после отключения света или большой загрузки теплых продуктов (норма 3.5–5 ч, запас до 7 ч).`;
@@ -894,6 +909,7 @@ function toggleFullScreen() {
                 healthBadge.style.background = 'rgba(249, 115, 22, 0.15)';
             } else {
                 healthCard.style.borderLeftColor = '#ef4444';
+                healthIcon.className = 'banner-icon-badge banner-icon-red';
                 healthIcon.innerHTML = UI_ICONS.healthAlert;
                 healthTitle.innerHTML = '<span class="led-dot led-red"></span> Внимание: Непрерывная работа компрессора (> 7 ч)';
                 healthSubtitle.innerText = `Компрессор работает уже ${durMin} мин без остановки. Проверьте дверь, уплотнители, термостат и уровень фреона.`;
@@ -906,6 +922,7 @@ function toggleFullScreen() {
             const restMin = Math.floor(restSec / 60);
             if (restMin <= 60) {
                 healthCard.style.borderLeftColor = '#06b6d4';
+                healthIcon.className = 'banner-icon-badge banner-icon-cyan';
                 healthIcon.innerHTML = UI_ICONS.healthRest;
                 healthTitle.innerHTML = '<span class="led-dot led-cyan"></span> Штатный отдых (Удержание холода)';
                 healthSubtitle.innerText = `Компрессор отдыхает ${restMin} мин (норма: 35–55 мин). Термоизоляция и уплотнители отлично держат мороз.`;
@@ -914,6 +931,7 @@ function toggleFullScreen() {
                 healthBadge.style.background = 'rgba(6, 182, 212, 0.15)';
             } else if (restMin <= 95) {
                 healthCard.style.borderLeftColor = '#3b82f6';
+                healthIcon.className = 'banner-icon-badge banner-icon-blue';
                 healthIcon.innerHTML = UI_ICONS.healthDeepRest;
                 healthTitle.innerHTML = '<span class="led-dot led-blue"></span> Глубокий покой (> 1 ч отдыха)';
                 healthSubtitle.innerText = `Холодильник отдыхает уже ${restMin} мин. Камера глубоко проморожена, дверь не открывали.`;
@@ -922,6 +940,7 @@ function toggleFullScreen() {
                 healthBadge.style.background = 'rgba(59, 130, 246, 0.15)';
             } else {
                 healthCard.style.borderLeftColor = '#f59e0b';
+                healthIcon.className = 'banner-icon-badge banner-icon-amber';
                 healthIcon.innerHTML = UI_ICONS.healthLoad;
                 healthTitle.innerHTML = '<span class="led-dot led-amber"></span> Внимание: Длительный простой (> 1.5 ч)';
                 healthSubtitle.innerText = `Холодильник не включается уже ${restMin} мин. Если в морозилке тепло, проверьте терморегулятор или таймер оттайки.`;
