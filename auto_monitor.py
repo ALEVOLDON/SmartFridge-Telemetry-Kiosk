@@ -2593,8 +2593,8 @@ def changelog_api():
                 data = json.load(f)
             return jsonify({
                 "status": "ok",
-                "version": getattr(version, "VERSION", "3.11.0"),
-                "version_string": getattr(version, "VERSION_STRING", "PRO v3.11.0"),
+                "version": getattr(version, "VERSION", "3.12.0"),
+                "version_string": getattr(version, "VERSION_STRING", "PRO v3.12.0"),
                 "release_title": getattr(version, "RELEASE_TITLE", ""),
                 "release_date": getattr(version, "RELEASE_DATE", ""),
                 "changelog": data

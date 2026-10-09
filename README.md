@@ -7,7 +7,7 @@
   <b>English</b> • <a href="README.ru.md">Русский</a>
 </p>
 
-[![Release: PRO v3.10.0](https://img.shields.io/badge/Release-PRO%20v3.11.0-blue.svg)](version.py)
+[![Release: PRO v3.10.0](https://img.shields.io/badge/Release-PRO%20v3.12.0-blue.svg)](version.py)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Backend-Flask-green.svg?logo=flask)](https://flask.palletsprojects.com/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite-lightgrey.svg?logo=sqlite)](https://sqlite.org/)
@@ -318,7 +318,7 @@ Comprehensive engineering reports, hardware wiring diagrams, thermodynamic analy
 | 🏗️ [**Architecture & Deployment Guide**](docs/Architecture_and_Deployment.md) | H96 Max TV Box setup, Termux:Boot supervisor, vintage iPad 3 Kiosk mounting, and automated deployment scripts. |
 | 🔌 [**REST API Reference**](docs/API_Reference.md) | Complete documentation of all backend endpoints (`/api/status`, `/api/history`, `/api/analytics`, `/api/changelog`). |
 | 🛡️ [**Network & Host Security**](docs/Network_and_Host_Security.md) | Linux Policy Routing shield (`table eth0 pref 9000`), SSH hardening, and LAN-guard isolation. |
-| 📜 [**Changelog Database**](changelog.json) | Centralized, machine-readable release history from `v1.0.0` to `PRO v3.11.0`. |
+| 📜 [**Changelog Database**](changelog.json) | Centralized, machine-readable release history from `v1.0.0` to `PRO v3.12.0`. |
 
 ---
 

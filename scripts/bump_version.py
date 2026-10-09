@@ -31,7 +31,7 @@ if sys.platform == "win32":
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHANGELOG_PATH = os.path.join(BASE_DIR, "changelog.json")
-H96_HOST = "192.168.0.103"
+H96_HOST = "u0_a140@192.168.0.103"
 H96_PORT = "8022"
 H96_DIR = "~/Samsung_RT34MB_Monitor"
 
@@ -139,7 +139,7 @@ def deploy_to_h96():
     print(f"\n[DEPLOY] Deploying to H96 Max ({H96_HOST}:{H96_PORT})...")
 
     # Core server files
-    core_files = ["changelog.json", "version.py", "auto_monitor.py"]
+    core_files = ["changelog.json", "version.py", "auto_monitor.py", "fridge_logic.py", "index.html", "index.en.html"]
     for cf in core_files:
         local_p = os.path.join(BASE_DIR, cf)
         if os.path.exists(local_p):
@@ -152,7 +152,8 @@ def deploy_to_h96():
         os.path.join("static", "index.html"),
         os.path.join("static", "ipad.html"),
         os.path.join("static", "css", "dashboard.css"),
-        os.path.join("static", "js", "dashboard.js")
+        os.path.join("static", "js", "dashboard.js"),
+        os.path.join("static", "js", "analytics.js"),
     ]
     for sf in static_files:
         local_p = os.path.join(BASE_DIR, sf)
@@ -213,8 +214,8 @@ RELEASE_DATE = "{today_str}"
                 content,
             )
             content = re.sub(
-                r'📦 (Скачать релиз|Скачать|Download) v[\d\.]+',
-                f'📦 \\1 v{clean_ver}',
+                r'(Скачать релиз|Скачать|Download) v[\d\.]+',
+                f'\\1 v{clean_ver}',
                 content,
             )
             content = re.sub(
@@ -226,7 +227,7 @@ RELEASE_DATE = "{today_str}"
                 f.write(content)
             print(f"  [OK] Updated {landing_page}")
 
-    # 3. Update static/index.html (changelog cards, modal badge, cache-busters)
+    # 3. Update static/index.html (changelog cards, modal badge, splash badge, cache-busters)
     static_index_path = os.path.join(BASE_DIR, "static", "index.html")
     if os.path.exists(static_index_path):
         with open(static_index_path, "r", encoding="utf-8") as f:
@@ -238,6 +239,11 @@ RELEASE_DATE = "{today_str}"
         c = re.sub(
             r'<span class="about-pro-badge">PRO v[\d\.]+</span>',
             f'<span class="about-pro-badge">{ver_str}</span>',
+            c,
+        )
+        c = re.sub(
+            r'TELEMETRY KIOSK • PRO v[\d\.]+',
+            f'TELEMETRY KIOSK • {ver_str}',
             c,
         )
 
@@ -282,7 +288,7 @@ RELEASE_DATE = "{today_str}"
             f.write(c_ipad)
         print("  [OK] Updated static/ipad.html (cards & version badge)")
 
-    # 5. Update README badges
+    # 5. Update README badges & changelog range
     for readme_fname, pattern, repl in [
         ("README.md", r'Release-PRO%20v[\d\.]+', f'Release-PRO%20v{clean_ver}'),
         ("README.ru.md", r'Релиз-PRO%20v[\d\.]+', f'Релиз-PRO%20v{clean_ver}'),
@@ -292,6 +298,7 @@ RELEASE_DATE = "{today_str}"
             with open(readme_path, "r", encoding="utf-8") as f:
                 r_content = f.read()
             r_content = re.sub(pattern, repl, r_content)
+            r_content = re.sub(r'(to|до) `PRO v[\d\.]+`', f'\\1 `{ver_str}`', r_content)
             with open(readme_path, "w", encoding="utf-8") as f:
                 f.write(r_content)
             print(f"  [OK] Updated {readme_fname}")

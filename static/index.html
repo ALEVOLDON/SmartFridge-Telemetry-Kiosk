@@ -15,7 +15,7 @@
     <meta name="apple-mobile-web-app-title" content="Samsung RT34MB">
     
     <script src="chart.umd.min.js"></script>
-    <link rel="stylesheet" href="css/dashboard.css?v=3.11.0">
+    <link rel="stylesheet" href="css/dashboard.css?v=3.12.0">
 
     <style>
         /* Safeguard style to ensure instant dark splash screen display on load */
@@ -83,7 +83,7 @@
         <div class="splash-brand">
             <div class="splash-brand-badge">
                 <span class="splash-dot-pulse"></span>
-                <span>TELEMETRY KIOSK • PRO v3.10.0</span>
+                <span>TELEMETRY KIOSK • PRO v3.12.0</span>
             </div>
             <h1 class="splash-title">SAMSUNG <span class="splash-highlight">RT34MB</span></h1>
             <p class="splash-subtitle">Автономный комплекс термодинамики &amp; энергомониторинга</p>
@@ -644,7 +644,7 @@
                 </div>
                 <div>
                     <div class="about-title-row">
-                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.11.0</span>
+                        Samsung RT34MB Monitor <span class="about-pro-badge">PRO v3.12.0</span>
                     </div>
                     <div class="about-subtitle">Автономная система энергомониторинга и предиктивной диагностики No-Frost</div>
                 </div>
@@ -777,6 +777,18 @@
 
             <!-- Tab 3: Changelog -->
             <div id="tab-changelog" style="display:none;">
+                <div class="changelog-card">
+                    <div class="changelog-ver">
+                        <span>v3.12.0 Pro — Vector SVG Iconography &amp; Power-Factor (cos φ) Telemetry</span>
+                        <span class="changelog-date">09.10.2026</span>
+                    </div>
+                    <div class="changelog-point"><strong>Фильтрация дельта-пакетов Tuya Protocol 3.5:</strong> автоматическое удержание последних валидных регистров напряжения, тока и мощности при частичных LAN-ответах розетки, полностью исключающее ложные нулевые провалы (0 В / 0 Вт) и искусственное дробление циклов.</div>
+                    <div class="changelog-point"><strong>Физическая классификация оттайки по коэффициенту мощности (cos φ):</strong> разделение активного ТЭНа оттайки No-Frost (cos φ ≥ 0.90) и индуктивного мотор-компрессора SK170K (cos φ ≈ 0.55–0.75) по реальному соотношению P / (V · I), устойчивое к переключениям ступеней стабилизатора (190–235 В).</div>
+                    <div class="changelog-point"><strong>Комбинированная векторная иконографика (Duotone + Contour SVG):</strong> полная замена системных эмодзи на масштабируемые SVG-иконки с двухтоновой полупрозрачной заливкой в карточках метрик и контурной графикой в кнопках, меню и таблицах архива.</div>
+                    <div class="changelog-point"><strong>Неоновые LED-индикаторы статусов (.led-dot):</strong> приборная стилизация индикаторов каналов связи (LAN / CLOUD), режимов работы агрегата и статусов сохранности продуктов с мягким свечением.</div>
+                    <div class="changelog-point"><strong>Единый векторный интерфейс на всех устройствах (100% Offline LAN):</strong> синхронное обновление главного дашборда, киоск-панели для ретро-iPad (чистый ES5, iOS 9–12) и презентационных лендингов (RU / EN) без зависимости от внешних иконочных шрифтов и CDN.</div>
+                </div>
+
                 <div class="changelog-card">
                     <div class="changelog-ver">
                         <span>v3.11.0 Pro — Cyberpunk Boot Splash Screen &amp; UI Experience</span>
@@ -1000,8 +1012,8 @@
     </div>
 </div>
 
-<script src="js/dashboard.js?v=3.11.0"></script>
-<script src="js/analytics.js?v=3.11.0"></script>
+<script src="js/dashboard.js?v=3.12.0"></script>
+<script src="js/analytics.js?v=3.12.0"></script>
 
 
 </body>

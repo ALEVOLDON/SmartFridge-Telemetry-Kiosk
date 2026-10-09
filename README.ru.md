@@ -7,7 +7,7 @@
   <a href="README.md">English</a> • <b>Русский</b>
 </p>
 
-[![Релиз: PRO v3.10.0](https://img.shields.io/badge/Релиз-PRO%20v3.11.0-blue.svg)](version.py)
+[![Релиз: PRO v3.10.0](https://img.shields.io/badge/Релиз-PRO%20v3.12.0-blue.svg)](version.py)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg?logo=python)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Бэкенд-Flask-green.svg?logo=flask)](https://flask.palletsprojects.com/)
 [![SQLite](https://img.shields.io/badge/База%20данных-SQLite-lightgrey.svg?logo=sqlite)](https://sqlite.org/)
@@ -318,7 +318,7 @@ nohup python auto_monitor.py > /sdcard/monitor.log 2>&1 &
 | 🏗️ [**Архитектура и руководство по деплою**](docs/Architecture_and_Deployment.md) | Настройка ТВ-приставки H96 Max (3 Вт), супервизор Termux:Boot, киоск на iPad 3 Retina и автодеплой. |
 | 🔌 [**Спецификация REST API**](docs/API_Reference.md) | Полное руководство по серверным эндпоинтам (`/api/status`, `/api/history`, `/api/analytics`, `/api/changelog`). |
 | 🛡️ [**Безопасность и Policy Routing**](docs/Network_and_Host_Security.md) | Системный экран Linux Policy Routing (`table eth0 pref 9000`), SSH-авторизация и LAN-Guard. |
-| 📜 [**База версий (Single Source of Truth)**](changelog.json) | Централизованная база данных всех релизов и изменений с `v1.0.0` до `PRO v3.11.0`. |
+| 📜 [**База версий (Single Source of Truth)**](changelog.json) | Централизованная база данных всех релизов и изменений с `v1.0.0` до `PRO v3.12.0`. |
 
 ---
 
