@@ -101,8 +101,8 @@ class DutyAndRestTests(unittest.TestCase):
 
     def test_fill_rest_missing_telemetry(self):
         end = datetime(2026, 9, 1, 10, 0, 0)
-        nxt = datetime(2026, 9, 1, 13, 0, 0)
-        rest_sec, rest_str, *_ = fill_rest_after(end, nxt, "13:00", [], 1800)
+        nxt = datetime(2026, 9, 1, 15, 0, 0)
+        rest_sec, rest_str, *_ = fill_rest_after(end, nxt, "15:00", [], 1800)
         self.assertEqual(rest_sec, 0)
         self.assertEqual(rest_str, "нет записи")
 
