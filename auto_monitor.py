@@ -93,6 +93,7 @@ state = LockedState({
     "rest_duration_sec": 0,
     "last_update": None,
     "error_message": "",
+    "sensor_stuck": False,
     "protection_active": False,
     "protection_lockout_sec": 0,
     "protection_status_text": "Пауза пуска снята",
@@ -1362,6 +1363,10 @@ def tuya_poller():
     cloud_ok = False
     last_pvi = None
     stuck_pvi_count = 0
+    total_stuck_polls = 0
+    stuck_alert_sent = False
+    last_stuck_alert_time = 0.0
+    STUCK_WARN_POLLS = 38  # ~10 minutes (38 * 16s = 608s)
     offline_streak = 0
     blackout_active = False
     blackout_start_time = None
@@ -1447,16 +1452,52 @@ def tuya_poller():
                 state["current"] = round(current, 2)
                 state["last_update"] = datetime.now().strftime("%H:%M:%S")
 
-                # Anti-stall: detect frozen telemetry socket values
+                # Anti-stall: detect frozen telemetry socket values and hardware chip lockup
                 cur_pvi = (round(power, 1), round(voltage, 1), round(current, 2))
                 if power > 30.0 and cur_pvi == last_pvi:
                     stuck_pvi_count += 1
+                    total_stuck_polls += 1
                     if stuck_pvi_count >= 4:
                         print(f"[{datetime.now().strftime('%H:%M:%S')}] Anti-stall: socket values frozen at {cur_pvi} for {stuck_pvi_count} polls. Reconnecting socket...")
                         _close_local()
                         stuck_pvi_count = 0
+
+                    if total_stuck_polls >= STUCK_WARN_POLLS:
+                        state["sensor_stuck"] = True
+                        now_t = time.time()
+                        if not stuck_alert_sent or (now_t - last_stuck_alert_time >= 3600):
+                            stuck_alert_sent = True
+                            last_stuck_alert_time = now_t
+                            dur_min = int((total_stuck_polls * sleep_sec) / 60)
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] ⚠️ Watchdog: Smart plug metering chip frozen at {cur_pvi} for {dur_min} min! Sending alert.")
+                            send_pc_toast(
+                                "⚠️ Завис чип умной розетки",
+                                f"Показания мощности ({power:.1f} Вт) не меняются более {dur_min} минут. Передерните розетку из сети.",
+                                is_warning=True
+                            )
+                            if _telegram_bot:
+                                try:
+                                    _telegram_bot.notify_sensor_stuck(power, voltage, current, dur_min)
+                                except Exception as err:
+                                    print("Telegram notify_sensor_stuck error:", err)
                 else:
+                    if stuck_alert_sent:
+                        dur_min = int((total_stuck_polls * sleep_sec) / 60)
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ Watchdog: Smart plug metering recovered after {dur_min} min frozen state! New values: {cur_pvi}")
+                        send_pc_toast(
+                            "✅ Датчик розетки в строю",
+                            f"Показания снова обновляются: {power:.1f} Вт ({voltage:.1f} В).",
+                            is_warning=False
+                        )
+                        if _telegram_bot:
+                            try:
+                                _telegram_bot.notify_sensor_recovered(power, voltage, current, state.get("mode_title", "Отдых"))
+                            except Exception as err:
+                                print("Telegram notify_sensor_recovered error:", err)
+                    state["sensor_stuck"] = False
                     stuck_pvi_count = 0
+                    total_stuck_polls = 0
+                    stuck_alert_sent = False
                 last_pvi = cur_pvi
                 
                 # Optional Tuya probe is treated as freezer-only; fridge stays a model.

@@ -242,6 +242,25 @@ class TestTelegramBot(unittest.TestCase):
         self.assertIn("2 ч 30 мин", alert_text)
         self.assertIn("Безопасно", alert_text)
 
+    @patch.object(FridgeTelegramBot, "send_alert")
+    def test_notify_sensor_stuck_and_recovered(self, mock_send_alert):
+        """Watchdog alerts for frozen metering chip and subsequent recovery."""
+        self.bot.notify_sensor_stuck(142.1, 217.6, 0.91, 15)
+        mock_send_alert.assert_called_once()
+        alert_text = mock_send_alert.call_args[0][0]
+        self.assertIn("Завис чип умной розетки", alert_text)
+        self.assertIn("142.1 Вт", alert_text)
+        self.assertIn("217.6 В", alert_text)
+        self.assertIn("15 мин", alert_text)
+
+        mock_send_alert.reset_mock()
+        self.bot.notify_sensor_recovered(0.0, 218.0, 0.0, "⚪ ПОЛНЫЙ ПОКОЙ (ОТДЫХ)")
+        mock_send_alert.assert_called_once()
+        recovered_text = mock_send_alert.call_args[0][0]
+        self.assertIn("снова в строю", recovered_text)
+        self.assertIn("0.0 Вт", recovered_text)
+        self.assertIn("218.0 В", recovered_text)
+
 
 class TestTelegramAPIEndpoints(unittest.TestCase):
 
