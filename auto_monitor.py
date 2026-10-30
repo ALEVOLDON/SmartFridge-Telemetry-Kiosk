@@ -1220,10 +1220,10 @@ def _remember_plug(cfg, ip, ver):
 _local_dps_cache = {}
 
 def _local_status(cfg):
-    """One short local read. Protocol 3.5 on this plug; never block 30s on 3.4.
-    Merges delta DPS updates from updatedps([18, 19, 20]) with full status() and
-    last known register values so unchanged registers omitted from delta frames
-    never drop to 0.0.
+    """Direct, reliable Local Tuya read.
+    Uses discrete short sessions (persist=False) to ensure Tuya 3.5 firmware
+    always replies with the complete full-status frame including current (18),
+    power (19), and voltage (20), preventing partial-delta desync and stuck 0W readings.
     """
     global _local_dev, _local_ident, _local_dps_cache
     loc_key = (cfg.get("local_key") or "").strip()
@@ -1235,58 +1235,49 @@ def _local_status(cfg):
     if not ip:
         return None
     ver = float(cfg.get("local_version") or 3.5)
-    ident = (dev_id, ip, loc_key, ver)
-    if _local_dev is None or _local_ident != ident:
-        _close_local()
+
+    st = None
+    try:
         d = tinytuya.OutletDevice(
             dev_id,
             ip,
             loc_key,
             version=ver,
-            persist=True,
-            connection_timeout=2,
+            persist=False,
+            connection_timeout=2.5,
             connection_retry_limit=1,
             connection_retry_delay=0,
         )
         d.set_retry(False)
-        _local_dev = d
-        _local_ident = ident
-    up_dps = {}
-    st_dps = {}
-    try:
-        up = _local_dev.updatedps([18, 19, 20])
-        if isinstance(up, dict) and isinstance(up.get("dps"), dict):
-            up_dps = {str(k): v for k, v in up["dps"].items() if v is not None}
-    except Exception:
-        up = None
-
-    if not all(k in up_dps for k in ("18", "19", "20")):
+        st = d.status()
         try:
-            st = _local_dev.status()
-            if isinstance(st, dict) and isinstance(st.get("dps"), dict):
-                st_dps = {str(k): v for k, v in st["dps"].items() if v is not None}
+            d.close()
         except Exception:
-            st = None
+            pass
+    except Exception:
+        return None
 
-    if not any(k in up_dps or k in st_dps for k in ("18", "19", "20")):
-        _close_local()
+    if not isinstance(st, dict) or not isinstance(st.get("dps"), dict):
+        return None
+
+    st_dps = {str(k): v for k, v in st["dps"].items() if v is not None}
+    if not any(k in st_dps for k in ("18", "19", "20")):
         return None
 
     for k in ("18", "19", "20"):
         if k in st_dps:
             _local_dps_cache[k] = float(st_dps[k] or 0)
-        if k in up_dps:
-            _local_dps_cache[k] = float(up_dps[k] or 0)
 
     p_raw = float(_local_dps_cache.get("19", 0) or 0)
     v_raw = float(_local_dps_cache.get("20", 0) or 0)
     i_raw = float(_local_dps_cache.get("18", 0) or 0)
 
     # When power is explicitly reported as 0, load is off -> current must be 0
-    if ("19" in up_dps and float(up_dps["19"] or 0) == 0.0) or ("19" not in up_dps and "19" in st_dps and float(st_dps["19"] or 0) == 0.0):
+    if p_raw <= 0.0:
         p_raw = 0.0
         i_raw = 0.0
         _local_dps_cache["18"] = 0.0
+        _local_dps_cache["19"] = 0.0
     elif p_raw > 350.0 and i_raw <= 0.0:
         est_v = (v_raw / 10.0) if v_raw > 1000.0 else 220.0
         i_raw = round((p_raw / 10.0) / (est_v * 0.72) * 1000.0)
