@@ -1357,7 +1357,7 @@ def tuya_poller():
     total_stuck_polls = 0
     stuck_alert_sent = False
     last_stuck_alert_time = 0.0
-    STUCK_WARN_POLLS = 38  # ~10 minutes (38 * 16s = 608s)
+    STUCK_WARN_POLLS = 75  # ~20 minutes (75 * 16s = 1200s, allows internal firmware watchdog to self-recover)
     offline_streak = 0
     blackout_active = False
     blackout_start_time = None
