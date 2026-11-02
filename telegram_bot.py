@@ -815,20 +815,18 @@ class FridgeTelegramBot:
         return self.send_alert(text)
 
     def notify_sensor_stuck(self, power, voltage, current, dur_min):
-        """Immediately alert user when smart plug metering chip has frozen."""
+        """Calmly notify user when smart plug metering chip telemetry has paused/frozen."""
         if not self.enabled:
             return False
         msg = [
-            "⚠️ <b>ВНИМАНИЕ: Завис чип умной розетки!</b>",
+            "ℹ️ <b>Заметка: Завис чип умной розетки</b>",
             "",
-            f"Датчик мощности розетки передаёт абсолютно одинаковые показания уже <b>{dur_min} мин</b>:",
+            f"Датчик мощности розетки передаёт одинаковые показания уже <b>{dur_min} мин</b>:",
             f"• Мощность: <b>{power:.1f} Вт</b>",
             f"• Напряжение: <b>{voltage:.1f} В</b>",
             f"• Ток: <b>{current:.2f} А</b>",
             "",
-            "<i>В реальной электросети 220В напряжение постоянно колеблется. Зависание чипа приводит к ложному учету непрерывной работы.</i>",
-            "",
-            "👉 <b>Решение:</b> выньте розетку из стены на 10–15 секунд (когда компрессор стихнет) и вставьте обратно для перезагрузки микросхемы."
+            "<i>Если компрессор уже стих — измерительный чип ожидает штатного автосброса (обычно 10–15 мин). Ничего экстренно делать не нужно, холодильник в безопасности.</i>"
         ]
         return self.send_alert("\n".join(msg))
 
@@ -837,11 +835,11 @@ class FridgeTelegramBot:
         if not self.enabled:
             return False
         msg = [
-            "✅ <b>Датчик умной розетки снова в строю!</b>",
+            "✅ <b>Датчик розетки отвис и снова в строю!</b>",
             "",
-            "Телеметрия возобновила нормальное обновление данных:",
-            f"• Текущая мощность: <b>{power:.1f} Вт</b>",
-            f"• Напряжение сети: <b>{voltage:.1f} В</b>",
+            "Телеметрия штатно обновилась:",
+            f"• Мощность: <b>{power:.1f} Вт</b>",
+            f"• Напряжение: <b>{voltage:.1f} В</b>",
             f"• Режим: <b>{mode_title}</b>"
         ]
         return self.send_alert("\n".join(msg))

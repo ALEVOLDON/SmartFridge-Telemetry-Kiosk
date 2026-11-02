@@ -1662,7 +1662,10 @@ def tuya_poller():
                         state["mode_title"] = "🔥 АВТООТТАЙКА NO FROST (ТЭН)"
                     else:
                         state["current_mode"] = "cooling"
-                        state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
+                        if state.get("sensor_stuck"):
+                            state["mode_title"] = f"⚠️ ЗАВИС ДАТЧИК РОЗЕТКИ ({power:.1f} Вт)"
+                        else:
+                            state["mode_title"] = "🟢 КОМПРЕССОР РАБОТАЕТ (ОХЛАЖДЕНИЕ)"
                     
                     recent_b_sec = get_active_post_blackout_sec()
 
